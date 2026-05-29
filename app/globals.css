@@ -1,26 +1,108 @@
 @import "tailwindcss";
 
+/* ── Sunday Estate Design Tokens (ported from sunday-estate-webapp/prototype/colors_and_type.css) ── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand core */
+  --se-blue:        #002c5f;
+  --se-blue-2:      #0a3d7d;
+  --se-gold:        #f6a800;
+  --se-gold-text:   #a96800;
+  --se-gold-hot:    #fff2b7;
+  --se-gold-halo:   rgba(246, 168, 0, 0.45);
+  --se-ink:         #081832;
+  --se-cream:       #f8f9fa;
+  --se-paper:       #ffffff;
+  --se-line:        rgba(0, 44, 95, 0.14);
+  --se-line-strong: rgba(0, 44, 95, 0.22);
+  --se-muted:       rgba(8, 24, 50, 0.68);
+
+  /* Semantic (light) */
+  --bg:        var(--se-cream);
+  --surface:   var(--se-paper);
+  --text:      var(--se-blue);
+  --muted:     var(--se-muted);
+  --accent:    var(--se-gold);
+  --border:    var(--se-line);
+
+  /* Cursor spotlight (set by Hero component) */
+  --logo-shine-x: 50%;
+  --logo-shine-y: 50%;
 }
 
+[data-theme="dark"] {
+  --bg:      #061429;
+  --surface: rgba(8, 24, 50, 0.86);
+  --text:    #f7fbff;
+  --muted:   rgba(238, 244, 255, 0.62);
+  --accent:  #ffd66b;
+  --border:  rgba(255, 255, 255, 0.14);
+}
+
+/* Expose tokens as Tailwind v4 theme — utilities like bg-navy, text-gold, font-thai become available */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-navy:        var(--se-blue);
+  --color-navy-2:      var(--se-blue-2);
+  --color-gold:        var(--se-gold);
+  --color-gold-text:   var(--se-gold-text);
+  --color-gold-hot:    var(--se-gold-hot);
+  --color-ink:         var(--se-ink);
+  --color-cream:       var(--se-cream);
+  --color-paper:       var(--se-paper);
+  --color-line:        var(--se-line);
+  --color-line-strong: var(--se-line-strong);
+  --color-muted:       var(--se-muted);
+  --color-bg:          var(--bg);
+  --color-surface:     var(--surface);
+  --color-text:        var(--text);
+  --color-accent:      var(--accent);
+
+  --font-sans:    var(--font-plex-thai), "IBM Plex Sans Thai", "IBM Plex Sans", system-ui, sans-serif;
+  --font-display: var(--font-plex-sans), "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono:    var(--font-plex-mono), "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  /* Expo-out easing — the Sunday Estate house easing */
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --radius-card:  10px;
+  --radius-hero:  18px;
+  --radius-pill:  999px;
+
+  --shadow-card-hover: 0 18px 44px rgba(0, 44, 95, 0.08);
+  --shadow-card-hot:   0 28px 70px rgba(0, 44, 95, 0.14);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--bg);
+  color: var(--text);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), "IBM Plex Sans Thai", system-ui, sans-serif;
+  font-feature-settings: "ss01", "tnum";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body, p, li {
+  line-height: 1.65;
+  letter-spacing: 0.005em;
+}
+
+/* Cursor-following gold spotlight — port of --logo-shine-x/y trick from prototype/landing.css */
+.spotlight {
+  background:
+    radial-gradient(
+      600px circle at var(--logo-shine-x) var(--logo-shine-y),
+      rgba(246, 168, 0, 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      1200px circle at 50% 0%,
+      rgba(0, 44, 95, 0.08),
+      transparent 70%
+    );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
