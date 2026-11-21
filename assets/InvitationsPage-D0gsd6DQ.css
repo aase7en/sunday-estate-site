@@ -1,0 +1,1 @@
+.invite-form{display:flex;gap:var(--d-2);flex-wrap:wrap;padding:var(--d-2) var(--d-card-pad) var(--d-2)}.invite-form .input{flex:1 1 220px}.invite-form-note{margin:0 var(--d-card-pad) var(--d-2)}.invite-note{padding:0 var(--d-card-pad) var(--d-3)}.invite-actions{display:inline-flex;gap:var(--d-2);flex-wrap:wrap}

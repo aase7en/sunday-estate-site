@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- JOBS/073 - boot error trap (diagnostic; dev-team audience, English only).
+         First script in the document: captures JS exceptions, resource-load
+         failures and unhandled rejections even when every other resource is
+         broken, renders them in a plain banner, and exposes
+         window.__SE_BOOT_ERRORS. Deliberate design-token exemption: this file
+         sits outside the component/token system and the banner must render
+         with zero external dependencies (inline attribute styles, CSS color
+         keywords, no hex/px). JOBS/073 job file documents the rationale. -->
+    <script>
+      (function () {
+        var errors = (window.__SE_BOOT_ERRORS = []);
+        var pre = null;
+        function render() {
+          var bootOk = window.__SE_BOOT_OK;
+          var lines = ["BOOT ERROR"];
+          for (var i = 0; i < errors.length; i++) lines.push(errors[i]);
+          lines.push("URL: " + location.href);
+          lines.push("UA: " + navigator.userAgent);
+          lines.push(
+            "BOOT_OK: " +
+              (bootOk ? "set - bundle started (" + bootOk + ")" : "NOT set - bundle never loaded"),
+          );
+          if (!pre) {
+            pre = document.createElement("pre");
+            pre.id = "se-boot-error";
+            pre.setAttribute(
+              "style",
+              "position:fixed;top:0;left:0;right:0;margin:0;padding:8px;background:yellow;color:black;font-family:monospace;font-size:small;line-height:1.4;z-index:2147483647;white-space:pre-wrap;word-break:break-word;",
+            );
+            (document.body || document.documentElement).appendChild(pre);
+          }
+          pre.textContent = lines.join("\n");
+        }
+        function capture(line) {
+          if (errors.length < 20) errors.push(line);
+          render();
+        }
+        window.addEventListener(
+          "error",
+          function (event) {
+            var t = event.target;
+            if (t && t.tagName && t !== window) {
+              capture("RESOURCE " + t.tagName + " failed: " + (t.src || t.href || "(no url)"));
+            } else {
+              var e = event.error || event;
+              capture(
+                "JS " +
+                  ((e && e.message) || event.message || String(e)) +
+                  " @ " +
+                  (event.filename || "?") +
+                  ":" +
+                  (event.lineno || "?"),
+              );
+            }
+          },
+          true,
+        );
+        window.addEventListener("unhandledrejection", function (event) {
+          var r = event.reason;
+          capture("PROMISE " + ((r && r.message) || String(r)));
+        });
+      })();
+    </script>
+    <!-- JOBS/071 — theme-color aligned to the approved theme contract
+         (docs/design/approved-theme-contract.md): light = Soft Aurora --bg,
+         dark scheme = Modern --bg. The old #002c5f navy matched neither. -->
+    <meta name="theme-color" content="#f7f6fe" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#07070b" />
+    <!-- JOBS/071 — iOS standalone metas: launch full-screen without Safari
+         chrome when added to the Home Screen; translucent status bar keeps
+         the topbar's safe-area-inset-top padding visible. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Sunday Estate" />
+    <meta name="description" content="Sunday Estate — contract, land, and portfolio management." />
+    <link rel="icon" href="/sunday-estate-site/assets/brand/sunday-logo-mark.png" />
+    <link rel="apple-touch-icon" href="/sunday-estate-site/icons/icon-192.png" />
+    <link rel="manifest" href="/sunday-estate-site/manifest.webmanifest" />
+    <title>Sunday Estate</title>
+    <script>
+      // Pre-paint: apply persisted language + theme before first render (no flash).
+      (function () {
+        try {
+          var lang = localStorage.getItem("se_lang");
+          if (lang) document.documentElement.lang = lang;
+          var theme = localStorage.getItem("se_theme") || localStorage.getItem("se_landing_theme");
+          if (theme) document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) { /* storage unavailable (private mode) — defaults apply */ }
+      })();
+    </script>
+    <script src="/sunday-estate-site/config.js"></script>
+    <script type="module" crossorigin src="/sunday-estate-site/assets/index-Bpk8g9Gm.js"></script>
+    <link rel="modulepreload" crossorigin href="/sunday-estate-site/assets/vendor-DxgS62pa.js">
+    <link rel="stylesheet" crossorigin href="/sunday-estate-site/assets/index-M9QvP1AV.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
