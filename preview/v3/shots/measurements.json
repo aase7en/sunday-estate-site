@@ -1,0 +1,128 @@
+{
+  "consoleErrors": {
+    "desktop_light": [],
+    "desktop_dark": [],
+    "mobile_light": [],
+    "mobile_dark": [],
+    "flip": [],
+    "reducedMotion": [],
+    "zoom200": []
+  },
+  "measurements": {
+    "desktop_light": {
+      "firstViewportHeight": 800,
+      "scrollHeight": 800,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "overflowX": false,
+      "heroBottom": 112.84375,
+      "kpiBottom": 213.84375,
+      "chartZeroBaselineHasNegativeMonth": true,
+      "oneScreen": true
+    },
+    "desktop_dark": {
+      "firstViewportHeight": 800,
+      "scrollHeight": 800,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "overflowX": false,
+      "heroBottom": 112.84375,
+      "kpiBottom": 213.84375,
+      "chartZeroBaselineHasNegativeMonth": true,
+      "oneScreen": true
+    },
+    "mobile_light": {
+      "firstViewportHeight": 812,
+      "scrollHeight": 1786,
+      "clientWidth": 375,
+      "scrollWidth": 375,
+      "overflowX": false,
+      "heroBottom": 184.84375,
+      "kpiBottom": 499.84375,
+      "chartZeroBaselineHasNegativeMonth": true,
+      "viewportRatio": 2.2
+    },
+    "mobile_dark": {
+      "firstViewportHeight": 812,
+      "scrollHeight": 1786,
+      "clientWidth": 375,
+      "scrollWidth": 375,
+      "overflowX": false,
+      "heroBottom": 184.84375,
+      "kpiBottom": 499.84375,
+      "chartZeroBaselineHasNegativeMonth": true,
+      "viewportRatio": 2.2
+    }
+  },
+  "assertions": {
+    "keyboardTrace": "PASS",
+    "reducedMotion": {
+      "transform": "none",
+      "visiblePage": "page-loans",
+      "verdict": "PASS — instant swap, no transform"
+    },
+    "zoom200": {
+      "proxy": "640×400 CSS viewport ≙ 200% zoom on 1280×800 (browser zoom halves the CSS viewport)",
+      "overflowX": false,
+      "verdict": "PASS — no horizontal overflow at 200%-zoom proxy"
+    },
+    "finance": {
+      "liveBalance_11M": true,
+      "arrears_42k": true,
+      "lands_84_6M": true,
+      "ring_94_7": true,
+      "ltv_65_9_coverage_2of6": true,
+      "repayment_88_9_8of9": true,
+      "comboNegativeMonthNote": true,
+      "netFormulaStated": true,
+      "transfersExcludedNote_present": true,
+      "syntheticReference_notCopied": true,
+      "demoLabeled": true
+    }
+  },
+  "traces": {
+    "flipEndState": {
+      "activeTab": "tab-loans",
+      "inertPages": 3,
+      "settledTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    "keyboard": [
+      {
+        "step": "focus #tab-cashflow",
+        "ariaSelected": "true"
+      },
+      {
+        "step": "ArrowRight",
+        "activeTab": "tab-loans",
+        "focusedTab": "tab-loans",
+        "pageVisible": true,
+        "inertOthers": 3
+      },
+      {
+        "step": "ArrowRight (page 3)",
+        "activeTab": "tab-lands",
+        "focusedTab": "tab-lands"
+      },
+      {
+        "step": "Home (page 1)",
+        "activeTab": "tab-cashflow",
+        "focusedTab": "tab-cashflow"
+      },
+      {
+        "step": "ArrowLeft (wraps to page 4)",
+        "activeTab": "tab-action",
+        "focusedTab": "tab-action"
+      },
+      {
+        "step": "End (page 4 again)",
+        "activeTab": "tab-action",
+        "focusedTab": "tab-action"
+      },
+      {
+        "step": "Enter on tab 1 → panel focus restored",
+        "activeTab": "tab-cashflow",
+        "focusedElement": "page-cashflow"
+      }
+    ]
+  }
+}
