@@ -3,423 +3,318 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunday Estate — Dashboard V3 Design Proof v2 (JOBS/084 · ข้อมูลตัวอย่าง)</title>
-<!--
-  JOBS/084 Phase A v2 — owner addendum (PR #98 comment 7066787053, 2026-11-22).
-  Standalone interactive design proof. NO build step, NO imports, NO network.
-  v2 anatomy per the owner's reference (04-Responsive-concept-exploration):
-  sidebar + hero band + KPI row (4th slot = success ring) + COMBINED cashflow
-  chart (inflow/outflow bars + signed NET line, NON-NEGOTIABLE) + work-queue
-  panel + bottom row 3 cards + lower analytical strip. FlipContentCard kept
-  (mobile-prominent). ALL numbers derive from webapp/src/data/demo/fixtures.ts
-  (CASHFLOW / COLLATERALS / LOANS / LANDS / ALERTS / makeDemoSchedule) or are
-  explicitly labeled ข้อมูลตัวอย่าง. Reference's synthetic figures
-  (฿12,480,000 / ฿284,920 / 98.7% / ACME / NovaPay / 78% / 92%) are layout
-  grammar only — never copied.
--->
+<title>Sunday Estate — Dashboard V3 (JOBS/085 · ข้อมูลตัวอย่าง)</title>
+<!-- Standalone design prototype. All dashboard figures belong to the demo dataset. -->
 <style>
-/* ── Global shell tokens (mirrored from webapp/src/styles/tokens.css — unchanged contract) ── */
 :root {
-  --bg: #f7f6fe;
-  --surface: rgba(255, 255, 255, 0.72);
-  --surface-solid: #ffffff;
-  --surface-2: #f0edfb;
-  --border: rgba(99, 82, 151, 0.15);
-  --border-strong: rgba(99, 82, 151, 0.25);
-  --text: #26263f;
-  --text-2: #4c5071;
-  --muted: #68708b;
-  --accent: #7651d0;
-  --accent-soft: rgba(118, 81, 208, 0.12);
-  --accent-text: #6240ad;
-  --chart-line: #ef6f9c;
-  --shadow-sm: 0 1px 2px rgba(20, 18, 14, 0.04);
-  --shadow-md: 0 4px 12px rgba(20, 18, 14, 0.06), 0 1px 2px rgba(20, 18, 14, 0.04);
-  --tap: 44px;
-  --font-sans: "IBM Plex Sans Thai", "IBM Plex Sans", "Leelawadee UI", system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-html[data-theme="dark"] {
-  --bg: #07070b;
-  --surface: rgba(20, 20, 28, 0.72);
-  --surface-solid: #14141c;
-  --surface-2: rgba(28, 28, 38, 0.6);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --text: #f5f5f7;
-  --text-2: #cfcfd6;
-  --muted: #8a8a98;
-  --accent: #b59aef;
-  --accent-soft: rgba(173, 148, 240, 0.16);
-  --accent-text: #c9a9f7;
-  --chart-line: #f2a0c0;
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.20);
-  --shadow-md: 0 9px 28px rgba(0, 0, 0, 0.26);
-}
-
-/* ── JOBS/084 v2 addendum: DASHBOARD-SCOPED palette (--d3-* = PROPOSED additions,
-   NOT repo tokens yet — see contract §8.2). Exact reference hexes; contrast
-   pairings documented; global theme untouched. ── */
-:root {
-  --d3-primary: #8b5cf6;        /* fills/disks/large numerals (contrast on white ≈ 4.2:1 — graphics/large-text only) */
-  --d3-primary-700: #7c3aed;    /* accent TEXT + net line (contrast ≈ 5.6:1 — AA large, near-AA normal) */
-  --d3-cyan: #22d3ee;           /* inflow bars / graphic fills ONLY (≈1.9:1 on white — never text) */
-  --d3-success: #10b981;        /* badges paired on soft bg; ring stroke */
-  --d3-warning: #f59e0b;
-  --d3-danger: #ef4444;
-  --d3-surface: #f8fafc;
+  color-scheme: light;
+  --d3-primary: #8B5CF6;
+  --d3-primary-700: #7C3AED;
+  --d3-cyan: #22D3EE;
+  --d3-success: #10B981;
+  --d3-warning: #F59E0B;
+  --d3-danger: #EF4444;
+  --d3-surface: #F8FAFC;
   --d3-radius-sm: 8px;
   --d3-radius-md: 12px;
   --d3-radius-lg: 16px;
   --d3-radius-xl: 24px;
-  --d3-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.05), 0 10px 28px rgba(124, 58, 237, 0.10);
-  --d3-in-start: #22d3ee;
-  --d3-in-end: #0ea5bf;
-  --d3-out-start: #f472b6;
-  --d3-out-end: #db2777;
-  --d3-net: #7c3aed;
-  --d3-soft-primary: rgba(139, 92, 246, 0.12);
-  --d3-soft-cyan: rgba(34, 211, 238, 0.14);
-  --d3-soft-success: rgba(16, 185, 129, 0.14);
-  --d3-soft-warning: rgba(245, 158, 11, 0.16);
-  --d3-soft-danger: rgba(239, 68, 68, 0.12);
-  --hero-grad: linear-gradient(105deg, #ede9fe 0%, #e3f1f8 46%, #fdf1f7 100%);
-  --hero-glow: radial-gradient(420px 130px at 88% 10%, rgba(139, 92, 246, 0.20), transparent 65%),
-               radial-gradient(360px 120px at 12% 90%, rgba(34, 211, 238, 0.16), transparent 60%);
+  --d3-shadow-card: 0 1px 2px #32265e0d, 0 4px 12px #5e459011;
+  --shadow-raised: 0 1px 2px #32265e13, 0 7px 18px #644ea821;
+  --bg: #f6f2fc;
+  --text: #191637;
+  --muted: #585574;
+  --accent: #6233bf;
+  --border: #62508722;
+  --hairline: #ffffffbd;
+  --panel: linear-gradient(155deg, color-mix(in srgb, white 80%, var(--d3-surface)), #fbf8ff);
+  --chrome: #faf8fdea;
+  --surface-solid: #fcfaff;
+  --well: #6852a112;
+  --zero: #746494;
+  --d3-in-start: #8b5cf6;
+  --d3-in-end: #d6bcff;
+  --d3-out-start: #dd4f99;
+  --d3-out-end: #f7abcf;
+  --d3-net: #6633ce;
+  --d3-net-end: #925ce8;
+  --net-area: #8b5cf651;
+  --ring-track: #e8e1f6;
+  --d3-green-text: #056c52;
+  --d3-amber-text: #8d4c09;
+  --d3-red-text: #a42e4e;
+  --d3-blue-text: #176285;
+  --d3-soft-primary: #8b5cf61f;
+  --d3-soft-cyan: #22d3ee24;
+  --d3-soft-success: #10b9811c;
+  --d3-soft-warning: #f59e0b20;
+  --d3-soft-danger: #ef44791a;
+  --canvas: radial-gradient(ellipse at 96% 12%, #e0edfd, transparent 46%),
+    radial-gradient(ellipse at 70% 92%, #f3e5fc, transparent 58%),
+    radial-gradient(ellipse at 18% 25%, #ebe4fa, transparent 62%);
+  --hero: linear-gradient(105deg, #fcfaff 6%, #eee5fb 57%, #e1eafb);
+  --wave: #9c7bea;
+  --d3-on-accent: linear-gradient(150deg, #7744df, #5d2abf);
+  --font-sans: "IBM Plex Sans Thai", "IBM Plex Sans", "Leelawadee UI", system-ui, sans-serif;
 }
-html[data-theme="dark"] {
-  --d3-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.30), 0 2px 10px rgba(0, 0, 0, 0.30), 0 12px 32px rgba(139, 92, 246, 0.14);
-  --d3-soft-primary: rgba(139, 92, 246, 0.20);
-  --d3-soft-cyan: rgba(34, 211, 238, 0.18);
-  --d3-soft-success: rgba(16, 185, 129, 0.18);
-  --d3-soft-warning: rgba(245, 158, 11, 0.18);
-  --d3-soft-danger: rgba(239, 68, 68, 0.20);
-  --hero-grad: linear-gradient(105deg, #171336 0%, #0a1a30 52%, #14101e 100%);
-  --hero-glow: radial-gradient(420px 130px at 88% 10%, rgba(139, 92, 246, 0.30), transparent 65%),
-               radial-gradient(360px 120px at 12% 90%, rgba(34, 211, 238, 0.18), transparent 60%);
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #080f21;
+  --text: #f5f3ff;
+  --muted: #b1b8d4;
+  --accent: #d0b7ff;
+  --border: #a2b0fa22;
+  --hairline: #9aafff26;
+  --panel: linear-gradient(153deg, #192641, #111d34 62%, #0e192e);
+  --chrome: #0f182fea;
+  --surface-solid: #15213b;
+  --well: #acbafa14;
+  --zero: #9ca6ca;
+  --d3-in-start: #a980ff;
+  --d3-in-end: #673ec4;
+  --d3-out-start: #f277b8;
+  --d3-out-end: #8e3278;
+  --d3-net: #dabdff;
+  --d3-net-end: #a482ff;
+  --net-area: #a482ff63;
+  --ring-track: #303959;
+  --d3-green-text: #67e6be;
+  --d3-amber-text: #ffd287;
+  --d3-red-text: #ffacc4;
+  --d3-blue-text: #95dcf4;
+  --d3-soft-primary: #a67aff2a;
+  --d3-soft-cyan: #22d3ee24;
+  --d3-soft-success: #10b98123;
+  --d3-soft-warning: #f59e0b24;
+  --d3-soft-danger: #ef447926;
+  --d3-shadow-card: 0 2px 4px #03061065, 0 5px 12px #04081a55;
+  --shadow-raised: 0 5px 16px #03061096;
+  --canvas: radial-gradient(ellipse at 93% 3%, #172b4d, transparent 54%),
+    radial-gradient(ellipse at 3% 86%, #181637, transparent 56%);
+  --hero: linear-gradient(107deg, #141e37 4%, #192449 63%, #1c3659);
+  --wave: #8290fa;
+  --d3-on-accent: linear-gradient(150deg, #3d5fa9, #4c379c);
 }
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html { -webkit-text-size-adjust: 100%; }
-body { font-family: var(--font-sans); background: var(--bg); color: var(--text); min-height: 100vh; }
-button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
-:focus-visible { outline: 2px solid var(--d3-primary-700); outline-offset: 2px; border-radius: 4px; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--canvas), var(--bg); color: var(--text); font: 14px/1.4 var(--font-sans); }
+h1, h2, p { margin: 0; }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sprite { position: absolute; }
 .shell { display: flex; min-height: 100vh; }
-
-/* ── Sidebar (reference v2 menu) ── */
-.sidebar {
-  display: none;
-  width: 208px; flex: 0 0 208px;
-  border-right: 1px solid var(--border);
-  background: var(--surface);
-  backdrop-filter: blur(14px);
-}
-.sidebar-inner { display: flex; flex-direction: column; height: 100%; padding: 14px 12px; }
-.brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 14px; }
-.brand-mark {
-  width: 32px; height: 32px; border-radius: 10px; flex: 0 0 32px;
-  background: linear-gradient(135deg, var(--d3-primary), var(--d3-primary-700));
-  display: grid; place-items: center; color: #fff;
-  box-shadow: 0 4px 12px var(--d3-soft-primary);
-}
-.brand-name { font-weight: 700; font-size: 14px; }
-.brand-sub { font-size: 9.5px; color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase; }
-.side-nav { display: grid; gap: 2px; }
-.side-nav button {
-  display: flex; align-items: center; gap: 10px;
-  min-height: 38px; padding: 0 11px; border-radius: var(--d3-radius-md);
-  color: var(--text-2); font-size: 13.5px; text-align: left;
-}
-.side-nav button:hover { background: var(--d3-soft-primary); color: var(--text); }
-.side-nav button[aria-current="page"] { background: var(--d3-soft-primary); color: var(--d3-primary-700); font-weight: 700; }
-html[data-theme="dark"] .side-nav button[aria-current="page"] { color: var(--d3-primary); }
-.side-user {
-  margin-top: auto; display: flex; align-items: center; gap: 9px;
-  padding: 10px; border-radius: var(--d3-radius-md);
-  border: 1px solid var(--border); background: var(--surface-solid);
-}
-.avatar {
-  width: 30px; height: 30px; border-radius: 999px; flex: 0 0 30px;
-  background: linear-gradient(135deg, #f2a4c0, var(--d3-primary));
-  color: #fff; font-size: 12px; font-weight: 700; display: grid; place-items: center;
-}
-.side-user .n { font-size: 12.5px; font-weight: 600; }
-.side-user .r { font-size: 10.5px; color: var(--muted); }
-
-.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.topbar {
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 14px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-  backdrop-filter: blur(14px);
-  position: sticky; top: 0; z-index: 40;
-}
-.search {
-  flex: 1; max-width: 400px; min-height: 32px;
-  display: flex; align-items: center; gap: 8px; padding: 0 12px;
-  border-radius: 999px; border: 1px solid var(--border);
-  background: var(--surface-solid); color: var(--muted); font-size: 12.5px;
-}
-.top-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
-.icon-btn {
-  width: 32px; height: 32px; border-radius: 999px;
-  display: grid; place-items: center; color: var(--text-2);
-  border: 1px solid var(--border); background: var(--surface-solid);
-  position: relative;
-}
-.icon-btn:hover { color: var(--d3-primary-700); box-shadow: var(--shadow-sm); }
-html[data-theme="dark"] .icon-btn:hover { color: var(--d3-primary); }
-.bell-dot {
-  position: absolute; top: -2px; right: -2px; min-width: 15px; height: 15px;
-  border-radius: 999px; background: var(--d3-danger); color: #fff;
-  font-size: 9.5px; font-weight: 700; display: grid; place-items: center; padding: 0 4px;
-}
-.avatar.top { width: 30px; height: 30px; flex-basis: 30px; }
-.demo-chip {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 9px; border-radius: 999px;
-  font-size: 10.5px; font-weight: 700;
-  color: var(--d3-warning); background: var(--d3-soft-warning);
-  border: 1px dashed rgba(245, 158, 11, 0.45);
-  white-space: nowrap;
-}
-.theme-btn { width: auto !important; padding: 0 11px; display: inline-flex; align-items: center; gap: 6px; }
-
-.content { padding: 10px 16px 16px; display: grid; gap: 8px; max-width: 1440px; width: 100%; margin: 0 auto; }
-
-/* ── Hero band (aurora gradient, CSS only) ── */
-.hero {
-  position: relative; overflow: hidden;
-  border-radius: var(--d3-radius-xl);
-  background: var(--hero-grad);
-  padding: 8px 16px;
-  border: 1px solid var(--border);
-  box-shadow: var(--d3-shadow-card);
-}
-.hero::before { content: ""; position: absolute; inset: 0; background: var(--hero-glow); pointer-events: none; }
-.hero-row { position: relative; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.hero h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.1px; }
-.hero .sub { font-size: 11px; color: var(--text-2); margin-top: 1px; }
-.hero-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.asof {
-  font-size: 11px; color: var(--text-2);
-  background: var(--surface-solid); border: 1px solid var(--border);
-  border-radius: 999px; padding: 4px 10px;
-}
-.hero-stat {
-  font-size: 11.5px; color: var(--text-2);
-  background: var(--surface-solid); border: 1px solid var(--border);
-  border-radius: 999px; padding: 4px 10px;
-}
-.hero-stat strong { color: var(--text); }
-
-/* ── Cards ── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--d3-radius-lg);
-  box-shadow: var(--d3-shadow-card);
-  backdrop-filter: blur(14px);
-}
-.card-title { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
-.card-title .hint { color: var(--muted); font-weight: 400; font-size: 11px; }
-.proceed {
-  margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
-  font-size: 12px; font-weight: 700; color: var(--d3-primary-700);
-  min-height: 24px; padding: 0 6px;
-}
-html[data-theme="dark"] .proceed { color: var(--d3-primary); }
+.main { flex: 1; min-width: 0; }
+.sidebar { display: none; width: 188px; flex: 0 0 188px; border-right: 1px solid var(--border); background: var(--chrome); }
+.sidebar-inner { position: sticky; top: 0; display: flex; flex-direction: column; min-height: 100vh; padding: 18px 12px; isolation: isolate; overflow: hidden; }
+.sidebar-inner::before { content: ""; position: absolute; z-index: -1; inset: auto -75px 48px -85px; height: 170px; border-radius: 55% 65% 0 0; transform: rotate(19deg); background: linear-gradient(155deg, color-mix(in srgb, var(--wave) 27%, transparent), transparent 67%); box-shadow: inset 0 1px var(--hairline); }
+.sidebar-inner::after { content: ""; position: absolute; z-index: -1; inset: auto -70px 14px -60px; height: 138px; border-radius: 74% 30% 0 0; transform: rotate(-12deg); background: linear-gradient(153deg, color-mix(in srgb, var(--wave) 23%, transparent), transparent 69%); box-shadow: inset 0 1px var(--hairline); }
+.brand, .mobile-brand { display: flex; align-items: center; gap: 7px; }
+.brand { padding: 0 4px 23px; }
+.brand-mark, .mobile-brand svg { display: grid; place-items: center; color: var(--accent); }
+.brand-name, .mobile-brand strong { font-size: 13px; line-height: 1.2; font-weight: 800; }
+.brand-sub { margin-top: 4px; color: var(--muted); font-size: 8px; letter-spacing: .09em; text-transform: uppercase; }
+.side-nav { display: grid; gap: 3px; }
+.side-nav button { display: flex; align-items: center; gap: 11px; min-height: 44px; padding: 0 12px; border-radius: var(--d3-radius-md); color: var(--muted); text-align: left; }
+.side-nav button:hover { background: var(--well); }
+.side-nav button[aria-current="page"] { background: linear-gradient(100deg, #e9defa, #e1d4f8); color: var(--accent); font-weight: 750; box-shadow: inset 0 1px var(--hairline); }
+[data-theme="dark"] .side-nav button[aria-current="page"] { background: linear-gradient(100deg, #263e77, #30285d); }
+.side-user { display: flex; gap: 9px; align-items: center; margin-top: auto; padding: 10px 8px; border-top: 1px solid var(--border); }
+.avatar { flex: 0 0 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--d3-on-accent); color: white; font-size: 11px; font-weight: 700; box-shadow: 0 2px 7px var(--d3-soft-primary); }
+.side-user .n { font-size: 12px; font-weight: 700; }
+.side-user .r { font-size: 10px; color: var(--muted); }
+.topbar { display: flex; align-items: center; gap: 12px; min-height: 57px; padding: 5px 24px; position: sticky; top: 0; z-index: 4; background: var(--chrome); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
+.mobile-brand { display: none; }
+.search { display: flex; align-items: center; gap: 8px; flex: 1; max-width: 455px; min-height: 34px; padding: 0 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--well); color: var(--muted); font-size: 13px; }
+.top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.icon-btn { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 999px; color: var(--muted); }
+.icon-btn:hover { background: var(--well); color: var(--accent); }
+.bell-dot { position: absolute; top: 6px; right: 5px; width: 7px; height: 7px; border-radius: 100%; background: #e4539b; box-shadow: 0 0 0 2px var(--chrome); }
+.demo-chip { white-space: nowrap; color: var(--accent); background: var(--d3-soft-primary); padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 750; }
+.theme-btn { display: flex; gap: 2px; width: auto; padding: 0 3px; }
+.theme-btn span { display: grid; place-items: center; width: 24px; height: 26px; border-radius: 50%; }
+:root:not([data-theme="dark"]) .theme-light, [data-theme="dark"] .theme-dark { color: var(--accent); background: var(--surface-solid); box-shadow: 0 2px 5px #24194c25; }
+.content { display: grid; gap: 12px; width: 100%; max-width: 1440px; margin: 0 auto; padding: 16px 24px 18px; }
+.content > *, .kpis > *, .main-row > *, .bottom-row > *, .strip > * { min-width: 0; }
+.hero { position: relative; overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--d3-radius-lg); background: var(--hero); box-shadow: var(--shadow-raised); padding: 13px 19px; }
+.hero-waves { position: absolute; inset: 0 0 0 auto; width: 58%; height: 100%; color: var(--wave); pointer-events: none; mask-image: linear-gradient(90deg, transparent, #000 32%); }
+.hero-waves path { fill: currentColor; opacity: .13; }
+.hero-waves path:nth-child(2) { opacity: .12; }
+.hero-waves path:nth-child(3) { opacity: .14; }
+.hero-row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hero h1 { font-size: 27px; line-height: 1.23; font-weight: 750; }
+.hero .sub { margin-top: 4px; font-size: 12px; }
+.hero-right { display: grid; justify-items: end; gap: 5px; flex-shrink: 0; }
+.hero-stat { color: var(--text); background: var(--chrome); padding: 3px 8px; border-radius: 999px; font-size: 11px; }
+.asof { font-size: 10px; color: var(--muted); }
+.card { background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--d3-radius-lg); box-shadow: var(--d3-shadow-card); }
+.card-title { font-size: 16px; font-weight: 750; line-height: 1.3; }
+.kpis, .main-row, .bottom-row, .strip { display: grid; gap: 12px; }
+.kpis, .strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.kpi { position: relative; overflow: hidden; display: grid; justify-items: start; align-content: start; gap: 3px; isolation: isolate; padding: 12px 15px; }
+.kpi::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at 5% 3%, var(--disk-fill), transparent 60%), linear-gradient(165deg, transparent 60%, var(--disk-fill)); }
+.kpi, .bcard, .disk { --disk-fill: var(--d3-soft-primary); --disk-ink: var(--accent); }
+.kpi.cyan, .channels { --disk-fill: var(--d3-soft-cyan); --disk-ink: var(--d3-blue-text); }
+.kpi.rose { --disk-fill: var(--d3-soft-danger); --disk-ink: var(--d3-red-text); }
+.kpi.blue { --disk-fill: color-mix(in srgb, #718aff 22%, transparent); --disk-ink: var(--d3-blue-text); }
+.follow-up { --disk-fill: var(--d3-soft-success); --disk-ink: var(--d3-green-text); }
+.disk { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; color: var(--disk-ink); background: linear-gradient(150deg, var(--disk-fill), color-mix(in srgb, var(--disk-fill) 45%, transparent)); box-shadow: inset 0 1px var(--hairline), 0 4px 12px var(--disk-fill); }
+.kpi .disk, .summary-head .disk { --disk-fill: inherit; --disk-ink: inherit; }
+.kpi .disk { border-radius: var(--d3-radius-md); }
+.kpi-label { font-size: 12px; font-weight: 650; color: color-mix(in srgb, var(--text) 83%, var(--muted)); }
+.kpi-value, .summary-value, .val { font-size: clamp(22px, 2.5vw, 32px); font-weight: 800; letter-spacing: -.045em; line-height: 1.08; font-variant-numeric: tabular-nums; }
+.badge { display: inline-flex; margin-top: 3px; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; color: var(--muted); background: var(--well); }
+.badge.up { color: var(--d3-green-text); background: var(--d3-soft-success); }
+.badge.down { color: var(--d3-red-text); background: var(--d3-soft-danger); }
+.main-row { grid-template-columns: minmax(0, 1.66fr) minmax(0, 1fr); }
+.chart-card, .composition { padding: 13px 16px; }
+.chart-card, .composition, .flip-card { box-shadow: var(--shadow-raised); }
+.chart-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 5px 12px; }
+.range-chips { display: flex; gap: 2px; padding: 3px; background: var(--well); border-radius: 999px; }
+.chip { min-height: 30px; padding: 0 9px; border-radius: 999px; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.chip[aria-pressed="true"], .seg [aria-selected="true"] { color: #fff; background: var(--d3-on-accent); font-weight: 750; box-shadow: 0 2px 6px var(--d3-soft-primary); }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 14px; margin: 6px 0 3px; color: var(--muted); font-size: 11px; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i, .dot { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.chart-unit { margin-left: auto; font-weight: 650; }
+.legend .net-key { width: 13px; height: 2px; border-radius: 2px; background: var(--d3-net); }
+.chart-host { position: relative; min-width: 0; height: 179px; }
+.chart-host svg { display: block; width: 100%; height: 100%; }
+.chart-host linearGradient[id$="-area"] stop:first-child { stop-color: var(--net-area); }
+.chart-host linearGradient[id$="-area"] stop:last-child { stop-color: var(--d3-net); stop-opacity: 0; }
+.chart-host [data-tick] + text { font-variant-numeric: tabular-nums; }
+.axis-note, .sub, .hint { color: var(--muted); font-size: 11px; }
+.axis-note { margin-top: 3px; }
+.composition { display: flex; flex-direction: column; gap: 8px; }
+.donut-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 1fr); align-items: center; gap: 12px; flex: 1; }
+#statusDonut svg { display: block; width: 100%; max-width: 181px; aspect-ratio: 1; height: auto; margin: 0 auto; background: radial-gradient(circle closest-side, transparent 65%, var(--ring-track) 65% 87.5%, transparent 87.5%); }
+#statusDonut circle { stroke-width: 18; filter: drop-shadow(0 2px 4px var(--d3-soft-primary)); }
+.donut-legend { display: grid; gap: 9px; font-size: 13px; }
+.donut-legend .li { display: flex; align-items: center; gap: 6px; }
+.donut-legend .v { margin-left: auto; font-weight: 800; }
+.bottom-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.bcard { display: grid; gap: 7px; align-content: start; padding: 11px 14px; position: relative; }
+.summary-head { display: flex; align-items: center; gap: 8px; }
+.summary-head .disk { width: 30px; height: 30px; flex: none; }
+.summary-value { font-size: 25px; }
+.summary-value small, .val small { font-size: 12px; color: var(--muted); letter-spacing: 0; }
+.channel-bar { display: flex; height: 9px; gap: 2px; overflow: hidden; border-radius: 999px; margin-top: 6px; }
+.channel-bar i:nth-child(1) { flex: 70; background: linear-gradient(90deg, var(--d3-primary-700), var(--d3-in-start)); }
+.channel-bar i:nth-child(2) { flex: 20; background: linear-gradient(90deg, #178fbe, var(--d3-cyan)); }
+.channel-bar i:nth-child(3) { flex: 10; background: linear-gradient(90deg, var(--d3-out-start), var(--d3-out-end)); }
+.channel-label { color: var(--muted); font-size: 11px; }
+.channel-label span { padding: 0 2px; }
+.proceed { justify-self: start; display: inline-flex; align-items: center; gap: 7px; color: var(--accent); padding: 0; font-size: 12px; font-weight: 750; }
+.queue-proceed { min-height: 44px; margin-top: 4px; }
 .proceed:hover { text-decoration: underline; text-underline-offset: 3px; }
-
-/* ── KPI row (4th slot = success ring) ── */
-.kpis { display: grid; gap: 10px; grid-template-columns: repeat(4, 1fr); }
-.kpi { display: flex; gap: 11px; align-items: flex-start; padding: 10px 12px; min-width: 0; }
-.disk {
-  width: 38px; height: 38px; border-radius: 999px; flex: 0 0 38px;
-  display: grid; place-items: center; color: #fff;
-  background: linear-gradient(135deg, var(--d3-primary), var(--d3-primary-700));
-  box-shadow: 0 6px 14px var(--d3-soft-primary);
+.follow-up .proceed { position: absolute; bottom: 11px; right: 14px; min-height: 30px; }
+.strip { gap: 8px; }
+.mini.repayment { position: relative; padding-right: 43px; }
+.repayment-ring {
+  position: absolute; top: 10px; right: 10px; width: 27px; height: 27px; border-radius: 50%;
+  background: conic-gradient(var(--d3-success) 94.7%, var(--well) 0);
+  mask-image: radial-gradient(transparent 45%, #000 47%);
 }
-.disk.cyan { background: linear-gradient(135deg, var(--d3-cyan), #0891b2); box-shadow: 0 6px 14px var(--d3-soft-cyan); }
-.disk.rose { background: linear-gradient(135deg, #f472b6, var(--d3-out-end)); box-shadow: 0 6px 14px var(--d3-soft-danger); }
-.kpi-label { font-size: 11.5px; color: var(--muted); }
-.kpi-value { font-size: clamp(18px, 1.8vw, 22px); font-weight: 700; letter-spacing: -0.3px; margin-top: 2px; font-variant-numeric: tabular-nums; }
-.badge {
-  display: inline-flex; align-items: center; gap: 3px;
-  margin-top: 3px; padding: 2px 8px; border-radius: 999px;
-  font-size: 11px; font-weight: 700;
-}
-.badge.up { color: #047857; background: var(--d3-soft-success); }
-html[data-theme="dark"] .badge.up { color: var(--d3-success); }
-.badge.down { color: #b91c1c; background: var(--d3-soft-danger); }
-html[data-theme="dark"] .badge.down { color: var(--d3-danger); }
-.badge.flat { color: var(--muted); background: var(--surface-2); }
-.kpi.ring-card { align-items: center; }
-.ring-note { font-size: 11px; color: var(--muted); }
-
-/* ── Main row 60:40 (combo chart + queue) ── */
-.main-row { display: grid; gap: 10px; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
-.chart-card { padding: 10px 13px; }
-.chart-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
-.range-chips { display: flex; gap: 5px; margin-left: auto; }
-.chip {
-  min-height: 28px; padding: 0 11px; border-radius: 999px;
-  font-size: 12px; color: var(--text-2);
-  border: 1px solid var(--border); background: var(--surface-solid);
-}
-.chip[aria-pressed="true"] { background: var(--d3-primary-700); color: #fff; border-color: transparent; font-weight: 700; }
-html[data-theme="dark"] .chip[aria-pressed="true"] { background: var(--d3-primary); }
-.legend { display: flex; gap: 10px; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
-.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
-.chart-box { position: relative; }
-.watermark {
-  position: absolute; right: 6px; top: 2px;
-  font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
-  color: var(--muted); background: var(--surface-solid);
-  border: 1px dashed var(--border-strong);
-  padding: 2px 8px; border-radius: 999px; opacity: 0.92;
-}
-.axis-note { font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
-
-/* queue panel */
-.queue-card { padding: 10px 13px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.queue-count { display: flex; align-items: baseline; gap: 8px; }
-.queue-count strong { font-size: 20px; font-variant-numeric: tabular-nums; }
-.queue-count span { font-size: 11px; color: var(--muted); }
-.rows { display: grid; gap: 6px; }
-.row-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 6px 9px; border-radius: var(--d3-radius-md);
-  border: 1px solid var(--border); background: var(--surface-solid);
-  font-size: 12px; min-width: 0;
-}
+.mini { display: grid; gap: 4px; align-content: start; padding: 10px 12px; }
+.mini.card { background: var(--chrome); }
+.mini .lbl { font-size: 11px; font-weight: 700; color: var(--muted); }
+.mini .val { font-size: 21px; }
+.rows { display: grid; gap: 6px; margin-top: 8px; }
+.row-item { display: flex; align-items: center; gap: 8px; padding: 8px; min-width: 0; border: 1px solid var(--border); border-radius: var(--d3-radius-md); background: var(--well); font-size: 12px; }
 .row-item .grow { flex: 1; min-width: 0; }
-.row-item .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row-item .s { color: var(--muted); font-size: 11px; margin-top: 1px; }
-.row-item .v { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.status-chip {
-  flex: 0 0 auto; font-size: 10px; font-weight: 700;
-  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
-}
-.status-chip.danger { color: #b91c1c; background: var(--d3-soft-danger); }
-.status-chip.warn { color: #92400e; background: var(--d3-soft-warning); }
-.status-chip.info { color: #0e7490; background: var(--d3-soft-cyan); }
-.status-chip.ok { color: #047857; background: var(--d3-soft-success); }
-html[data-theme="dark"] .status-chip.danger { color: var(--d3-danger); }
-html[data-theme="dark"] .status-chip.warn { color: var(--d3-warning); }
-html[data-theme="dark"] .status-chip.info { color: var(--d3-cyan); }
-html[data-theme="dark"] .status-chip.ok { color: var(--d3-success); }
-
-/* ── Bottom row: 3 cards ── */
-.bottom-row { display: grid; gap: 10px; grid-template-columns: repeat(3, 1fr); }
-.bcard { padding: 10px 13px; display: grid; gap: 7px; min-width: 0; }
-.bar-row { display: grid; gap: 4px; }
-.bar-row .lbl { display: flex; font-size: 11.5px; color: var(--text-2); gap: 6px; }
-.bar-row .lbl b { margin-left: auto; font-variant-numeric: tabular-nums; }
-.bar { height: 7px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
-.bar i { display: block; height: 100%; border-radius: 999px; }
-.nextdue { display: flex; align-items: center; gap: 10px; }
-.nextdue .big { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.sub { font-size: 10px; color: var(--muted); line-height: 1.35; }
-.donut-wrap { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.donut-legend { display: grid; gap: 5px; font-size: 11.5px; min-width: 130px; flex: 1; }
-.donut-legend .li { display: flex; align-items: center; gap: 7px; }
-.donut-legend .li .v { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
-.dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 8px; }
-
-/* ── Lower analytical strip: 4 metric minis ── */
-.strip { display: grid; gap: 10px; grid-template-columns: repeat(4, 1fr); }
-.mini { padding: 9px 12px; display: grid; gap: 4px; min-width: 0; }
-.mini .lbl { font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.mini .val { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
-.mini .sub { font-size: 10.5px; color: var(--muted); }
-.needs-contract {
-  font-size: 10px; font-weight: 700; color: var(--d3-warning);
-  background: var(--d3-soft-warning); border-radius: 999px; padding: 2px 8px;
-}
-
-/* ── FlipContentCard (mobile-prominent analytics module) ── */
-.flip-card { display: none; }
-.seg {
-  display: flex; gap: 4px; padding: 4px;
-  border-radius: 999px; background: var(--surface-2);
-  border: 1px solid var(--border);
-}
-.seg [role="tab"] {
-  flex: 1; min-height: 36px; padding: 0 8px; border-radius: 999px;
-  font-size: 12px; font-weight: 600; color: var(--text-2);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.seg [role="tab"][aria-selected="true"] { background: var(--d3-primary-700); color: #fff; box-shadow: var(--shadow-sm); }
-html[data-theme="dark"] .seg [role="tab"][aria-selected="true"] { background: var(--d3-primary); }
-.flip-viewport { position: relative; overflow: hidden; transition: height 175ms cubic-bezier(0.45, 0, 0.55, 1); }
-.flip-inner { position: relative; transform-style: preserve-3d; will-change: transform; perspective: 1200px; }
-.page { padding: 12px 13px; outline: none; }
+.row-item .t { font-weight: 700; }
+.row-item .s { color: var(--muted); font-size: 11px; }
+.row-item .v { font-weight: 750; white-space: nowrap; }
+.status-chip { flex: none; font-weight: 750; font-size: 10px; padding: 2px 5px; border-radius: 999px; }
+.status-chip.danger { color: var(--d3-red-text); background: var(--d3-soft-danger); }
+.status-chip.warn { color: var(--d3-amber-text); background: var(--d3-soft-warning); }
+.status-chip.info { color: var(--d3-blue-text); background: var(--d3-soft-cyan); }
+.flip-card, .bottom-nav { display: none; }
+.flip-tabs { padding: 11px 12px 0; }
+.seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; background: var(--well); border: 1px solid var(--border); border-radius: var(--d3-radius-md); }
+.seg [role="tab"] { min-height: 44px; border-radius: var(--d3-radius-sm); font-size: 13px; font-weight: 650; }
+.seg [role="tab"]:focus-visible { outline-offset: -2px; }
+.flip-viewport { overflow: hidden; perspective: 1100px; }
+.flip-inner { backface-visibility: hidden; }
+.page { padding: 11px 13px 13px; }
+.page:focus-visible { outline-offset: -3px; border-radius: var(--d3-radius-md); }
 .page[hidden] { display: none; }
-.page-head-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
-.mini-stat { display: inline-flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
-.mini-stat div strong { font-size: 16px; display: block; font-variant-numeric: tabular-nums; }
-.mini-stat div span { font-size: 10.5px; color: var(--muted); }
-
-/* ── Mobile bottom nav ── */
-.bottom-nav { display: none; }
-
-@media (max-width: 1023.98px) {
-  .sidebar, .main-row { display: none; }
-  .flip-card { display: block; }
-  .bottom-nav {
-    display: flex; position: fixed; z-index: 45; bottom: 0; left: 0; right: 0;
-    border-top: 1px solid var(--border);
-    background: var(--surface); backdrop-filter: blur(16px);
-    padding: 5px 4px calc(5px + env(safe-area-inset-bottom));
-  }
-  .bottom-nav button {
-    flex: 1; display: grid; justify-items: center; gap: 2px;
-    padding: 4px 0; font-size: 10px; color: var(--muted); border-radius: 10px;
-  }
-  .bottom-nav button[aria-current="page"] { color: var(--d3-primary-700); font-weight: 700; }
-  html[data-theme="dark"] .bottom-nav button[aria-current="page"] { color: var(--d3-primary); }
-  .content { padding-bottom: 78px; }
-  .kpis { grid-template-columns: repeat(2, 1fr); }
-  .strip { grid-template-columns: repeat(2, 1fr); }
-  .bottom-row { grid-template-columns: 1fr; }
-  .hero { padding: 12px 14px; border-radius: var(--d3-radius-lg); }
-  .hero h1 { font-size: 17px; }
-  .kpi { flex-direction: column; gap: 8px; padding: 11px 12px; }
-  .disk { width: 32px; height: 32px; flex-basis: 32px; }
-  .kpi-value { font-size: 17px; }
-  .seg { display: grid; grid-template-columns: 1fr 1fr; border-radius: var(--d3-radius-md); }
-  .seg [role="tab"] { min-height: 38px; }
-  .content > *, .kpis > *, .strip > *, .bottom-row > *, .main-row > * { min-width: 0; }
-}
+.mini-stat { display: flex; gap: 8px 12px; flex-wrap: wrap; margin-top: 8px; }
+.mini-stat strong { display: block; font-size: 16px; font-variant-numeric: tabular-nums; }
+.mini-stat div span { color: var(--muted); font-size: 11px; }
+dialog { width: min(520px, calc(100% - 24px)); border: 1px solid var(--border); border-radius: var(--d3-radius-lg); background: var(--surface-solid); color: var(--text); padding: 18px; box-shadow: var(--d3-shadow-card); }
+dialog::backdrop { background: #060a2377; }
+dialog .summary-head { justify-content: space-between; margin-bottom: 8px; }
+dialog form .chip { background: var(--well); min-height: 44px; }
+dialog .rows + .sub { margin-top: 10px; }
 @media (min-width: 1024px) {
   .sidebar { display: block; }
-  .content { padding: 12px 18px 16px; gap: 10px; }
+  .content { gap: 10px; padding-block: 13px 12px; }
+  .hero { padding-block: 11px; }
+  .kpi { padding-block: 9px; gap: 2px; }
+  .chart-card, .composition { padding-block: 10px; }
+  .bcard { padding-block: 9px; gap: 5px; }
+  .mini { padding-block: 8px; }
 }
-@media (max-width: 480px) {
-  .search { flex: 0 0 36px; max-width: 36px; min-width: 0; padding: 0; justify-content: center; border: 0; background: transparent; }
-  .search-label { display: none; }
-  .demo-chip { font-size: 9.5px; padding: 3px 7px; }
-  #themeLabel { display: none; }
+@media (max-width: 1023px) {
+  .mobile-brand { display: flex; }
+  .content { padding-bottom: 84px; }
+  .bottom-nav { display: flex; position: fixed; z-index: 5; inset: auto 0 0; padding: 5px 8px calc(5px + env(safe-area-inset-bottom)); background: var(--chrome); border-top: 1px solid var(--border); backdrop-filter: blur(14px); }
+  .bottom-nav button { flex: 1; min-height: 44px; display: grid; place-content: center; justify-items: center; gap: 3px; font-size: 10px; color: var(--muted); }
+  .bottom-nav button[aria-current="page"] { color: var(--accent); font-weight: 800; }
+  .chart-host { height: 190px; }
+  .chip { min-height: 44px; }
 }
-
-/* ── Reduced motion ── */
+@media (700px <= width <= 850px) {
+  .donut-wrap { grid-template-columns: 1fr; gap: 5px; align-content: center; }
+  #statusDonut svg { max-width: 124px; }
+  .donut-legend { padding: 0 5px; gap: 5px; }
+}
+@media (max-width: 699px) {
+  .main-row { display: none; }
+  .flip-card { display: block; }
+}
+@media (max-width: 550px) {
+  .topbar { padding: 3px 12px; gap: 3px; min-height: 51px; }
+  .top-actions { gap: 3px; }
+  .search { display: none; }
+  .content { gap: 8px; padding: 8px 12px 72px; }
+  .hero { padding: 8px 12px; }
+  .hero-row { display: grid; gap: 5px; }
+  .hero h1 { font-size: 21px; }
+  .hero-right { display: flex; justify-content: space-between; align-items: baseline; gap: 5px; }
+  .hero-stat { padding: 0; background: none; }
+  .hero-waves { width: 66%; }
+  .kpis, .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .kpi { padding: 7px 11px; gap: 2px; }
+  .kpi-value { font-size: clamp(19px, 6vw, 27px); }
+  .kpi .disk { width: 30px; height: 30px; }
+  .chart-host { height: 168px; }
+  .seg { grid-template-columns: 1.35fr repeat(3, minmax(0, 1fr)); gap: 2px; padding: 3px; }
+  .seg [role="tab"] { padding: 0 2px; font-size: 12px; }
+  .bottom-nav button { padding-inline: 1px; }
+  .bottom-row { grid-template-columns: 1fr; gap: 8px; }
+  .range-chips { gap: 1px; }
+  .chart-head .card-title { font-size: 15px; }
+}
+@media (max-width: 350px) {
+  .top-actions > .avatar { display: none; }
+  .seg { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
-html[data-capture="1"] .bottom-nav { position: static; padding: 8px 4px; border-radius: var(--d3-radius-md); margin: 0 12px 12px; }
+html[data-capture="1"] .bottom-nav { position: static; }
+@media (max-width: 1023px) {
+  html[data-capture="1"] .content { padding-bottom: 14px; }
+}
 </style>
 </head>
 <body>
+<svg class="sprite" aria-hidden="true" width="0" height="0"><symbol id="i-roof" viewBox="0 0 24 24"><path d="M2 15 10 8l4 3 3-2 5 5M6 16l4-3 3 2M2 19c5-2 13-3 20 0" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-flow" viewBox="0 0 24 24"><path d="M4 18h16M6 14l5-5 4 3 5-7m-5 0h5v5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 10-7 10S5 15 5 10a7 7 0 1 1 14 0Z M14 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM8 12l3 3 5-6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 8v5m0 3v.5m0-13a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20h16M6 16v-4m6 4V8m6 8V4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><path d="M4 7h16v13H4zM8 4v5m8-5v5M4 11h16m-12 5h4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5m-3 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 14a9 9 0 0 1-11-11 9 9 0 1 0 11 11Z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M6 10v10h12V10m-8 10v-6h4v6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 4h9l3 3v13H6zM9 10h6m-6 4h6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
 <div class="shell">
-  <aside class="sidebar" aria-label="เมนูหลัก (อ้างอิงโครง shell เดิม)">
+  <aside class="sidebar" aria-label="เมนูหลัก">
     <div class="sidebar-inner">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 11.5 12 4l9 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 10.5V20h13v-9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
+        <div class="brand-mark"><svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-roof"/></svg></div>
         <div>
           <div class="brand-name">Sunday Estate</div>
           <div class="brand-sub">Estate · Land · Loan</div>
@@ -467,20 +362,21 @@ html[data-capture="1"] .bottom-nav { position: static; padding: 8px 4px; border-
 
   <div class="main">
     <header class="topbar">
-      <div class="search" role="search" aria-label="ค้นหา (ตกแต่ง)">
+      <div class="mobile-brand"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-roof"/></svg> <strong>Sunday Estate</strong></div>
+      <div class="search" aria-hidden="true">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <span class="search-label">ค้นหา (สัญญา, ที่ดิน, ลูกค้า)…</span>
+        <span class="search-label">ค้นหาสัญญา ที่ดิน หรือลูกค้า…</span>
       </div>
       <div class="top-actions">
-        <div class="demo-chip" role="status">ข้อมูลตัวอย่าง · DEMO</div>
-        <button class="icon-btn" aria-label="แจ้งเตือน 11 รายการ (เดโม)">
+        <div class="demo-chip">ข้อมูลตัวอย่าง</div>
+        <button class="icon-btn" aria-label="เปิดรายการแจ้งเตือน (ข้อมูลตัวอย่าง)" type="button" data-open-queue>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 10a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 20a2.2 2.2 0 0 0 4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <span class="bell-dot">11</span>
+          <span class="bell-dot" aria-hidden="true"></span>
         </button>
-        <button class="icon-btn theme-btn" id="themeToggle" aria-label="สลับธีม Light / Dark" aria-pressed="false">
-          <span id="themeIcon" aria-hidden="true">🌙</span><span id="themeLabel">Dark</span>
+        <button class="icon-btn theme-btn" id="themeToggle" aria-label="โหมดมืด" aria-pressed="false">
+          <span class="theme-light"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sun"/></svg></span><span class="theme-dark"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-moon"/></svg></span>
         </button>
-        <div class="avatar top" aria-label="ผู้ใช้ เขจ (admin เดโม)">ขจ</div>
+        <div class="avatar top" aria-label="ผู้ใช้ เขจ (ข้อมูลตัวอย่าง)">ขจ</div>
       </div>
     </header>
 
@@ -488,144 +384,113 @@ html[data-capture="1"] .bottom-nav { position: static; padding: 8px 4px; border-
 
       <!-- ── Hero band (aurora gradient, CSS only) ── -->
       <section class="hero" aria-labelledby="h-title">
+        <svg class="hero-waves" viewBox="0 0 520 110" preserveAspectRatio="xMaxYMax slice" aria-hidden="true"><path d="M0 110C130 109 197 12 306 53S436 43 520 17V110Z"/><path d="M110 110c94-17 122-47 206-35S457 49 520 49v61Z"/><path d="M227 110c123-9 167-35 293-38v38Z"/></svg>
         <div class="hero-row">
           <div>
             <h1 id="h-title">ภาพรวมธุรกิจไฟแนนซ์</h1>
-            <p class="sub">ที่ดิน · สินเชื่อ · กระแสเงินสด — บริษัท (scope: company)</p>
+            <p class="sub">พอร์ตสินเชื่อ ที่ดิน และกระแสเงินสดของบริษัท</p>
           </div>
           <div class="hero-right">
-            <span class="hero-stat">มูลค่าที่ดินบริษัท <strong>฿84.6M</strong> · 5 แปลง</span>
-            <span class="asof" id="asof">ข้อมูลตัวอย่าง · as-of เดโม</span>
+            <span class="hero-stat">มูลค่าที่ดิน <strong>฿84.6 ล้าน</strong> · 5 แปลง</span>
+            <span class="asof" id="asof">ชุดข้อมูล พ.ค. 2569</span>
           </div>
         </div>
       </section>
 
-      <!-- ── KPI row (4th slot = success ring) ── -->
       <section class="kpis" aria-label="ตัวชี้วัดหลัก">
-        <div class="card kpi">
-          <div class="disk" aria-hidden="true">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18" stroke="currentColor" stroke-width="2"/></svg>
-          </div>
-          <div>
-            <div class="kpi-label">เงินให้กู้ยืมคงค้าง (live)</div>
-            <div class="kpi-value">฿11,000,000</div>
-            <span class="badge flat">สแนปช็อต · อนุพันธ์ fixtures</span>
-          </div>
-        </div>
-        <div class="card kpi">
-          <div class="disk cyan" aria-hidden="true">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 19V5m0 14h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M8 15l3-4 3 2 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div>
-            <div class="kpi-label">ดอกเบี้ยรับ/เดือน (ประมาณ)</div>
-            <div class="kpi-value">฿157,825</div>
-            <span class="badge flat">Σ งวดถัดไป 6 สัญญา live</span>
-          </div>
-        </div>
-        <div class="card kpi">
-          <div class="disk rose" aria-hidden="true">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 8v5m0 3.5v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg>
-          </div>
-          <div>
-            <div class="kpi-label">เงินค้างชำระ</div>
-            <div class="kpi-value">฿42,000</div>
-            <span class="badge down">▼ 1 สัญญา ค้าง 2 งวด</span>
-          </div>
-        </div>
-        <div class="card kpi ring-card">
-          <div id="kpiRing" aria-hidden="true"></div>
-          <div>
-            <div class="kpi-label">เก็บครบงวดตรงเวลา</div>
-            <div class="kpi-value" style="font-size:20px">94.7%</div>
-            <div class="ring-note">54/57 งวด · live contracts</div>
-          </div>
-        </div>
+        <article class="card kpi primary">
+          <div class="disk"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-layers"/></svg></div>
+          <h2 class="kpi-label">เงินต้นคงค้าง</h2>
+          <div class="kpi-value">฿11,000,000</div>
+          <span class="badge flat">6 สัญญาที่ใช้งาน</span>
+        </article>
+        <article class="card kpi cyan">
+          <div class="disk"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-flow"/></svg></div>
+          <h2 class="kpi-label">ดอกเบี้ยรับต่อเดือน</h2>
+          <div class="kpi-value">฿157,825</div>
+          <span class="badge up">ประมาณการ</span>
+        </article>
+        <article class="card kpi rose">
+          <div class="disk"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-warn"/></svg></div>
+          <h2 class="kpi-label">เงินค้างชำระ</h2>
+          <div class="kpi-value">฿42,000</div>
+          <span class="badge down">1 สัญญา · 2 งวด</span>
+        </article>
+        <article class="card kpi blue">
+          <div class="disk"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pin"/></svg></div>
+          <h2 class="kpi-label">มูลค่าประเมินที่ดิน</h2>
+          <div class="kpi-value">฿84,600,000</div>
+          <span class="badge flat">5 แปลง</span>
+        </article>
       </section>
 
-      <!-- ── Desktop main row: COMBINED cashflow chart + work queue ── -->
-      <section class="main-row" aria-label="กราฟกระแสเงินสดรวม + คิวงาน">
-        <div class="card chart-card">
+      <section class="main-row" aria-label="กระแสเงินสดและสถานะสัญญา">
+        <article class="card chart-card">
           <div class="chart-head">
-            <div class="card-title">กระแสเงินสดรวม <span class="hint">· รับ−จ่าย−สุทธิ</span></div>
-            <div class="range-chips" role="group" aria-label="ช่วงของกราฟ" id="chartRange">
-              <button class="chip" data-range="3" aria-pressed="false">3 เดือน</button>
-              <button class="chip" data-range="12" aria-pressed="true">12 เดือน</button>
-              <button class="chip" data-range="6" aria-pressed="false">6 เดือน</button>
-            </div>
-            <div class="legend">
-              <span><i style="background:var(--d3-cyan)"></i>เงินเข้า</span>
-              <span><i style="background:var(--d3-out-start)"></i>เงินออก</span>
-              <span><i style="background:var(--d3-net)"></i>สุทธิ (net = in − out)</span>
-            </div>
+            <h2 class="card-title">กระแสเงินสดรายเดือน</h2>
+            <div class="range-chips" role="group" aria-label="ช่วงของกราฟ" id="chartRange"></div>
           </div>
-          <div class="chart-box">
-            <span class="watermark">ข้อมูลตัวอย่าง</span>
-            <div id="comboChartDesk"></div>
+          <div class="legend" data-chart-legend></div>
+          <div class="chart-host" id="comboChartDesk"></div>
+          <p class="axis-note">สุทธิ = เงินเข้า − เงินออก · ไม่รวมการโอนภายใน</p>
+        </article>
+        <article class="card composition" aria-labelledby="composition-title">
+          <h2 class="card-title" id="composition-title">สัดส่วนสถานะสัญญา</h2>
+          <div class="donut-wrap">
+            <div id="statusDonut" role="img"></div>
+            <div class="donut-legend" id="statusLegend"></div>
           </div>
-          <p class="axis-note" data-note="combo">ฐาน 0฿ · สุทธิติดลบใต้เส้นฐาน (ส.ค. −112k) · ซีรีส์ CASHFLOW fixtures · production: ยืนยัน fetch-cap 500 แถวก่อนอ้างเทรนด์</p>
-        </div>
-
-        <div class="card queue-card">
-          <div class="card-title">คิวงานที่ต้องติดตาม <span class="hint">· จาก ALERTS fixtures</span></div>
-          <div class="queue-count"><strong>5</strong><span>รายการ (เก็บเงิน 1 · ครบกำหนด 1 · OCR 2 · ประเมินราคา 1)</span></div>
-          <div class="rows" id="queueRows"></div>
-          <button class="proceed" type="button">ดำเนินการต่อ <span aria-hidden="true">→</span></button>
-        </div>
+          <p class="sub">นับตามสถานะล่าสุดของแต่ละสัญญา</p>
+        </article>
       </section>
 
       <!-- ── FlipContentCard (mobile-prominent) ── -->
-      <section class="card flip-card" id="flipCard" aria-label="โมดูลวิเคราะห์ (FlipContentCard)">
-        <div style="padding:11px 12px 0">
+      <section class="card flip-card" id="flipCard" aria-label="ภาพรวมเชิงวิเคราะห์">
+        <div class="flip-tabs">
           <div class="seg" role="tablist" aria-label="หน้าของโมดูลวิเคราะห์" id="seg">
             <button role="tab" id="tab-cashflow" aria-selected="true" aria-controls="page-cashflow" tabindex="0">กระแสเงินสด</button>
-            <button role="tab" id="tab-loans" aria-selected="false" aria-controls="page-loans" tabindex="-1">สินเชื่อ+ทวงคืน</button>
+            <button role="tab" id="tab-loans" aria-selected="false" aria-controls="page-loans" tabindex="-1">สัญญา</button>
             <button role="tab" id="tab-lands" aria-selected="false" aria-controls="page-lands" tabindex="-1">ที่ดิน</button>
-            <button role="tab" id="tab-action" aria-selected="false" aria-controls="page-action" tabindex="-1">งาน+ข้อมูลเชิงลึก</button>
+            <button role="tab" id="tab-action" aria-selected="false" aria-controls="page-action" tabindex="-1">งานด่วน</button>
           </div>
         </div>
         <div class="flip-viewport" id="flipViewport">
           <div class="flip-inner" id="flipInner">
 
             <div class="page" id="page-cashflow" role="tabpanel" aria-labelledby="tab-cashflow" tabindex="-1">
-              <div class="page-head-row">
-                <div class="card-title">กระแสเงินสดรวม <span class="hint">· รับ−จ่าย−สุทธิ</span></div>
-                <div class="range-chips" role="group" aria-label="ช่วงของกราฟ (ในหน้า)" id="chartRangeFlip">
-                  <button class="chip" data-range="3" aria-pressed="false">3 เดือน</button>
-                  <button class="chip" data-range="12" aria-pressed="true">12 เดือน</button>
-                  <button class="chip" data-range="6" aria-pressed="false">6 เดือน</button>
-                </div>
+              <div class="chart-head">
+                <h2 class="card-title">กระแสเงินสดรายเดือน</h2>
+                <div class="range-chips" role="group" aria-label="ช่วงของกราฟ" id="chartRangeFlip"></div>
               </div>
-              <div class="chart-box">
-                <span class="watermark">ข้อมูลตัวอย่าง</span>
-                <div id="comboChartFlip"></div>
-              </div>
-              <p class="axis-note" data-note="combo">ห่วงซีโร่ = 0 ฿ · สุทธิติดลบใต้เส้นฐาน · ซีรีส์จาก CASHFLOW fixtures</p>
+              <div class="legend" data-chart-legend></div>
+              <div class="chart-host" id="comboChartFlip"></div>
+              <p class="axis-note">สุทธิ = เงินเข้า − เงินออก · ไม่รวมการโอนภายใน</p>
             </div>
 
             <div class="page" id="page-loans" role="tabpanel" aria-labelledby="tab-loans" tabindex="-1" hidden inert>
               <div class="page-head-row">
-                <div class="card-title">สินเชื่อ &amp; การทวงคืน <span class="hint">· อนุพันธ์จาก fixtures</span></div>
+                <div class="card-title">สถานะสัญญา</div>
               </div>
               <div class="mini-stat">
-                <div><strong>6</strong><span>สัญญาใช้งาน (live)</span></div>
+                <div><strong>6</strong><span>สัญญาใช้งาน</span></div>
                 <div><strong>1</strong><span>ไถ่ถอนแล้ว</span></div>
                 <div><strong>1</strong><span>ต่อสัญญาแล้ว</span></div>
-                <div><strong>0</strong><span>หลุดจำนอง (อนุพันธ์ J048)</span></div>
+                <div><strong>0</strong><span>หลุดจำนอง</span></div>
               </div>
               <div class="rows">
-                <div class="row-item"><span class="dot" style="background:var(--d3-danger)"></span><div class="grow"><div class="t">LN-2025-010 · ค้างชำระ 2 งวด</div><div class="s">คุณรัตนา จงเจริญ · ทาวน์เฮาส์ บางพลี</div></div><span class="v" style="color:var(--d3-danger)">฿42,000</span></div>
-                <div class="row-item"><span class="dot" style="background:var(--d3-warning)"></span><div class="grow"><div class="t">LN-2025-012 · ครบกำหนดใกล้</div><div class="s">คุณวิภา ทองดี · บ้านเดี่ยว ปทุมธานี · ค้าง 1 งวด</div></div><span class="v" style="color:var(--d3-warning)">฿13,800</span></div>
+                <div class="row-item"><span class="dot" style="background:var(--d3-danger)"></span><div class="grow"><div class="t">LN-2025-010 · ค้างชำระ 2 งวด</div><div class="s">คุณรัตนา จงเจริญ · ทาวน์เฮาส์ บางพลี</div></div><span class="v" style="color:var(--d3-red-text)">฿42,000</span></div>
+                <div class="row-item"><span class="dot" style="background:var(--d3-warning)"></span><div class="grow"><div class="t">LN-2025-012 · ครบกำหนดใกล้</div><div class="s">คุณวิภา ทองดี · บ้านเดี่ยว ปทุมธานี · ค้าง 1 งวด</div></div><span class="v" style="color:var(--d3-amber-text)">฿13,800</span></div>
                 <div class="row-item"><span class="dot" style="background:var(--d3-success)"></span><div class="grow"><div class="t">LN-2025-009 · ไถ่ถอนแล้ว (15 มี.ค.)</div><div class="s">หจก. รุ่งเรืองทรัพย์ · โกดัง บางบ่อ</div></div><span class="v">฿3,500,000</span></div>
               </div>
               <div class="mini-stat" style="margin-top:10px">
-                <div><strong>ขายฝาก 83.3%</strong><span>฿9.16M · live balance</span></div>
+                <div><strong>ขายฝาก 83.3%</strong><span>฿9.16M · ยอดคงค้าง</span></div>
                 <div><strong>จำนอง 16.7%</strong><span>฿1.84M</span></div>
               </div>
             </div>
 
             <div class="page" id="page-lands" role="tabpanel" aria-labelledby="tab-lands" tabindex="-1" hidden inert>
               <div class="page-head-row">
-                <div class="card-title">ที่ดินบริษัท <span class="hint">· จาก fixtures LD-001…005</span></div>
+                <div class="card-title">ที่ดินบริษัท</div>
               </div>
               <div class="mini-stat">
                 <div><strong>฿84.6M</strong><span>มูลค่าประเมินรวม</span></div>
@@ -635,89 +500,79 @@ html[data-capture="1"] .bottom-nav { position: static; padding: 8px 4px; border-
               <div class="rows">
                 <div class="row-item"><span class="dot" style="background:var(--d3-cyan)"></span><div class="grow"><div class="t">LD-003 · พระราม 2 ติดถนน</div><div class="s">ถมที่ 28% · รอประเมินรอบใหม่</div></div><span class="v">฿24.0M</span></div>
                 <div class="row-item"><span class="dot" style="background:var(--d3-cyan)"></span><div class="grow"><div class="t">LD-001 · รามอินทรา–สายไหม</div><div class="s">พัฒนา 62% · ศักยภาพขายต่อ</div></div><span class="v">฿22.5M</span></div>
-                <div class="row-item"><span class="dot" style="background:var(--d3-success)"></span><div class="grow"><div class="t">LD-002 · บางใหญ่ Phase 1</div><div class="s">ขายแล้ว 70% · progress 85%</div></div><span class="v">฿18.4M</span></div>
+                <div class="row-item"><span class="dot" style="background:var(--d3-success)"></span><div class="grow"><div class="t">LD-002 · บางใหญ่ Phase 1</div><div class="s">ขายแล้ว 70% · คืบหน้า 85%</div></div><span class="v">฿18.4M</span></div>
               </div>
             </div>
 
             <div class="page" id="page-action" role="tabpanel" aria-labelledby="tab-action" tabindex="-1" hidden inert>
               <div class="page-head-row">
-                <div class="card-title">คิวงาน &amp; ข้อมูลเชิงลึก <span class="hint">· 5 รายการ</span></div>
+                <div class="card-title">งานด่วน <span class="hint">5 รายการ</span></div>
               </div>
               <div class="rows" id="queueRowsFlip"></div>
+              <button class="proceed queue-proceed" type="button" data-open-queue>ดำเนินการต่อ <span aria-hidden="true">→</span></button>
             </div>
 
           </div>
         </div>
       </section>
 
-      <!-- ── Bottom row: 3 cards ── -->
-      <section class="bottom-row" aria-label="การ์ดสรุปแถวล่าง">
-        <div class="card bcard">
-          <div class="card-title">ช่องทางรับชำระ <span class="hint">· เดโม</span><button class="proceed" type="button">ดำเนินการต่อ <span aria-hidden="true">→</span></button></div>
-          <div class="bar-row"><div class="lbl">เงินสด <b>70%</b></div><div class="bar"><i style="width:70%;background:linear-gradient(90deg,var(--d3-primary),var(--d3-primary-700))"></i></div></div>
-          <div class="bar-row"><div class="lbl">โอนธนาคาร <b>20%</b></div><div class="bar"><i style="width:20%;background:linear-gradient(90deg,var(--d3-cyan),#0891b2)"></i></div></div>
-          <div class="bar-row"><div class="lbl">หักจากเงินได้ <b>10%</b></div><div class="bar"><i style="width:10%;background:linear-gradient(90deg,#f472b6,var(--d3-out-end))"></i></div></div>
-          <div class="sub">เดโม — production: payVia จริงผ่าน receipts seam · needs contract</div>
-        </div>
-
-        <div class="card bcard">
-          <div class="card-title">งวดถัดไป &amp; ความคืบหน้า <span class="hint">· จากตารางงวดเดโม</span><button class="proceed" type="button">ดำเนินการต่อ <span aria-hidden="true">→</span></button></div>
-          <div class="nextdue">
-            <div>
-              <div class="big">#16 · 12 เม.ย. 26 · ฿27,000</div>
-              <div class="sub">LN-2025-014 · ต่อจากงวด #15 ชำระบางส่วน</div>
-            </div>
-          </div>
-          <div class="bar-row"><div class="lbl">ชำระแล้ว 14.5/18 งวด <b>81%</b></div><div class="bar"><i style="width:81%;background:linear-gradient(90deg,var(--d3-success),#059669)"></i></div></div>
-        </div>
-
-        <div class="card bcard">
-          <div class="card-title">สถานะสัญญาทั้งหมด <span class="hint">· องค์ประกอบจริง (10 สัญญา)</span></div>
-          <div class="donut-wrap">
-            <div id="statusDonut" aria-hidden="true"></div>
-            <div class="donut-legend">
-              <div class="li"><span class="dot" style="background:var(--d3-primary)"></span>ใช้งาน <span class="v">6</span></div>
-              <div class="li"><span class="dot" style="background:var(--d3-cyan)"></span>ใกล้ครบกำหนด <span class="v">1</span></div>
-              <div class="li"><span class="dot" style="background:var(--d3-danger)"></span>ค้างชำระ <span class="v">1</span></div>
-              <div class="li"><span class="dot" style="background:var(--d3-success)"></span>ไถ่ถอน/ต่อสัญญา <span class="v">2</span></div>
-            </div>
-          </div>
-          <div class="sub">ครบ 10 สัญญา (จริง) · donut มูลค่าพอร์ต = needs contract</div>
-        </div>
+      <section class="bottom-row" aria-label="สรุปการติดตาม">
+        <article class="card bcard trend">
+          <div class="summary-head"><div class="disk"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chart"/></svg></div><h2 class="card-title">แนวโน้มพอร์ตสินเชื่อ</h2></div>
+          <div class="summary-value">—</div>
+          <p class="sub">ยังไม่มีประวัติยอดคงค้างรายเดือน</p>
+        </article>
+        <article class="card bcard channels">
+          <div class="summary-head"><div class="disk"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-layers"/></svg></div><h2 class="card-title">ช่องทางรับชำระ</h2></div>
+          <div class="channel-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+          <p class="channel-label">เงินสด <b>70%</b> <span>·</span> โอน <b>20%</b> <span>·</span> หักเงินได้ <b>10%</b></p>
+        </article>
+        <article class="card bcard follow-up">
+          <div class="summary-head"><div class="disk"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-calendar"/></svg></div><h2 class="card-title">งานที่ต้องติดตาม</h2></div>
+          <div class="summary-value">5 <small>รายการ</small></div>
+          <button class="proceed" type="button" data-open-queue>ดำเนินการต่อ <span aria-hidden="true">→</span></button>
+        </article>
       </section>
 
-      <!-- ── Lower analytical strip: 4 metrics ── -->
-      <section class="strip" aria-label="แถบวิเคราะห์ล่าง">
-        <div class="card mini">
-          <div class="lbl">แนวโน้มพอร์ตสินเชื่อ <span class="needs-contract">needs contract</span></div>
-          <div class="val">—</div>
-          <div class="sub">สแนปช็อต ≠ ประวัติ — ห้ามแต่งจาก in/out เดโม</div>
-        </div>
-        <div class="card mini">
-          <div class="lbl">อัตราการชำระ 12 เดือน</div>
-          <div class="val">88.9% <span class="badge up" style="margin:0">8/9 งวด</span></div>
-          <div class="sub">งวดชำระเต็ม ÷ ครบกำหนด 12 เดือน (ตารางเดโม LN-2025-014) · production: รวมทุกสัญญา</div>
-        </div>
-        <div class="card mini">
-          <div class="lbl">LTV เฉลี่ย (ถ่วงน้ำหนักยอดเผชิญ)</div>
+      <section class="strip" aria-label="ตัวชี้วัดและงวดชำระ">
+        <article class="card mini repayment">
+          <span class="repayment-ring" aria-hidden="true"></span>
+          <h2 class="lbl">งวดที่ชำระแล้ว</h2>
+          <div class="val">94.7%</div>
+          <p class="sub">54 จาก 57 งวดของสัญญาที่ใช้งาน</p>
+        </article>
+        <article class="card mini">
+          <h2 class="lbl">ชำระครบในรอบ 12 เดือน</h2>
+          <div class="val">88.9%</div>
+          <p class="sub">8/9 งวด · สัญญา LN-2025-014</p>
+        </article>
+        <article class="card mini">
+          <h2 class="lbl">LTV ถ่วงน้ำหนัก</h2>
           <div class="val">65.9%</div>
-          <div class="sub">฿2.57M ÷ ฿3.9M · เฉพาะ 2/6 สัญญาที่มี COLLATERALS · shared-collateral รอนิยาม</div>
-        </div>
-        <div class="card mini">
-          <div class="lbl">สัญญาที่ต้องดำเนินการ</div>
-          <div class="val">2</div>
-          <div class="sub">การจำแนก canonical: ค้างชำระ 1 (LN-2025-010) + ใกล้ครบกำหนด 1 (LN-2025-012) · ตาม classifyDueLoan</div>
-        </div>
+          <p class="sub">เฉพาะ 2/6 สัญญาที่มีราคาประเมินหลักประกัน</p>
+        </article>
+        <article class="card mini">
+          <h2 class="lbl">สัญญาที่ต้องดำเนินการ</h2>
+          <div class="val">2 <small>สัญญา</small></div>
+          <p class="sub">ค้างชำระ 1 · ใกล้ครบกำหนด 1</p>
+        </article>
       </section>
+
+      <dialog id="queueDialog" aria-labelledby="queue-title">
+        <div class="summary-head"><h2 class="card-title" id="queue-title">งานที่ต้องติดตาม</h2><form method="dialog"><button class="chip">ปิด</button></form></div>
+        <p class="sub">ข้อมูลตัวอย่าง · แสดง 3 จาก 5 รายการ</p>
+        <div class="rows" id="queueRows"></div>
+        <p class="sub">งวดถัดไปตามตารางตัวอย่าง · LN-2025-014 · งวด 16 · ฿27,000</p>
+      </dialog>
 
     </main>
 
     <nav class="bottom-nav" aria-label="การนำทางหลัก (มือถือ)">
-      <button aria-current="page">หน้าหลัก</button>
-      <button>ทั้งหมด</button>
-      <button>สินเชื่อ</button>
-      <button>รายงาน</button>
-      <button>การเงิน</button>
+      <button aria-current="page"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-home"/></svg>ภาพรวม</button>
+      <button><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-doc"/></svg>ทั้งหมด</button>
+      <button><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-layers"/></svg>สินเชื่อ</button>
+      <button><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chart"/></svg>รายงาน</button>
+      <button><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-flow"/></svg>การเงิน</button>
     </nav>
   </div>
 </div>
@@ -744,252 +599,280 @@ const CASHFLOW = [
 const QUEUE = [
   { chip: 'ค้างชำระ', cls: 'danger', t: 'LN-2025-010 · เก็บงวดค้าง 2 งวด', s: 'คุณรัตนา จงเจริญ · LINE แจ้งเตือนรอส่ง', v: '฿42,000' },
   { chip: 'ใกล้ครบกำหนด', cls: 'warn', t: 'LN-2025-012 · ครบกำหนด 22 พ.ค.', s: 'คุณวิภา ทองดี · ค้าง 1 งวดก่อนหน้า', v: '฿13,800' },
-  { chip: 'OCR รอตรวจ', cls: 'info', t: 'โฉนด LD-004 · ความมั่นใจ 87%', s: 'รอยืนยันก่อนบันทึก valuation', v: '1 ฉบับ' },
+  { chip: 'OCR รอตรวจ', cls: 'info', t: 'โฉนด LD-004 · ความมั่นใจ 87%', s: 'รอยืนยันก่อนบันทึกราคาประเมิน', v: '1 ฉบับ' },
 ];
-const RING_PCT = 94.7;
 const STATUS_DONUT = [ // 10 สัญญา — one exclusive status each
-  { label: 'ใช้งาน', n: 6, color: 'var(--d3-primary)' },
-  { label: 'ใกล้ครบกำหนด', n: 1, color: 'var(--d3-cyan)' },
-  { label: 'ค้างชำระ', n: 1, color: 'var(--d3-danger)' },
-  { label: 'ไถ่ถอน/ต่อสัญญา', n: 2, color: 'var(--d3-success)' },
+  { label: 'ใช้งาน', n: 6, color: 'var(--d3-primary)', end: 'var(--d3-primary-700)' },
+  { label: 'ใกล้ครบกำหนด', n: 1, color: 'var(--d3-cyan)', end: '#168fb8' },
+  { label: 'ค้างชำระ', n: 1, color: 'var(--d3-out-start)', end: '#c13c77' },
+  { label: 'ไถ่ถอน/ต่อสัญญา', n: 2, color: 'var(--d3-success)', end: '#087b79' },
 ];
 
-/* ── theme ── */
-let booted = false;
+
+const params = new URLSearchParams(location.search);
+const root = document.documentElement;
 const themeBtn = document.getElementById('themeToggle');
-function setTheme(t) {
-  document.documentElement.setAttribute('data-theme', t);
-  document.getElementById('themeIcon').textContent = t === 'dark' ? '☀️' : '🌙';
-  document.getElementById('themeLabel').textContent = t === 'dark' ? 'Light' : 'Dark';
-  themeBtn.setAttribute('aria-pressed', String(t === 'dark'));
-  if (booted) renderCharts();
+function setTheme(dark) {
+  root.dataset.theme = dark ? 'dark' : 'light';
+  themeBtn.setAttribute('aria-pressed', String(dark));
 }
-themeBtn.addEventListener('click', () => {
-  setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-});
-if (new URLSearchParams(location.search).get('theme') === 'dark') setTheme('dark');
-if (new URLSearchParams(location.search).get('capture') === '1') {
-  document.documentElement.setAttribute('data-capture', '1');
-}
-const now = new Date();
-document.getElementById('asof').textContent =
-  'ข้อมูลตัวอย่าง · as-of เดโม · ' + now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+setTheme(params.get('theme') === 'dark');
+if (params.get('capture') === '1') root.dataset.capture = '1';
+themeBtn.addEventListener('click', () => setTheme(root.dataset.theme !== 'dark'));
 
-/* ── SVG helpers ── */
 const SVGNS = 'http://www.w3.org/2000/svg';
-function svgEl(tag, attrs) {
-  const el = document.createElementNS(SVGNS, tag);
-  for (const k in attrs) el.setAttribute(k, attrs[k]);
-  return el;
+function svgEl(tag, attrs, label) {
+  const element = document.createElementNS(SVGNS, tag);
+  for (const [key, value] of Object.entries(attrs)) element.setAttribute(key, value);
+  if (label !== undefined) element.textContent = label;
+  return element;
 }
-function fmtK(v) { const a = Math.abs(v); return a >= 1000 ? (v / 1000).toFixed(a % 1000 === 0 ? 0 : 1) + 'M' : Math.round(v) + 'k'; }
+function gradient(id, start, end, x2 = '0%', y2 = '100%') {
+  const element = svgEl('linearGradient', { id, x1: '0%', y1: '0%', x2, y2 });
+  element.append(svgEl('stop', { offset: '0%', 'stop-color': start }),
+    svgEl('stop', { offset: '100%', 'stop-color': end }));
+  return element;
+}
 
-/* ══ COMBINED cashflow chart: inflow bars + outflow bars + signed NET line ══
-   Non-negotiable per owner addendum: same month/scope/currency/freshness;
-   zero baseline emphasized; negative nets render BELOW the baseline. ══ */
-function renderCombo(range, hostId) {
-  const host = document.getElementById(hostId);
-  if (!host) return;
-  host.textContent = '';
-  const uid = hostId; // per-instance gradient ids — duplicate ids across hidden SVGs break url(#) painting
-  const d = CASHFLOW.slice(-range);
-  const W = host.clientWidth || 560, H = window.innerWidth >= 1024 ? 126 : 186;
-  const padL = 36, padR = 10, padT = 12, padB = 22;
-  const iw = W - padL - padR, ih = H - padT - padB;
-  const maxMag = Math.max(...d.map(p => Math.max(p.in, p.out)), ...d.map(p => Math.abs(p.net))) * 1.12;
-  const yOf = v => padT + ih / 2 - (v / maxMag) * (ih / 2); // signed: zero at middle
-  const svg = svgEl('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `กราฟกระแสเงินสดรวม ${range} เดือน: แท่งเงินเข้า แท่งเงินออก และเส้นสุทธิ (ข้อมูลตัวอย่าง)` });
+let range = 12;
+const chartHosts = [...document.querySelectorAll('.chart-host')];
+const rangeGroups = [...document.querySelectorAll('.range-chips')];
+const chartGeometry = new WeakMap();
+const signed = value => String(value).replace('-', '−');
+
+function renderCombo(host) {
+  // Ignore hidden hosts and measure layout independently of flip transforms.
+  const width = host.clientWidth;
+  const height = host.clientHeight;
+  if (!width || !height) return;
+  const geometry = [width, height, range].join(':');
+  if (chartGeometry.get(host) === geometry) return;
+  chartGeometry.set(host, geometry);
+
+  const data = CASHFLOW.slice(-range);
+  const step = 100;
+  const minimum = Math.floor(Math.min(0, ...data.map(p => p.net)) / step) * step;
+  const maximum = Math.ceil(Math.max(...data.flatMap(p => [p.in, p.out])) / step) * step;
+  const left = 34, right = width - 8, top = 12, bottom = height - 24;
+  const y = value => top + (maximum - value) / (maximum - minimum) * (bottom - top);
+  const zero = y(0);
+  const slot = (right - left) / data.length;
+  const barWidth = Math.min(23, slot * .29);
+  const svg = svgEl('svg', {
+    width, height, viewBox: `0 0 ${width} ${height}`, role: 'img',
+    'aria-label': `กระแสเงินสด ${range} เดือน หน่วยพันบาท (ข้อมูลตัวอย่าง). ${data.map(p => `${p.m} เงินเข้า ${p.in} เงินออก ${p.out} สุทธิ ${p.net}`).join(', ')}`,
+  });
+  const prefix = host.id;
   const defs = svgEl('defs', {});
-  const mk = (id, c1, c2) => {
-    const g = svgEl('linearGradient', { id, x1: '0', y1: '0', x2: '0', y2: '1' });
-    g.append(svgEl('stop', { offset: '0%', 'stop-color': c1 }), svgEl('stop', { offset: '100%', 'stop-color': c2 }));
-    return g;
-  };
-  defs.append(mk(`gIn-${uid}`, 'var(--d3-in-start)', 'var(--d3-in-end)'), mk(`gOut-${uid}`, 'var(--d3-out-start)', 'var(--d3-out-end)'));
+  defs.append(
+    gradient(prefix + '-in', 'var(--d3-in-start)', 'var(--d3-in-end)'),
+    gradient(prefix + '-out', 'var(--d3-out-start)', 'var(--d3-out-end)'),
+    gradient(prefix + '-net', 'var(--d3-net)', 'var(--d3-net-end)', '100%', '0%'),
+    gradient(prefix + '-area', 'var(--d3-soft-primary)', 'transparent'),
+  );
   svg.append(defs);
-  // gridlines at ±½, ±¼ magnitudes + zero baseline emphasized
-  for (const f of [1, 0.5, 0, -0.5, -1]) {
-    const y = yOf(maxMag * f);
-    svg.append(svgEl('line', { x1: padL, x2: W - padR, y1: y, y2: y, stroke: 'var(--border)', 'stroke-width': f === 0 ? 1.5 : 1, 'stroke-dasharray': f === 0 ? '' : '3 5', opacity: f === 0 ? 0.9 : 0.6 }));
-    const t = svgEl('text', { x: padL - 6, y: y + 3.5, 'text-anchor': 'end', 'font-size': 9.5, fill: 'var(--muted)' });
-    t.textContent = f === 0 ? '0' : fmtK(maxMag * f); svg.append(t);
+  for (let value = minimum; value <= maximum; value += step) {
+    svg.append(svgEl('line', {
+      x1: left, x2: right, y1: y(value), y2: y(value),
+      stroke: value === 0 ? 'var(--zero)' : 'var(--border)',
+      'stroke-width': value === 0 ? 1.2 : 1, 'data-tick': value,
+    }), svgEl('text', {
+      x: left - 6, y: y(value) + 3.5, 'text-anchor': 'end', 'font-size': 10, fill: 'var(--muted)',
+    }, signed(value)));
   }
-  const slot = iw / d.length, bw = Math.min(16, slot * 0.26);
-  const thinLabels = slot < 24; // mobile 12-month: labels would overlap — show every 2nd
-  const pts = [];
-  d.forEach((p, i) => {
-    const cx = padL + slot * i + slot / 2;
-    const hIn = (p.in / maxMag) * (ih / 2), hOut = (p.out / maxMag) * (ih / 2);
-    svg.append(svgEl('rect', { x: cx - bw - 1.5, y: yOf(0) - hIn, width: bw, height: hIn, rx: 2.5, fill: `url(#gIn-${uid})` }));
-    svg.append(svgEl('rect', { x: cx + 1.5, y: yOf(0) - hOut, width: bw, height: hOut, rx: 2.5, fill: `url(#gOut-${uid})` }));
-    pts.push([cx, yOf(p.net)]);
-    if (!thinLabels || i % 2 === 0) {
-      const t = svgEl('text', { x: cx, y: H - 6, 'text-anchor': 'middle', 'font-size': 10, fill: 'var(--muted)' });
-      t.textContent = p.m; svg.append(t);
+
+  const points = [];
+  data.forEach((month, index) => {
+    const x = left + slot * (index + .5);
+    const pair = svgEl('g', {});
+    pair.append(svgEl('title', {}, `${month.m} · เงินเข้า ${month.in} · เงินออก ${month.out} · สุทธิ ${signed(month.net)} พันบาท`));
+    for (const [series, offset] of [['in', -barWidth - 1], ['out', 1]]) {
+      pair.append(svgEl('rect', {
+        x: x + offset, y: y(month[series]), width: barWidth, height: zero - y(month[series]),
+        rx: Math.min(4, barWidth / 3), fill: `url(#${prefix}-${series})`, 'data-value': month[series],
+      }));
+    }
+    svg.append(pair);
+    points.push([x, y(month.net)]);
+    const isLastMonth = index === data.length - 1;
+    const hasRoomForLabel = index % 2 === 0 && index < data.length - 2;
+    if (slot >= 29 || isLastMonth || hasRoomForLabel) {
+      svg.append(svgEl('text', {
+        x, y: height - 6, 'text-anchor': 'middle', 'font-size': 10, fill: 'var(--muted)',
+      }, month.m));
     }
   });
-  svg.append(svgEl('polyline', { points: pts.map(p => p.join(',')).join(' '), fill: 'none', stroke: 'var(--d3-net)', 'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
-  pts.forEach(p => svg.append(svgEl('circle', { cx: p[0], cy: p[1], r: 3.2, fill: 'var(--surface-solid)', stroke: 'var(--d3-net)', 'stroke-width': 2 })));
-  host.append(svg);
+
+  // Horizontal handles smooth the curve while keeping it between neighboring values.
+  const curve = points.slice(1).map(([x, py], i) => {
+    const [previousX, previousY] = points[i];
+    const midpoint = (previousX + x) / 2;
+    return `C ${midpoint} ${previousY} ${midpoint} ${py} ${x} ${py}`;
+  }).join(' ');
+  const path = `M ${points[0].join(' ')} ${curve}`;
+  svg.append(svgEl('path', {
+    d: `${path} L ${points.at(-1)[0]} ${zero} H ${points[0][0]} Z`,
+    fill: `url(#${prefix}-area)`, 'pointer-events': 'none',
+  }), svgEl('path', {
+    d: path, fill: 'none', stroke: `url(#${prefix}-net)`, 'stroke-width': 2.3, 'stroke-linecap': 'round',
+  }));
+  points.forEach(([cx, cy], i) => {
+    const point = svgEl('circle', {
+      cx, cy, r: 3, fill: 'var(--surface-solid)', stroke: 'var(--d3-net)', 'stroke-width': 1.6,
+      'data-net': data[i].net,
+    });
+    point.append(svgEl('title', {}, `${data[i].m} · สุทธิ ${signed(data[i].net)} พันบาท`));
+    svg.append(point);
+  });
+  host.replaceChildren(svg);
 }
 
-/* ── rings ── */
-function renderRing(hostId, pct, S, r, sw) {
-  const host = document.getElementById(hostId);
-  if (!host) return;
-  host.textContent = '';
-  const c = 2 * Math.PI * r;
-  const svg = svgEl('svg', { width: S, height: S, viewBox: `0 0 ${S} ${S}`, role: 'img', 'aria-label': `วงแหวน ${pct}%` });
-  const cx = S / 2;
-  svg.append(svgEl('circle', { cx, cy: cx, r, fill: 'none', stroke: 'var(--surface-2)', 'stroke-width': sw }));
-  svg.append(svgEl('circle', { cx, cy: cx, r, fill: 'none', stroke: 'var(--d3-success)', 'stroke-width': sw, 'stroke-linecap': 'round', 'stroke-dasharray': `${c * pct / 100} ${c}`, transform: `rotate(-90 ${cx} ${cx})` }));
-  const t = svgEl('text', { x: cx, y: cx + 4, 'text-anchor': 'middle', 'font-size': S >= 56 ? 11.5 : 13, 'font-weight': 700, fill: 'var(--text)' });
-  t.textContent = pct + '%'; svg.append(t);
-  host.append(svg);
-}
 
-/* ── status composition donut (truthful exclusive whole: 10 สัญญา) ── */
-function renderStatusDonut() {
-  const host = document.getElementById('statusDonut');
-  host.textContent = '';
-  const S = 84, r = 29, c = 2 * Math.PI * r;
-  const total = STATUS_DONUT.reduce((s, p) => s + p.n, 0);
-  const svg = svgEl('svg', { width: S, height: S, viewBox: `0 0 ${S} ${S}`, role: 'img', 'aria-label': 'โดนัทสถานะสัญญา 10 สัญญา (ข้อมูลตัวอย่าง)' });
-  const cx = S / 2;
-  svg.append(svgEl('circle', { cx, cy: cx, r, fill: 'none', stroke: 'var(--surface-2)', 'stroke-width': 11 }));
-  let acc = 0;
-  for (const p of STATUS_DONUT) {
-    const frac = p.n / total;
-    svg.append(svgEl('circle', { cx, cy: cx, r, fill: 'none', stroke: p.color, 'stroke-width': 11, 'stroke-dasharray': `${Math.max(c * frac - 1.5, 0.001)} ${c}`, 'stroke-dashoffset': -c * acc, transform: `rotate(-90 ${cx} ${cx})` }));
-    acc += frac;
-  }
-  const t1 = svgEl('text', { x: cx, y: cx + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: 'var(--text)' });
-  t1.textContent = '10';
-  svg.append(t1);
-  host.append(svg);
-}
-
-function currentRange(scope) {
-  const on = document.querySelector(`#${scope} .chip[aria-pressed="true"]`);
-  return on ? Number(on.dataset.range) : 12;
-}
-function renderCharts() {
-  if (!booted) return;
-  renderCombo(currentRange('chartRange'), 'comboChartDesk');
-  renderCombo(currentRange('chartRangeFlip'), 'comboChartFlip');
-  renderRing('kpiRing', RING_PCT, 62, 24, 7);
-  renderStatusDonut();
-}
-for (const scope of ['chartRange', 'chartRangeFlip']) {
-  document.getElementById(scope).addEventListener('click', (e) => {
-    const b = e.target.closest('.chip'); if (!b) return;
-    for (const c of e.currentTarget.querySelectorAll('.chip')) c.setAttribute('aria-pressed', 'false');
-    b.setAttribute('aria-pressed', 'true');
-    renderCombo(Number(b.dataset.range), scope === 'chartRange' ? 'comboChartDesk' : 'comboChartFlip');
+for (const group of rangeGroups) {
+  group.innerHTML = [3, 6, 12].map(months =>
+    `<button class="chip" type="button" data-range="${months}" aria-pressed="${months === range}">${months} เดือน</button>`
+  ).join('');
+  group.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-range]');
+    if (!button) return;
+    range = Number(button.dataset.range);
+    for (const option of document.querySelectorAll('[data-range]')) {
+      option.setAttribute('aria-pressed', String(Number(option.dataset.range) === range));
+    }
+    chartHosts.forEach(renderCombo);
   });
 }
-let resizeT = 0;
-window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(renderCharts, 150); });
+for (const legend of document.querySelectorAll('[data-chart-legend]')) {
+  legend.innerHTML = '<span><i style="background:var(--d3-in-start)"></i>เงินเข้า</span>'
+    + '<span><i style="background:var(--d3-out-start)"></i>เงินออก</span>'
+    + '<span><i class="net-key"></i>สุทธิ</span><span class="chart-unit">พันบาท</span>';
+}
+const chartObserver = new ResizeObserver(entries => {
+  for (const { target } of entries) renderCombo(target);
+});
+chartHosts.forEach(host => chartObserver.observe(host));
 
-/* queue rows (single source: QUEUE) */
+function renderStatusDonut() {
+  const center = 80, radius = 61, circumference = 2 * Math.PI * radius;
+  const total = STATUS_DONUT.reduce((sum, status) => sum + status.n, 0);
+  const svg = svgEl('svg', { viewBox: '0 0 160 160', width: 160, height: 160 });
+  const defs = svgEl('defs', {});
+  svg.append(defs);
+  let offset = 0;
+  const legend = document.getElementById('statusLegend');
+  for (const [index, status] of STATUS_DONUT.entries()) {
+    const id = `status-${index}`;
+    const length = status.n / total * circumference;
+    defs.append(gradient(id, status.color, status.end, '100%'));
+    svg.append(svgEl('circle', {
+      cx: center, cy: center, r: radius, fill: 'none', stroke: `url(#${id})`, 'stroke-width': 16,
+      'stroke-dasharray': `${length - 3} ${circumference}`, 'stroke-dashoffset': -offset - 1.5,
+      transform: `rotate(-90 ${center} ${center})`,
+    }));
+    offset += length;
+    legend.insertAdjacentHTML('beforeend',
+      `<div class="li"><span class="dot" style="background:${status.color}"></span>${status.label}<span class="v">${status.n}</span></div>`);
+  }
+  svg.append(
+    svgEl('text', { x: center, y: 82, 'text-anchor': 'middle', fill: 'var(--text)', 'font-size': 33, 'font-weight': 800 }, total),
+    svgEl('text', { x: center, y: 101, 'text-anchor': 'middle', fill: 'var(--muted)', 'font-size': 12 }, 'สัญญาทั้งหมด'),
+  );
+  const host = document.getElementById('statusDonut');
+  host.setAttribute('aria-label', 'สัญญาทั้งหมด ' + total + ' สัญญา ข้อมูลตัวอย่าง');
+  host.append(svg);
+}
+renderStatusDonut();
+
 for (const hostId of ['queueRows', 'queueRowsFlip']) {
-  const host = document.getElementById(hostId);
-  host.innerHTML = QUEUE.map(q =>
-    `<div class="row-item"><span class="status-chip ${q.cls}">${q.chip}</span><div class="grow"><div class="t">${q.t}</div><div class="s">${q.s}</div></div><span class="v">${q.v}</span></div>`
+  document.getElementById(hostId).innerHTML = QUEUE.map(q =>
+    `<div class="row-item"><div class="grow"><div class="t">${q.t}</div><div class="s">${q.s}</div></div><span class="status-chip ${q.cls}">${q.chip}</span><span class="v">${q.v}</span></div>`
   ).join('');
 }
+const queueDialog = document.getElementById('queueDialog');
+for (const trigger of document.querySelectorAll('[data-open-queue]')) {
+  trigger.addEventListener('click', () => queueDialog.showModal());
+}
 
-/* ════════ FlipContentCard — unchanged mechanics from v1 (350ms rotateY, single face,
-   direction-aware, inert+focus, reduced-motion instant, crossfade fallback) ════════ */
-const FLIP_MS = 350;
-const HALF = FLIP_MS / 2;
-const EASE = 'cubic-bezier(0.45, 0, 0.55, 1)';
 const seg = document.getElementById('seg');
-const tabs = Array.from(seg.querySelectorAll('[role="tab"]'));
-const viewport = document.getElementById('flipViewport');
-const inner = document.getElementById('flipInner');
-const pages = tabs.map(t => document.getElementById(t.getAttribute('aria-controls')));
-let current = 0;
-let flipping = false;
-const mqReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+const tabs = [...seg.querySelectorAll('[role="tab"]')];
+const face = document.getElementById('flipInner');
+const pages = tabs.map(tab => document.getElementById(tab.getAttribute('aria-controls')));
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const timing = { duration: 175, easing: 'cubic-bezier(.45,0,.55,1)', fill: 'both' };
+let active = 0;
+let pending = null;
 
-function supports3D() {
-  const el = document.createElement('p');
-  el.style.transform = 'rotateY(90deg)';
-  return el.style.transform !== '' && 'perspective' in (document.documentElement.style || {});
-}
-function showOnly(idx) {
-  pages.forEach((p, i) => {
-    if (i === idx) { p.hidden = false; p.removeAttribute('inert'); }
-    else { p.hidden = true; p.setAttribute('inert', ''); }
+function showPage(index) {
+  active = index;
+  pages.forEach((page, i) => {
+    page.inert = i !== index;
+    page.hidden = i !== index;
+    tabs[i].setAttribute('aria-selected', String(i === index));
+    tabs[i].tabIndex = i === index ? 0 : -1;
   });
+  if (index === 0) renderCombo(document.getElementById('comboChartFlip'));
 }
-function sizeViewport(idx) { viewport.style.height = pages[idx].offsetHeight + 'px'; }
-function updateSeg(idx) {
-  tabs.forEach((t, i) => {
-    t.setAttribute('aria-selected', String(i === idx));
-    t.tabIndex = i === idx ? 0 : -1;
-  });
+
+function settle(index, focus) {
+  pending?.animation?.cancel();
+  pending = null;
+  showPage(index);
+  if (focus) pages[active].focus({ preventScroll: true });
 }
-function focusPanel(idx, keyboard) { if (keyboard) pages[idx].focus({ preventScroll: true }); }
-function finishFlip(idx, keyboard) {
-  showOnly(idx); sizeViewport(idx);
-  inner.style.transition = 'none'; inner.style.transform = 'none';
-  current = idx; flipping = false;
-  updateSeg(idx); focusPanel(idx, keyboard);
-}
-function activate(idx, keyboard) {
-  if (idx === current) { if (keyboard) focusPanel(idx, true); return; }
-  if (flipping) { finishFlip(idx, keyboard); return; }
-  updateSeg(idx);
-  if (mqReduce.matches || !supports3D()) {
-    showOnly(idx); sizeViewport(idx); current = idx; focusPanel(idx, keyboard);
+
+async function activate(index) {
+  if (pending || reducedMotion.matches || active === index || !face.animate) {
+    settle(index, true);
     return;
   }
-  const dir = idx > current ? 1 : -1;
-  flipping = true;
-  inner.style.transition = `transform ${HALF}ms ${EASE}`;
-  requestAnimationFrame(() => { inner.style.transform = `rotateY(${dir * 90}deg)`; });
-  setTimeout(() => {
-    showOnly(idx);
-    inner.style.transition = 'none';
-    inner.style.transform = `rotateY(${-dir * 90}deg)`;
-    void inner.offsetHeight;
-    sizeViewport(idx);
-    inner.style.transition = `transform ${HALF}ms ${EASE}`;
-    inner.style.transform = 'rotateY(0deg)';
-    setTimeout(() => {
-      inner.style.transition = '';
-      flipping = false; current = idx;
-      focusPanel(idx, keyboard);
-    }, HALF + 16);
-  }, HALF + 16);
-}
-seg.addEventListener('click', (e) => {
-  const t = e.target.closest('[role="tab"]'); if (!t) return;
-  activate(tabs.indexOf(t), false);
-});
-/* keyboard policy (v2): Arrow/Home/End = move + activate, focus STAYS on the tabs
-   (roving tabindex, automatic-activation tablist) so arrows keep working;
-   Enter/Space = explicit activation → focus moves to the newly active panel
-   (Shift+Tab returns to the tablist). Inactive panels stay inert + untabbable. */
-seg.addEventListener('keydown', (e) => {
-  const i = tabs.indexOf(document.activeElement);
-  if (i < 0) return;
-  let next = null;
-  if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
-  else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
-  else if (e.key === 'Home') next = 0;
-  else if (e.key === 'End') next = tabs.length - 1;
-  else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(i, true); return; }
-  if (next !== null) { e.preventDefault(); tabs[next].focus(); activate(next, false); }
-});
+  const request = { index, animation: null };
+  pending = request;
+  const turn = 90 * (index > active ? 1 : -1);
+  const steps = CSS.supports('perspective', '1100px')
+    ? [[{ transform: 'rotateY(0deg)' }, { transform: `rotateY(${turn}deg)` }],
+       [{ transform: `rotateY(${-turn}deg)` }, { transform: 'rotateY(0deg)' }]]
+    : [[{ opacity: 1 }, { opacity: 0 }], [{ opacity: 0 }, { opacity: 1 }]];
 
-/* boot */
-booted = true;
-showOnly(0);
-requestAnimationFrame(() => { sizeViewport(0); renderCharts(); });
-window.addEventListener('load', () => { sizeViewport(current); renderCharts(); });
+  for (const [phase, frames] of steps.entries()) {
+    const previous = request.animation;
+    if (phase === 1) showPage(index);
+    request.animation = face.animate(frames, timing);
+    previous?.cancel();
+    // The request identity also guards a phase that fulfilled just before interruption.
+    const completed = await request.animation.finished.then(() => true, () => false);
+    if (!completed || pending !== request) return;
+  }
+  settle(index, true);
+}
+
+reducedMotion.addEventListener('change', () => {
+  if (reducedMotion.matches && pending) settle(pending.index, true);
+});
+seg.addEventListener('click', event => {
+  const tab = event.target.closest('[role="tab"]');
+  if (tab) activate(tabs.indexOf(tab));
+});
+seg.addEventListener('keydown', event => {
+  const index = tabs.indexOf(document.activeElement);
+  if (index < 0) return;
+  const targets = {
+    ArrowRight: (index + 1) % tabs.length,
+    ArrowLeft: (index + tabs.length - 1) % tabs.length,
+    Home: 0,
+    End: tabs.length - 1,
+  };
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    activate(index);
+  } else if (Object.hasOwn(targets, event.key)) {
+    event.preventDefault();
+    const next = targets[event.key];
+    // Automatic arrow activation keeps focus on the tabs for continued navigation.
+    settle(next, false);
+    tabs[next].focus();
+  }
+});
+showPage(0);
 </script>
 </body>
 </html>

@@ -1,0 +1,63 @@
+{
+  "prototypeSha256": "b7912cc669e08332f88b3f224d29f034314e5a9e407913f3920750d9d9fd51c4",
+  "measurements": {
+    "desktop-light": {
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "scrollHeight": 800,
+      "kpiRows": 1,
+      "kpiColumns": 4,
+      "flipBottom": 0
+    },
+    "tablet-light": {
+      "clientWidth": 768,
+      "scrollWidth": 768,
+      "scrollHeight": 923,
+      "kpiRows": 1,
+      "kpiColumns": 4,
+      "flipBottom": 0
+    },
+    "mobile-light": {
+      "clientWidth": 375,
+      "scrollWidth": 375,
+      "scrollHeight": 1401,
+      "kpiRows": 2,
+      "kpiColumns": 2,
+      "flipBottom": 797
+    },
+    "desktop-dark": {
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "scrollHeight": 800,
+      "kpiRows": 1,
+      "kpiColumns": 4,
+      "flipBottom": 0
+    },
+    "tablet-dark": {
+      "clientWidth": 768,
+      "scrollWidth": 768,
+      "scrollHeight": 923,
+      "kpiRows": 1,
+      "kpiColumns": 4,
+      "flipBottom": 0
+    },
+    "mobile-dark": {
+      "clientWidth": 375,
+      "scrollWidth": 375,
+      "scrollHeight": 1401,
+      "kpiRows": 2,
+      "kpiColumns": 2,
+      "flipBottom": 797
+    }
+  },
+  "checks": [
+    "File URL, both themes and no console errors",
+    "375px two-by-two grid, 44px range controls and no horizontal overflow",
+    "3/6/12 month ranges and matching tick, bar and point coordinates",
+    "August −112 below zero",
+    "Four persistent pages, inert inactive faces, keyboard focus, both rapid-flip phases and immediate reduced motion",
+    "Theme and viewport changed while chart hidden, range preserved across reveal and desktop crossover",
+    "Queue dialog and demo-data values"
+  ],
+  "consoleErrors": []
+}
