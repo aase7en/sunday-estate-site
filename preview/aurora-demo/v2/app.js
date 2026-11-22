@@ -551,6 +551,7 @@
     }
   });
   document.addEventListener('input', e => {
+    if (e.target.matches('#v2-deal [data-share]')) xp.updateDealShares(e.target.closest('fieldset'));
     if (e.target.closest('#v2-expense')) xp.updateExpensePreview(e.target.closest('form'));
     if (e.target.id === 'global-lookup') updateSearch(e.target.value);
     if (e.target.matches('.record-tools input')) {

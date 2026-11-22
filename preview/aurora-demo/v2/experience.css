@@ -57,6 +57,10 @@
 .v2-expense-item>span:last-child{display:grid;justify-items:end;gap:4px}
 .v2-fieldset,.v2-allocation{min-width:0;display:grid;gap:8px}
 .v2-fieldset{border:1px solid var(--border);border-radius:12px;padding:9px;margin:0}
+.v2-fieldset legend{padding:0 5px;font-weight:700}
+.v2-three small{font-size:.7rem;color:var(--muted)}
+.v2-three input[aria-invalid="true"]{border-color:var(--danger)}
+.v2-share-total{margin:0;padding:4px 6px;font-size:.83rem;font-weight:700}
 .v2-allocation{padding:7px;border-radius:9px;background:var(--wash)}
 .v2-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
 .v2-grants,.v2-gallery-list{list-style:none;margin:0;padding:0}

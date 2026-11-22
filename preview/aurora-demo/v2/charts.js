@@ -74,7 +74,12 @@ window.EstateCharts = (() => {
     const labelFreq = (right - left) / rows.length < 48 ? 2 : 1;
     const tickText = n => n === 0 ? '0' : Math.abs(n) >= 1000000 ? (n / 1000000) + ' ล.' : (n / 1000) + 'k';
 
-    const defs = keys.map(key => '<linearGradient id="' + kind + '-' + key + '" x1="0" x2="0" y1="0" y2="1" gradientUnits="objectBoundingBox"><stop class="gradient-' + tones[key] + ' start"/><stop offset="100%" class="gradient-' + tones[key] + ' end"/></linearGradient>').join('');
+    const defs = chartBars ? ['income','expense'].map(key => {
+      const up = key === 'income';
+      return '<linearGradient id="' + kind + '-' + key + '" x1="0" x2="0" y1="' + (up ? 1 : 0) + '" y2="' + (up ? 0 : 1) +
+        '" gradientUnits="objectBoundingBox"><stop class="gradient-' + tones[key] + ' end" stop-opacity=".4"/>' +
+        '<stop offset="100%" class="gradient-' + tones[key] + ' start" stop-opacity="1"/></linearGradient>';
+    }).join('') : '';
     const grids = scale.ticks.map(t => '<line x1="' + left + '" x2="' + right + '" y1="' + y(t) + '" y2="' + y(t) + '" class="' + (t === 0 ? 'axis-zero' : 'axis-grid') + '"/><text class="axis-label" x="' + (left - 9) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + tickText(t) + '</text>').join('');
     const axisLabels = rows.map((row, i) => i % labelFreq === 0 || (i === rows.length - 1 && rows.length % labelFreq === 0 && cell > 39)
       ? '<text class="axis-label" x="' + at(i) + '" y="' + (height - 9) + '" text-anchor="middle">' + row.label + '</text>' : '').join('');
