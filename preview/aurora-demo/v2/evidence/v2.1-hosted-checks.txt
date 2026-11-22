@@ -1,0 +1,6 @@
+PASS signed bar geometry and exact mobile tooltip
+PASS lending grid, reduced motion, payment receipts and closeout replay
+PASS scoped expense visibility, customer chat, sale-redemption language and company-only staff access
+PASS six deeds, per-deed caps, 20→80, 25.55→54.45, over-allocation, exact 100%, removal, grants
+PASS birthday once, gallery draft/publish, five scenes and mobile overflow
+PASS no browser errors or failed assets

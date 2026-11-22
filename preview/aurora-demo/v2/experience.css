@@ -62,7 +62,7 @@
 .v2-three input[aria-invalid="true"]{border-color:var(--danger)}
 .v2-share-total{margin:0;padding:4px 6px;font-size:.83rem;font-weight:700}
 .v2-allocation{padding:7px;border-radius:9px;background:var(--wash)}
-.v2-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.v2-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;align-items:start}
 .v2-grants,.v2-gallery-list{list-style:none;margin:0;padding:0}
 .v2-grants li{border-bottom:1px solid var(--border);overflow-wrap:anywhere}
 .v2-gallery-list li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:9px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
