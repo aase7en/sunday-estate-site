@@ -1,0 +1,605 @@
+(() => {
+  const d = window.EstateData;
+  const charts = window.EstateCharts;
+  const root = document.querySelector('#app');
+  const dialog = document.querySelector('#dialog');
+  const toast = document.querySelector('#toast');
+  const accounts = {
+    portfolio: {name: 'กิตติพงศ์ วัฒนากุล', initials: 'กว', role: 'ผู้จัดการพอร์ต', email: 'portfolio@example.test', bio: 'ดูแลภาพรวมพอร์ตสินเชื่อและการติดตามสัญญา'},
+    operations: {name: 'พิมพ์ชนก สุวรรณ', initials: 'พส', role: 'เจ้าหน้าที่ดูแลสัญญา', email: 'operations@example.test', bio: 'ดูแลเอกสารและประสานงานตามกำหนดสัญญา'},
+  };
+  const defaults = {theme: 'light', period: 'auto', custom: null, mode: 'combined', type: 'loan', home: 'overview', reminders: true, digest: false, profile: {}};
+  const pages = {overview: ['ภาพรวม', 'overview'], lending: ['ปล่อยกู้ / ขายฝาก', 'layers'], profile: ['โปรไฟล์', 'user']};
+  const shapes = {
+    brand: '<path d="M2.5 13.5 12 4l9.5 9.5M6.5 11v7.5L12 16l5.5 2.5V11M9 10.5l3-3 3 3"/><path d="M4 21c3-1 5-1 8-1s6 0 8 1"/>',
+    overview: '<rect x="3" y="3" width="7" height="7" rx="1.4"/><rect x="14" y="3" width="7" height="7" rx="1.4"/><rect x="3" y="14" width="7" height="7" rx="1.4"/><rect x="14" y="14" width="7" height="7" rx="1.4"/>',
+    layers: '<path d="M12 2.8 22 8l-10 5.2L2 8l10-5.2ZM2 12l10 5.2L22 12M2 16l10 5.2L22 16"/>',
+    user: '<circle cx="12" cy="8" r="3.4"/><path d="M4.5 20v-1.4a4.6 4.6 0 0 1 4.6-4.6h5.8a4.6 4.6 0 0 1 4.6 4.6V20"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',
+    moon: '<path d="M20.9 13.3A9 9 0 0 1 10.7 3.1 9 9 0 1 0 20.9 13.3Z"/>',
+    bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12a2 2 0 0 0 4 0"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-14 5h2m3 0h2m3 0h1"/>',
+    in: '<path d="M12 3v12m-4-4 4 4 4-4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>',
+    out: '<path d="M12 16V4m-4 4 4-4 4 4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>',
+    wallet: '<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M21 10h-5a2.5 2.5 0 0 0 0 5h5m-5-2.5h.1M4 5l11-3"/>',
+    chart: '<path d="M3 3v17h18M7 15v-4m4 4V7m4 8V9m4 6V5"/>',
+    ring: '<path d="M11 3a9 9 0 1 0 10 10h-10V3Z"/><path d="M14 2.5V10h7.5A8 8 0 0 0 14 2.5Z"/>',
+    trend: '<path d="m3 17 6-6 4 4 7-8m-5 0h5v5"/>',
+    alert: '<path d="M10.2 4.5a2 2 0 0 1 3.6 0l7.5 13.4a2 2 0 0 1-1.8 3H4.5a2 2 0 0 1-1.8-3l7.5-13.4ZM12 9v4m0 3.5h.01"/>',
+    arrow: '<path d="M4 12h15m-5-5 5 5-5 5"/>',
+    chevron: '<path d="m6 9 6 6 6-6"/>',
+    right: '<path d="m9 6 6 6-6 6"/>',
+    x: '<path d="M6 6l12 12M18 6 6 18"/>',
+    search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    percent: '<circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/><path d="M5 19 19 5"/>',
+    file: '<path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10l-7-7Zm0 0v7h7M8 14h8m-8 3h6"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="1.5"/><path d="m21 16-5-5-7 7-2-2-4 4"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 0 0 18m0-18a15 15 0 0 1 0 18"/>',
+    logout: '<path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5m-1-8h12m-4-4 4 4-4 4"/>',
+  };
+  const icon = (name, size = 20) => '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + shapes[name] + '</svg>';
+  const escape = (value = '') => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const storageKey = 'sunday-estate.redesign.v1';
+  let toastTimer;
+  function notice(message) {
+    toast.textContent = message;
+    toast.classList.add('shown');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('shown'), 3400);
+  }
+  function read(key) {
+    try { return JSON.parse(localStorage.getItem(storageKey + '.' + key)); }
+    catch { return null; }
+  }
+  function write(key, value) {
+    try {
+      localStorage.setItem(storageKey + '.' + key, JSON.stringify(value));
+      return true;
+    } catch {
+      notice('บันทึกในเบราว์เซอร์ไม่ได้ การตั้งค่าจะอยู่เฉพาะรอบนี้');
+      return false;
+    }
+  }
+  const sessions = {};
+  let account = read('session');
+  if (!Object.hasOwn(accounts, account)) account = account === 'signed-out' ? null : 'portfolio';
+  const load = key => sessions[key] ??= {...defaults, ...read(key)};
+  let pref = account ? load(account) : {...defaults};
+  let page = 'overview';
+  let statusFilter = 'all';
+  let lookup = '';
+  let animation;
+  let resizeTimer;
+  let dialogType;
+  let dialogReturn;
+  const width = () => document.documentElement.clientWidth;
+  const autoPeriod = () => width() < 640 ? 3 : width() < 1150 ? 6 : 12;
+  const density = () => width() < 420 ? 4 : width() < 640 ? 6 : width() < 1150 ? 8 : 12;
+  const route = () => Object.hasOwn(pages, location.hash.slice(1)) ? location.hash.slice(1) : pref.home;
+  const settings = patch => {
+    Object.assign(pref, patch);
+    return write(account, pref);
+  };
+  function range() {
+    if (pref.period === 'custom' && pref.custom) return pref.custom;
+    const months = pref.period === 'auto' ? autoPeriod() : Number(pref.period);
+    return {start: d.month(d.asOf, 1 - months), end: d.asOf};
+  }
+  const safeImage = value => typeof value === 'string' && /^data:image\/(?:jpeg|webp|png);base64,[A-Za-z0-9+/=]+$/.test(value) ? value : '';
+  const person = () => ({...accounts[account], ...pref.profile});
+  function avatar(large = false) {
+    const p = person();
+    const photo = safeImage(p.avatar);
+    const initials = p.name === accounts[account].name ? accounts[account].initials : p.name.trim().split(/\s+/).slice(0,2).map(s => [...s][0]).join('');
+    return '<span class="avatar' + (large ? ' large' : '') + '" aria-hidden="true">' + (photo ? '<img src="' + photo + '" alt="">' : escape(initials)) + '</span>';
+  }
+  const brand = '<span class="brand-mark">' + icon('brand', 22) + '</span><span><strong>Sunday Estate</strong><small>Portfolio workspace</small></span>';
+  const disk = (symbol, tone) => '<span class="disk ' + tone + '">' + icon(symbol, 20) + '</span>';
+  const buttonIcon = (id, symbol, label, extra = '') => '<button class="icon-button" type="button" data-action="' + id + '" title="' + label + '" aria-label="' + label + '">' + icon(symbol) + extra + '</button>';
+  const navLinks = () => Object.entries(pages).map(([key, [title, glyph]]) => '<a href="#' + key + '"' +
+    (page === key ? ' aria-current="page"' : '') + '>' + icon(glyph) + '<span>' + title + '</span></a>').join('');
+
+  function shell(content) {
+    const p = person();
+    const actions = d.portfolio(d.asOf).some(c => c.status === 'overdue' || c.status === 'soon');
+    return '<aside class="sidebar"><div class="sidebar-inner"><a class="brand" href="#overview" aria-label="Sunday Estate · ภาพรวม">' + brand +
+      '</a><nav class="side-nav" aria-label="เมนูหลัก">' + navLinks() + '</nav><div class="side-scene" aria-hidden="true"></div>' +
+      '<button data-action="accounts" type="button" class="side-account">' + avatar() + '<span><strong>' + escape(p.name) +
+      '</strong><small>' + escape(p.role) + '</small></span>' + icon('chevron', 15) + '</button></div></aside>' +
+      '<div class="app-body"><header class="topbar"><a class="brand mobile-brand" href="#overview" aria-label="Sunday Estate · ภาพรวม">' +
+      brand + '</a><button class="search-trigger" type="button" data-action="search" aria-label="ค้นหาสัญญา">' + icon('search', 17) +
+      '<span>ค้นหาเลขสัญญาหรือพื้นที่</span></button><div class="top-actions"><span class="demo-tag"><i></i>ข้อมูลจำลอง</span>' +
+      buttonIcon('alerts', 'bell', 'รายการที่ต้องดำเนินการ', actions ? '<i class="notification-dot"></i>' : '') +
+      buttonIcon('theme', pref.theme === 'light' ? 'moon' : 'sun', pref.theme === 'light' ? 'เปลี่ยนเป็นธีมมืด' : 'เปลี่ยนเป็นธีมสว่าง') +
+      '<a class="profile-link" href="#profile" aria-label="เปิดโปรไฟล์">' + avatar() + '</a></div></header>' +
+      '<main class="workspace" id="workspace" tabindex="-1">' + content + '</main>' +
+      '<nav class="bottom-nav" aria-label="เมนูหลักบนมือถือ">' + navLinks() + '</nav></div>';
+  }
+
+  function kpi({title, value, foot, glyph, tone, money = false}) {
+    const million = money && Math.abs(value) >= 1000000;
+    const full = money ? d.baht(value) : String(value);
+    const compact = million ? (value / 1000000).toFixed(2) : full;
+    return '<article class="card kpi ' + tone + '"><div class="kpi-title">' + disk(glyph, tone) + '<h2>' + title +
+      '</h2></div><div class="kpi-value" title="' + full + '">' + (million ? '<span class="amount-wide">' + full +
+      '</span><span class="amount-compact" aria-hidden="true">฿' + compact + '<small> ล้าน</small></span><span class="sr-only amount-exact">' + full + '</span>' : full) + '</div>' +
+      '<p class="kpi-foot">' + foot + '</p></article>';
+  }
+
+  function cardHead(title, subtitle, glyph, tone, action = '') {
+    return '<div class="card-head"><div class="card-title">' + disk(glyph, tone) + '<div><h2>' + title + '</h2><p>' +
+      subtitle + '</p></div></div>' + action + '</div>';
+  }
+  const rangeCaption = r => d.formatDate(r.start) + ' – ' + d.formatDate(r.end);
+  function chartControls(r) {
+    const selected = pref.period === 'auto' ? String(autoPeriod()) : pref.period;
+    return '<div class="range-tools"><button class="control date-button' + (pref.period === 'custom' ? ' chosen' : '') +
+      '" type="button" data-action="dates" aria-label="เลือกช่วงวันที่">' + icon('calendar', 17) + '<span>' + rangeCaption(r) + '</span></button>' +
+      '<div class="segments ranges" role="group" aria-label="ช่วงเวลาวิเคราะห์">' + [3,6,12].map(n =>
+        '<button type="button" id="period-' + n + '" data-period="' + n + '" aria-pressed="' + (selected === String(n)) + '">' + n + ' เดือน</button>').join('') +
+      '</div></div>';
+  }
+
+  function dashboard() {
+    const r = range();
+    const latest = d.portfolio(d.asOf);
+    const historical = d.portfolio(r.end);
+    const monthly = d.totals(d.month(d.asOf), d.asOf);
+    const active = latest.filter(c => c.balance > 0);
+    const actions = latest.filter(c => c.status === 'overdue' || c.status === 'soon');
+    const flow = d.totals(r.start, r.end);
+    const overdue = actions.filter(c => c.status === 'overdue').length;
+    const status = overdue > 0 ? '<button class="attention" data-action="alerts" type="button">' + icon('alert', 16) +
+      '<span><strong>' + overdue + ' สัญญาเกินกำหนด</strong> <span class="attention-extra">· ติดตามในคิวงาน</span></span>' + icon('right', 14) + '</button>' : '';
+    const cards = [
+      {title:'เงินต้นคงค้าง', value:d.sum(active,'balance'), foot:active.length + ' สัญญาที่ยังเปิด', glyph:'wallet', tone:'purple', money:true},
+      {title:'เงินไหลเข้าเดือนนี้', value:monthly.income, foot:'ยอดรับ ต.ค. 2569', glyph:'in', tone:'cyan', money:true},
+      {title:'เงินไหลออกเดือนนี้', value:monthly.expense, foot:'ยอดจ่าย ต.ค. 2569', glyph:'out', tone:'pink', money:true},
+      {title:'หลักประกันสินเชื่อ', value:d.sum(active.filter(c=>c.type==='loan'),'appraisal'), foot:'ราคาประเมินของสัญญาปล่อยกู้', glyph:'layers', tone:'blue', money:true},
+    ];
+    const dataButton = kind => '<button type="button" class="subtle text-data" data-table="' + kind + '" aria-label="ดูตาราง' +
+      (kind === 'cash' ? 'กระแสเงินสด' : 'แนวโน้มพอร์ต') + '">' + icon('file', 15) + '<span>ข้อมูล</span></button>';
+    return '<section class="intro overview-intro"><div><h1>ภาพรวมธุรกิจ</h1><p>พอร์ตสินเชื่อ ขายฝาก และกระแสเงินสด</p></div><span class="as-of">' + icon('clock', 15) +
+      ' ข้อมูล ณ ' + d.formatDate(d.asOf) + '</span></section>' +
+      '<section class="kpis" aria-label="ตัวชี้วัดภาพรวม ณ วันที่สรุป">' + cards.map(kpi).join('') + '</section>' + status +
+      '<section class="analytics" aria-labelledby="analytics-title"><div class="analytics-head"><div><h2 id="analytics-title">วิเคราะห์พอร์ต</h2><p class="range-help">ช่วงเวลาสำหรับกราฟกระแสเงินสด สถานะสัญญา และแนวโน้ม</p><p class="range-mobile">' +
+      rangeCaption(r) + '</p></div>' + chartControls(r) + '</div>' +
+      '<div class="analytics-grid"><article class="card panel cash">' + cardHead('กระแสเงินสด', 'รับ จ่าย และยอดสุทธิ · หน่วยบาท', 'chart', 'purple',
+      '<div class="head-actions">' + dataButton('cash') + '<button class="subtle mode-button" type="button" data-action="mode" aria-label="สลับเป็น' +
+      (pref.mode === 'combined' ? 'กราฟเส้น' : 'กราฟผสม') + '" id="mode">' + icon(pref.mode === 'combined' ? 'chart' : 'trend', 16) +
+      '<span>' + (pref.mode === 'combined' ? 'กราฟผสม' : 'กราฟเส้น') + '</span>' + icon('chevron', 12) + '</button></div>') +
+      charts.legend(['income','expense','net'], pref.mode) + '<div class="chart-host" id="cash-chart"></div>' +
+      '<div class="chart-summary"><span>รับรวม <b>' + d.baht(flow.income) + '</b></span><span>จ่ายรวม <b>' + d.baht(flow.expense) + '</b></span><span>สุทธิ <b class="' +
+      (flow.net < 0 ? 'risk-text' : 'gain-text') + '">' + charts.amount(flow.net,'net') + '</b></span></div></article>' +
+      '<article class="card panel composition">' + cardHead('สัดส่วนสถานะสัญญา', 'จำนวนตามสถานะ ณ ' + d.formatDate(r.end), 'ring', 'cyan') +
+      '<div class="donut-host" id="donut-chart"></div><p class="panel-note">นับสัญญาที่เริ่มแล้ว ณ วันสิ้นสุดช่วง · ใกล้ครบกำหนดภายใน 15 วัน</p></article>' +
+      '<article class="card panel trend">' + cardHead('แนวโน้มเงินต้นคงค้าง', 'ยอดคงเหลือ ณ วันสิ้นสุดแต่ละช่วง · หน่วยบาท', 'trend', 'purple', dataButton('trend')) +
+      '<div class="trend-stat"><strong>' + d.baht(d.sum(historical,'balance')) + '</strong><span>ณ ' + d.formatDate(r.end) + '</span></div>' +
+      '<div class="chart-host" id="trend-chart"></div></article>' +
+      '<article class="card panel queue" id="queue" tabindex="-1">' + cardHead('สัญญาที่ต้องติดตาม', actions.length + ' สัญญา ณ ' + d.formatDate(d.asOf), 'calendar', 'amber',
+      '<a class="subtle text-data" href="#lending">ดูสัญญา ' + icon('arrow', 15) + '</a>') + queueMarkup(actions) + '</article></div></section>' +
+      '<section class="insight-grid" aria-label="ตัวชี้วัดความเสี่ยง">' +
+      '<article class="card insight">' + disk('percent','blue') + '<div><h2>สัดส่วนหนี้ต่อหลักประกัน (LTV)</h2><p>เฉพาะปล่อยกู้ · เงินต้นคงค้าง ÷ ราคาประเมิน</p></div><strong>' + d.ratioText(d.ratio(latest)) + '</strong></article>' +
+      '<article class="card insight">' + disk('alert','pink') + '<div><h2>เงินต้นของสัญญาเกินกำหนด</h2><p>เงินต้นคงค้างของสัญญาค้างติดตาม</p></div><strong>' +
+      d.baht(d.sum(actions.filter(c => c.status === 'overdue'), 'balance')) + '</strong></article></section>';
+  }
+
+  const statusPill = c => '<span class="status ' + d.groupTone[c.status] + '">' + d.statusName[c.status] + '</span>';
+  function queueMarkup(items) {
+    if (!items.length) return '<p class="empty">ไม่มีสัญญาที่ต้องดำเนินการ</p>';
+    return '<ul class="queue-list">' + items.slice().sort((a,b) => a.days - b.days).map(c =>
+      '<li><button type="button" data-contract="' + c.id + '">' + disk(c.days < 0 ? 'alert' : 'clock', d.groupTone[c.status]) +
+      '<span class="queue-text"><strong>' + c.id + ' · ' + c.property + '</strong><small>' + d.labels[c.type] + ' · ' +
+      d.formatDate(c.due) + '</small></span>' + statusPill(c) + '</button></li>').join('') + '</ul>';
+  }
+
+  function lending() {
+    return '<section class="intro lending-intro"><div><h1>ปล่อยกู้ / ขายฝาก</h1><p>ติดตามยอดเงินต้น สัญญาที่เปิด และกำหนดชำระหรือไถ่ถอน</p></div><span class="as-of">' +
+      icon('clock', 15) + ' ข้อมูล ณ ' + d.formatDate(d.asOf) + '</span></section><div class="contract-tabs segments" role="tablist" aria-label="ประเภทสัญญา">' +
+      Object.entries(d.labels).map(([key, name]) => '<button role="tab" type="button" id="tab-' + key + '" data-type="' + key +
+      '" aria-controls="contract-panel" tabindex="' + (pref.type === key ? 0 : -1) + '" aria-selected="' + (pref.type === key) + '">' +
+      icon(key === 'loan' ? 'wallet' : 'layers', 18) + name + '</button>').join('') +
+      '</div><div class="lending-perspective"><section id="contract-panel" role="tabpanel" tabindex="0" aria-labelledby="tab-' + pref.type +
+      '" class="contract-panel">' + lendingPanel() + '</section></div>';
+  }
+
+  function lendingPanel() {
+    const rows = d.portfolio(d.asOf, pref.type);
+    const active = rows.filter(c=>c.balance > 0);
+    const actions = rows.filter(c=>c.status === 'overdue' || c.status === 'soon');
+    const isLoan = pref.type === 'loan';
+    const cards = [
+      {title:'เงินต้นคงค้าง', value:d.sum(active,'balance'), foot:'เฉพาะสัญญาที่ยังเปิด', glyph:'wallet', tone:'purple', money:true},
+      {title:'เงินต้นตามสัญญา', value:d.sum(rows,'principal'), foot:'รวมทุกสัญญาในชุดจำลอง', glyph:'layers', tone:'cyan', money:true},
+      {title:'สัญญาที่เปิดอยู่', value:active.length, foot:'จาก ' + rows.length + ' สัญญา', glyph:'file', tone:'blue'},
+      {title:'สัญญาต้องติดตาม', value:actions.length, foot:actions.filter(c=>c.days<0).length + ' เกินกำหนด', glyph:'alert', tone:'amber'},
+    ];
+    const stat = isLoan ? '<strong>' + d.ratioText(d.ratio(rows)) + '</strong><span>เงินต้นคงค้างเทียบราคาประเมิน</span>' :
+      '<strong>' + d.baht(d.sum(active.filter(c => c.status === 'soon'), 'balance')) + '</strong><span>เงินต้นของสัญญาที่ใกล้ครบกำหนดภายใน 15 วัน</span>';
+    return '<section class="kpis lending-kpis" aria-label="ตัวชี้วัด' + d.labels[pref.type] + '">' + cards.map(kpi).join('') + '</section>' +
+      '<div class="lending-grid"><article class="card panel records">' + cardHead('ทะเบียนสัญญา', 'ดูรายละเอียดจากรายการสัญญา', 'file', 'purple') +
+      '<div class="record-tools"><label class="field-search">' + icon('search', 17) + '<input type="search" aria-label="ค้นหาในทะเบียนสัญญา" placeholder="เลขสัญญาหรือพื้นที่" value="' +
+      escape(lookup) + '"></label><label><span class="sr-only">สถานะสัญญา</span><select id="contract-status" aria-label="สถานะสัญญา"><option value="all">ทุกสถานะ</option>' +
+      Object.entries(d.statusName).map(([key, text]) => '<option value="' + key + '"' + (statusFilter === key ? ' selected' : '') + '>' + text + '</option>').join('') +
+      '</select></label></div><div id="record-results">' + recordRows(rows) + '</div></article>' +
+      '<div class="lending-aside"><article class="card panel risk-panel">' +
+      cardHead(isLoan ? 'สัดส่วนหนี้ต่อหลักประกัน (LTV)' : 'ยอดใกล้ครบกำหนดไถ่ถอน', isLoan ? 'สัญญาปล่อยกู้ที่ยังเปิด' : 'สัญญาขายฝากที่ยังเปิด', isLoan ? 'percent' : 'clock', 'cyan') +
+      '<div class="risk-stat">' + stat + '</div></article><article class="card panel queue">' +
+      cardHead('คิวติดตาม', d.labels[pref.type] + ' · ' + actions.length + ' สัญญา', 'calendar', 'amber') + queueMarkup(actions) + '</article></div></div>';
+  }
+  function recordRows(rows) {
+    const query = lookup.trim().toLowerCase();
+    const filtered = rows.filter(c => (statusFilter === 'all' || c.status === statusFilter) && (c.id + ' ' + c.property).toLowerCase().includes(query));
+    if (!filtered.length) return '<p class="empty" role="status">ไม่พบสัญญาที่ตรงกับตัวกรอง</p>';
+    return '<div class="record-header" aria-hidden="true"><span>สัญญา / พื้นที่</span><span>กำหนด</span><span>เงินต้นคงค้าง</span><span>สถานะ</span></div><ul class="record-list" aria-label="ผลการค้นหา ' +
+      filtered.length + ' สัญญา">' + filtered.map(c => '<li><button type="button" data-contract="' + c.id + '"><span><strong>' + c.id +
+      '</strong><small>' + c.property + '</small></span><span class="record-due">' + d.formatDate(c.due) + '</span><strong class="record-amount">' +
+      d.baht(c.balance) + '</strong>' + statusPill(c) + '</button></li>').join('') + '</ul>';
+  }
+
+  const themeOptions = '<option value="light">Light · Soft Aurora</option><option value="dark">Dark · Modern</option>';
+  const choose = (options, value) => options.replace('value="' + value + '"', 'value="' + value + '" selected');
+  function profile() {
+    const p = person();
+    const cover = safeImage(p.cover);
+    const input = (label, key, type = 'text', max = 60) => '<label>' + label + '<input name="' + key + '" type="' + type + '" maxlength="' + max +
+      '" value="' + escape(p[key]) + '"' + (key === 'name' || key === 'email' ? ' required' : '') + '></label>';
+    const toggle = (key, label, info) => '<label class="toggle-row"><span><strong>' + label + '</strong><small>' + info +
+      '</small></span><input type="checkbox" name="' + key + '" role="switch"' + (pref[key] ? ' checked' : '') + '></label>';
+    return '<section class="intro profile-intro"><div><h1>โปรไฟล์และการตั้งค่า</h1><p>ปรับพื้นที่ทำงานให้เหมาะกับคุณ</p></div>' +
+      '<button type="button" class="control" data-action="accounts">' + icon('logout', 17) + ' จัดการบัญชีจำลอง</button></section>' +
+      '<section class="card profile-hero"><div class="profile-cover"><img src="' + (cover || 'assets/aurora-estate.webp') + '" alt="">' +
+      '<button type="button" class="cover-button" data-action="cover">' + icon('image', 17) + '<span>เปลี่ยนภาพปก</span></button></div>' +
+      '<div class="profile-identity"><div class="profile-avatar">' + avatar(true) + '<button type="button" data-action="avatar" title="เปลี่ยนรูปโปรไฟล์" aria-label="เปลี่ยนรูปโปรไฟล์">' +
+      icon('image', 16) + '</button></div><div><h2>' + escape(p.name) + '</h2><span>' + escape(p.role) + ' · บัญชีจำลอง</span><p>' +
+      escape(p.bio) + '</p></div></div></section><div class="profile-grid"><article class="card panel">' +
+      cardHead('ข้อมูลส่วนตัว', 'ชื่อ บทบาท และข้อมูลติดต่อ', 'user','purple') + '<form id="profile-form" class="editor"><div class="form-grid">' +
+      input('ชื่อที่แสดง','name') + input('บทบาท','role') + input('อีเมลติดต่อ','email','email',120) + input('เบอร์โทร','phone','tel',32) +
+      '</div><label>เกี่ยวกับคุณ<textarea name="bio" maxlength="160" rows="2">' + escape(p.bio) + '</textarea></label>' +
+      '<div class="form-footer"><button class="primary" type="submit">บันทึกโปรไฟล์</button></div></form></article>' +
+      '<article class="card panel">' + cardHead('การตั้งค่าพื้นที่ทำงาน','บันทึกแยกตามบัญชีในเบราว์เซอร์นี้','globe','cyan') +
+      '<form id="prefs-form" class="editor"><div class="form-grid"><label>ธีม<select name="theme">' + choose(themeOptions, pref.theme) +
+      '</select></label><label>ช่วงเวลากราฟ<select name="period">' + choose('<option value="auto">อัตโนมัติตามหน้าจอ</option><option value="3">3 เดือน</option><option value="6">6 เดือน</option><option value="12">12 เดือน</option>' +
+      (pref.custom ? '<option value="custom">ช่วงวันที่ที่บันทึกไว้</option>' : ''), pref.period) + '</select></label><label>รูปแบบกราฟ<select name="mode">' +
+      choose('<option value="combined">ผสมแท่งและเส้น</option><option value="lines">เส้น</option>',pref.mode) + '</select></label><label>หน้าเริ่มต้น<select name="home">' +
+      choose('<option value="overview">ภาพรวม</option><option value="lending">ปล่อยกู้ / ขายฝาก</option><option value="profile">โปรไฟล์</option>',pref.home) +
+      '</select></label></div>' + toggle('reminders','เตือนกำหนดสัญญา','แสดงจุดแจ้งเตือนในต้นแบบ') + toggle('digest','สรุปรายสัปดาห์','บันทึกตัวเลือกสำหรับเชื่อมระบบแจ้งเตือน') +
+      '<div class="form-footer"><button class="primary" type="submit">บันทึกการตั้งค่า</button></div></form></article></div>';
+  }
+
+  function login() {
+    return '<main class="login-screen"><div class="card login-card"><div class="brand">' + brand + '</div><span class="demo-tag"><i></i>ข้อมูลจำลอง</span>' +
+      '<h1>เข้าสู่พื้นที่วิเคราะห์</h1><p>เลือกบัญชีจำลองเพื่อเรียกคืนการตั้งค่าที่บันทึกในเบราว์เซอร์นี้</p>' +
+      accountChoices() + '</div></main>';
+  }
+  function accountChoices() {
+    return '<div class="account-options">' + Object.entries(accounts).map(([id,p]) => '<button type="button" data-account="' + id + '">' +
+      '<span class="avatar">' + p.initials + '</span><span><strong>' + p.name + '</strong><small>' + p.role +
+      '</small></span>' + (id === account ? '<em>กำลังใช้งาน</em>' : icon('right', 16)) + '</button>').join('') + '</div>';
+  }
+
+  function render(focusId) {
+    animation?.cancel();
+    const currentTheme = account ? pref.theme : 'light';
+    document.documentElement.dataset.theme = currentTheme;
+    page = route();
+    root.innerHTML = account ? shell(page === 'lending' ? lending() : page === 'profile' ? profile() : dashboard()) : login();
+    const dot = root.querySelector('.notification-dot');
+    if (dot && !pref.reminders) dot.remove();
+    if (account && page === 'overview') renderCharts();
+    if (focusId) document.getElementById(focusId)?.focus({preventScroll:true});
+  }
+
+  function renderCharts() {
+    const r = range();
+    const cash = document.querySelector('#cash-chart');
+    if (!cash) return;
+    charts.draw(cash, r, 'cash', pref.mode, density());
+    charts.draw(document.querySelector('#trend-chart'), r, 'trend', pref.mode, density());
+    const rows = d.portfolio(r.end);
+    charts.donut(document.querySelector('#donut-chart'), Object.entries(d.statusName).map(([key,name]) =>
+      ({name, tone:d.groupTone[key], value:rows.filter(c=>c.status===key).length})),r.end);
+  }
+
+  function showDialog(title, content, type) {
+    if (!dialog.open) dialogReturn = document.activeElement;
+    dialogType = type;
+    dialog.innerHTML = '<div class="dialog-head"><h2 id="dialog-title">' + title + '</h2>' + buttonIcon('dismiss','x','ปิดหน้าต่าง') +
+      '</div><div class="dialog-body">' + content + '</div>';
+    if (!dialog.open) dialog.showModal();
+  }
+  dialog.addEventListener('close', () => {
+    if (dialog.open) return;
+    if (dialogReturn?.isConnected) dialogReturn.focus({preventScroll:true});
+    dialog.replaceChildren();
+    dialogType = null;
+  });
+  function dateDialog() {
+    const r = pref.custom ?? range();
+    showDialog('กำหนดช่วงวันที่', '<form id="date-form" class="editor"><p>ชุดข้อมูลครอบคลุม ' +
+      rangeCaption({start:d.first,end:d.asOf}) + '</p><div class="form-grid"><label>วันที่เริ่มต้น<input type="date" name="start" min="' + d.first +
+      '" max="' + d.asOf + '" value="' + r.start + '" required></label><label>วันที่สิ้นสุด<input type="date" name="end" min="' + d.first +
+      '" max="' + d.asOf + '" value="' + r.end + '" required></label></div><p id="date-error" class="risk-text" role="alert"></p>' +
+      '<div class="form-footer"><button class="control" data-action="date-auto" type="button">ใช้ค่าอัตโนมัติ</button><button class="primary" type="submit">ใช้ช่วงวันที่</button></div></form>', 'dates');
+  }
+  function dataTable(kind) {
+    const r = range();
+    const isFlow = kind === 'cash';
+    const keys = isFlow ? ['income','expense','net'] : ['balance'];
+    const rows = d.periods(r, 12);
+    showDialog(isFlow ? 'ข้อมูลกระแสเงินสด' : 'ข้อมูลแนวโน้มเงินต้นคงค้าง', '<div class="table-wrap"><table class="data-table"><caption>' +
+      rangeCaption(r) + ' · รายเดือน · บาท</caption><thead><tr><th scope="col">ช่วง</th>' + keys.map(k=>'<th scope="col">' + charts.label[k] + '</th>').join('') +
+      '</tr></thead><tbody>' + rows.map(row => '<tr><th scope="row">' + row.title + '</th>' + keys.map(k=>'<td>' + charts.amount(row[k],k) +
+      '</td>').join('') + '</tr>').join('') + '</tbody></table></div>', 'table');
+  }
+  function contract(id) {
+    const c = d.portfolio(d.asOf).find(row=>row.id===id);
+    if (!c) return;
+    const fields = [['ประเภทสัญญา',d.labels[c.type]], ['พื้นที่',c.property], ['วันเปิดสัญญา',d.formatDate(c.opened)],
+      ['ครบกำหนด',d.formatDate(c.due)], ['เงินต้นตามสัญญา',d.baht(c.principal)], ['เงินต้นคงค้าง',d.baht(c.balance)]];
+    if (c.type === 'loan') fields.push(['ราคาประเมินหลักประกัน',d.baht(c.appraisal)]);
+    showDialog(c.id + ' · ข้อมูลสัญญาจำลอง', statusPill(c) + '<dl class="details">' + fields.map(([key,value]) =>
+      '<div><dt>' + key + '</dt><dd>' + value + '</dd></div>').join('') + '</dl>', 'contract');
+  }
+  function globalSearch() {
+    showDialog('ค้นหาสัญญา', '<label class="field-search">' + icon('search', 17) +
+      '<input type="search" id="global-lookup" aria-label="ค้นหาเลขสัญญาหรือพื้นที่" placeholder="เช่น SE-1024 หรือคลองหลวง" autofocus></label><div id="search-results"></div>', 'search');
+    updateSearch('');
+  }
+  function updateSearch(query) {
+    const rows = d.portfolio(d.asOf).filter(c => (c.id + ' ' + c.property).toLowerCase().includes(query.trim().toLowerCase()));
+    dialog.querySelector('#search-results').innerHTML = rows.length ?
+      '<div class="search-results">' + rows.map(c => '<button type="button" data-contract="' + c.id + '"><strong>' + c.id +
+      '</strong><span>' + c.property + ' · ' + d.labels[c.type] + '</span>' + icon('right',15) + '</button>').join('') +
+      '</div>' : '<p class="empty" role="status">ไม่พบสัญญา</p>';
+  }
+  function mediaDialog(target) {
+    const title = target === 'cover' ? 'ภาพปก' : 'รูปโปรไฟล์';
+    showDialog('เปลี่ยน' + title, '<form class="editor" id="media-form" data-target="' + target +
+      '"><label>เลือกรูปจากอุปกรณ์<input type="file" name="image" accept="image/png,image/jpeg,image/webp" required></label><p class="muted">JPEG, PNG หรือ WebP · สูงสุด 12 MB</p><p class="risk-text" role="alert" id="media-error"></p>' +
+      '<div class="form-footer"><button class="control" type="button" data-reset="' + target +
+      '">ใช้ภาพเริ่มต้น</button><button type="submit" class="primary">บันทึกรูป</button></div></form>', 'media');
+  }
+  async function saveImage(form) {
+    const {target} = form.dataset;
+    const file = form.elements.image.files[0];
+    const error = form.querySelector('#media-error');
+    if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 12000000) {
+      error.textContent = 'เลือกรูป JPEG, PNG หรือ WebP ขนาดไม่เกิน 12 MB';
+      return;
+    }
+    const owner = account;
+    const button = form.querySelector('[type="submit"]');
+    button.disabled = true;
+    try {
+      const img = await createImageBitmap(file);
+      const canvas = document.createElement('canvas');
+      const widthLimit = target === 'avatar' ? 320 : 1440;
+      const heightLimit = target === 'avatar' ? 320 : 720;
+      const scale = Math.min(1, widthLimit / img.width, heightLimit / img.height);
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      img.close();
+      if (owner !== account || !form.isConnected || !dialog.open) return;
+      const saved = settings({profile:{...pref.profile, [target]:canvas.toDataURL('image/webp',.82)}});
+      dialog.close();
+      render();
+      root.querySelector('[data-action="' + target + '"]')?.focus();
+      if (saved) notice('บันทึกรูปแล้ว');
+    } catch {
+      error.textContent = 'เปิดไฟล์รูปนี้ไม่ได้';
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function activateAccount(key) {
+    if (!Object.hasOwn(accounts, key) || key === account) { if (dialog.open) dialog.close(); return; }
+    if (dialog.open) dialog.close();
+    account = key;
+    pref = load(account);
+    lookup = '';
+    statusFilter = 'all';
+    write('session', account);
+    history.replaceState(null, '', '#' + pref.home);
+    render('workspace');
+    window.scrollTo(0,0);
+  }
+
+  function flip(to) {
+    if (to === pref.type) return;
+    const section = document.getElementById('contract-panel');
+    const nextTab = document.getElementById('tab-' + to);
+    const from = pref.type;
+    settings({type:to});
+    root.querySelectorAll('[role="tab"]').forEach(b => {
+      b.setAttribute('aria-selected', String(b === nextTab));
+      b.tabIndex = b === nextTab ? 0 : -1;
+    });
+    if (nextTab !== document.activeElement) nextTab.focus({preventScroll:true});
+    const swap = () => {
+      section.innerHTML = lendingPanel();
+      section.setAttribute('aria-labelledby', 'tab-' + to);
+    };
+    animation?.cancel();
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches || !section.animate) {
+      swap();
+      section.inert = false;
+      section.style.minHeight = '';
+      return;
+    }
+    const supports3d = CSS.supports('backface-visibility', 'hidden') && CSS.supports('perspective', '800px');
+    const direction = from === 'loan' ? 1 : -1;
+    const hidden = supports3d ? {opacity:.2,transform:'rotateY(' + (direction * -84) + 'deg)'} : {opacity:0};
+    const entering = supports3d ? {opacity:.2,transform:'rotateY(' + (direction * 84) + 'deg)'} : {opacity:0};
+    const visible = {opacity:1,transform:'none'};
+    const previousHeight = section.offsetHeight;
+    section.style.minHeight = previousHeight + 'px';
+    section.inert = true;
+    const out = animation = section.animate([visible,hidden],{duration:135,easing:'cubic-bezier(.45,0,.55,1)',fill:'forwards'});
+    out.onfinish = () => {
+      if (animation !== out) return;
+      swap();
+      out.cancel();
+      const incoming = animation = section.animate([entering,visible],{duration:155,easing:'cubic-bezier(.22,.61,.36,1)'});
+      incoming.onfinish = () => {
+        if (animation !== incoming) return;
+        section.inert = false;
+        section.style.minHeight = '';
+      };
+    };
+  }
+
+  function toQueue() {
+    if (page !== 'overview') {
+      history.pushState(null,'','#overview');
+      render();
+    }
+    const queue = document.getElementById('queue');
+    queue.focus({preventScroll:true});
+    queue.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+  }
+
+  document.addEventListener('pointerdown', e => {
+    for (const tip of root.querySelectorAll('.chart-tooltip:not([hidden])')) {
+      if (!tip.parentElement.contains(e.target)) tip.dispatchEvent(new Event('tip-dismiss'));
+    }
+  });
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const {action, period, type, table, contract: id, account: choice, reset} = btn.dataset;
+    if (choice) { activateAccount(choice); return; }
+    if (!account) return;
+    if (period) { settings({period}); render(btn.id); return; }
+    if (type) { flip(type); return; }
+    if (table) { dataTable(table); return; }
+    if (id) { contract(id); return; }
+    if (reset) {
+      const profileSettings = {...pref.profile};
+      delete profileSettings[reset];
+      const saved = settings({profile:profileSettings});
+      dialog.close();
+      render();
+      root.querySelector('[data-action="' + reset + '"]')?.focus();
+      if (saved) notice('คืนค่าเริ่มต้นแล้ว');
+      return;
+    }
+    switch (action) {
+      case 'theme':
+        settings({theme: pref.theme === 'light' ? 'dark' : 'light'});
+        document.documentElement.dataset.theme = pref.theme;
+        const name = pref.theme === 'light' ? 'เปลี่ยนเป็นธีมมืด' : 'เปลี่ยนเป็นธีมสว่าง';
+        btn.title = name;
+        btn.setAttribute('aria-label', name);
+        btn.innerHTML = icon(pref.theme === 'light' ? 'moon' : 'sun');
+        const themeSelect = root.querySelector('#prefs-form [name="theme"]');
+        if (themeSelect) themeSelect.value = pref.theme;
+        break;
+      case 'alerts': toQueue(); break;
+      case 'dates': dateDialog(); break;
+      case 'date-auto':
+        settings({period:'auto'});
+        dialog.close();
+        render();
+        root.querySelector('[data-action="dates"]').focus();
+        break;
+      case 'mode': settings({mode:pref.mode === 'combined' ? 'lines' : 'combined'}); render('mode'); break;
+      case 'search': globalSearch(); break;
+      case 'dismiss': dialog.close(); break;
+      case 'accounts':
+        showDialog('บัญชีจำลอง', accountChoices() + '<div class="form-footer"><button data-action="sign-out" class="control" type="button">' +
+          icon('logout',18) + ' ออกจากบัญชี</button></div>', 'accounts');
+        break;
+      case 'sign-out':
+        dialog.close();
+        account = null;
+        write('session', 'signed-out');
+        pref = {...defaults};
+        history.replaceState(null,'',location.pathname + location.search);
+        render();
+        root.querySelector('[data-account]')?.focus();
+        window.scrollTo(0,0);
+        break;
+      case 'avatar': case 'cover': mediaDialog(action); break;
+    }
+  });
+  document.addEventListener('input', e => {
+    if (e.target.id === 'global-lookup') updateSearch(e.target.value);
+    if (e.target.matches('.record-tools input')) {
+      lookup = e.target.value;
+      document.querySelector('#record-results').innerHTML = recordRows(d.portfolio(d.asOf,pref.type));
+    }
+  });
+  document.addEventListener('change', e => {
+    if (e.target.id === 'contract-status') {
+      statusFilter = e.target.value;
+      document.querySelector('#record-results').innerHTML = recordRows(d.portfolio(d.asOf,pref.type));
+    }
+    if (dialogType === 'dates') dialog.querySelector('#date-error').textContent = '';
+  });
+  document.addEventListener('submit', e => {
+    const form = e.target;
+    e.preventDefault();
+    const values = Object.fromEntries(new FormData(form));
+    if (form.id === 'date-form') {
+      const {start,end} = values;
+      if (start > end || start < d.first || end > d.asOf) {
+        dialog.querySelector('#date-error').textContent = 'เลือกวันเริ่มต้นก่อนหรือเท่ากับวันสิ้นสุดภายในชุดข้อมูล';
+        form.elements.end.focus();
+        return;
+      }
+      settings({period:'custom', custom:{start,end}});
+      dialog.close();
+      render();
+      root.querySelector('[data-action="dates"]').focus();
+    }
+    if (form.id === 'profile-form') {
+      const cleaned = Object.fromEntries(Object.entries(values).map(([key,value])=>[key,value.trim()]));
+      if (!cleaned.name) { notice('กรอกชื่อที่แสดง'); form.elements.name.focus(); return; }
+      const saved = settings({profile:{...pref.profile,...cleaned}});
+      render();
+      root.querySelector('#profile-form [type="submit"]').focus();
+      if (saved) notice('บันทึกโปรไฟล์แล้ว');
+    }
+    if (form.id === 'prefs-form') {
+      const saved = settings({...values, reminders:form.elements.reminders.checked, digest:form.elements.digest.checked});
+      render();
+      root.querySelector('#prefs-form [type="submit"]').focus();
+      if (saved) notice('บันทึกการตั้งค่าแล้ว');
+    }
+    if (form.id === 'media-form') void saveImage(form);
+  });
+  root.addEventListener('keydown', e => {
+    if (!e.target.matches('[role="tab"]')) return;
+    const tabs = [...root.querySelectorAll('[role="tab"]')];
+    const next = {Home:0, End:1, ArrowLeft:1-tabs.indexOf(e.target), ArrowRight:1-tabs.indexOf(e.target)}[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    flip(tabs[next].dataset.type);
+  });
+  window.addEventListener('hashchange', () => {
+    const next = route();
+    if (next === page) return;
+    if (dialog.open) dialog.close();
+    render('workspace');
+    window.scrollTo(0,0);
+  });
+  let lastWidth = width();
+  window.addEventListener('resize', () => {
+    if (width() === lastWidth) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (width() === lastWidth) return;
+      const previous = lastWidth < 640 ? 3 : lastWidth < 1150 ? 6 : 12;
+      lastWidth = width();
+      if (page !== 'overview' || !account) return;
+      if (pref.period === 'auto' && previous !== autoPeriod()) render(document.activeElement?.id);
+      else renderCharts();
+    }, 130);
+  });
+  if (account && !location.hash) history.replaceState(null,'','#' + pref.home);
+  render();
+})();
