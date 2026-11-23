@@ -77,7 +77,7 @@ window.EstateCharts = (() => {
     const defs = chartBars ? ['income','expense'].map(key => {
       const up = key === 'income';
       return '<linearGradient id="' + kind + '-' + key + '" x1="0" x2="0" y1="' + (up ? 1 : 0) + '" y2="' + (up ? 0 : 1) +
-        '" gradientUnits="objectBoundingBox"><stop class="gradient-' + tones[key] + ' end" stop-opacity=".4"/>' +
+        '" gradientUnits="objectBoundingBox"><stop class="gradient-' + tones[key] + ' end" stop-opacity=".6"/>' +
         '<stop offset="100%" class="gradient-' + tones[key] + ' start" stop-opacity="1"/></linearGradient>';
     }).join('') : '';
     const grids = scale.ticks.map(t => '<line x1="' + left + '" x2="' + right + '" y1="' + y(t) + '" y2="' + y(t) + '" class="' + (t === 0 ? 'axis-zero' : 'axis-grid') + '"/><text class="axis-label" x="' + (left - 9) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + tickText(t) + '</text>').join('');
