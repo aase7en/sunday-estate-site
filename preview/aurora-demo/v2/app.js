@@ -16,7 +16,7 @@
   const shapes = {
     ai: '<path d="M2 14l8-8 6 6M6 11v8h9v-4M18.5 2v7M15 5.5h7M19.5 12v5m-2.5-2.5h5"/><path d="M3 22h16"/>',
     check: '<path d="m5 12 4 4L19 6"/>',
-    brand: '<path d="M2.5 13.5 12 4l9.5 9.5M6.5 11v7.5L12 16l5.5 2.5V11M9 10.5l3-3 3 3"/><path d="M4 21c3-1 5-1 8-1s6 0 8 1"/>',
+    home: '<path d="M2.5 13.5 12 4l9.5 9.5M6.5 11v7.5L12 16l5.5 2.5V11M9 10.5l3-3 3 3"/><path d="M4 21c3-1 5-1 8-1s6 0 8 1"/>',
     overview: '<rect x="3" y="3" width="7" height="7" rx="1.4"/><rect x="14" y="3" width="7" height="7" rx="1.4"/><rect x="3" y="14" width="7" height="7" rx="1.4"/><rect x="14" y="14" width="7" height="7" rx="1.4"/>',
     layers: '<path d="M12 2.8 22 8l-10 5.2L2 8l10-5.2ZM2 12l10 5.2L22 12M2 16l10 5.2L22 16"/>',
     user: '<circle cx="12" cy="8" r="3.4"/><path d="M4.5 20v-1.4a4.6 4.6 0 0 1 4.6-4.6h5.8a4.6 4.6 0 0 1 4.6 4.6V20"/>',
@@ -111,7 +111,8 @@
     const initials = p.name === accounts[account].name ? accounts[account].initials : p.name.trim().split(/\s+/).slice(0,2).map(s => [...s][0]).join('');
     return '<span class="avatar' + (large ? ' large' : '') + '" aria-hidden="true">' + (photo ? '<img src="' + photo + '" alt="">' : escape(initials)) + '</span>';
   }
-  const brand = '<span class="brand-mark">' + icon('brand', 22) + '</span><span><strong>Sunday Estate</strong><small>Portfolio workspace</small></span>';
+  const brandImage = '<img class="brand-mark" src="assets/brand/sunday-logo-mark.png" width="391" height="391" alt="">';
+  const brand = brandImage + '<span><strong>Sunday Estate</strong><small>Portfolio workspace</small></span>';
   const disk = (symbol, tone) => '<span class="disk ' + tone + '">' + icon(symbol, 20) + '</span>';
   const buttonIcon = (id, symbol, label, extra = '') => '<button class="icon-button" type="button" data-action="' + id + '" title="' + label + '" aria-label="' + label + '">' + icon(symbol) + extra + '</button>';
   const navLinks = () => Object.entries(pages).filter(([key]) => xp.allowedRoute(key)).map(([key, [title, glyph]]) => '<a href="#' + key + '"' +
@@ -121,7 +122,7 @@
     const p = person();
     const actions = xp.staff() && xp.contracts().some(c => c.status === 'overdue' || c.status === 'soon');
     return '<aside class="sidebar"><div class="sidebar-inner"><a class="brand" href="#overview" aria-label="Sunday Estate · ภาพรวม">' + brand +
-      '</a><nav class="side-nav" aria-label="เมนูหลัก">' + navLinks() + '<a href="#hero">' + icon('brand') + 'ดูหน้าแรก</a></nav><div class="side-scene" aria-hidden="true"></div>' +
+      '</a><nav class="side-nav" aria-label="เมนูหลัก">' + navLinks() + '<a href="#hero">' + icon('home') + 'ดูหน้าแรก</a></nav><div class="side-scene" aria-hidden="true"></div>' +
       '<button data-action="accounts" type="button" class="side-account">' + avatar() + '<span><strong>' + escape(p.name) +
       '</strong><small>' + escape(p.role) + '</small></span>' + icon('chevron', 15) + '</button></div></aside>' +
       '<div class="app-body"><header class="topbar"><a class="brand mobile-brand" href="#overview" aria-label="Sunday Estate · ภาพรวม">' +
@@ -336,7 +337,7 @@
     document.documentElement.dataset.theme = currentTheme;
     page = route();
     let content;
-    if (page === 'hero') content = window.EstateScenes.landing({icon,escape});
+    if (page === 'hero') content = window.EstateScenes.landing({icon,escape,brandImage});
     else if (!account) content = login();
     else if (page === 'profile') content = shell(profile());
     else if (page === 'lending') content = shell(lending());

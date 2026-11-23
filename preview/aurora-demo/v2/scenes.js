@@ -13,7 +13,7 @@ window.EstateScenes = (() => {
   let stopCurrent = () => {};
 
   function landing(api) {
-    const {icon, escape} = api;
+    const {icon, escape, brandImage} = api;
     const chapters = scenes.map((scene,i) =>
       '<div class="cinema-anchor" id="scene-' + i + '" aria-hidden="true"></div><section class="cinema-scene' +
       (i === 0 ? ' cinema-opening' : '') + '" aria-labelledby="scene-title-' + i + '">' +
@@ -26,7 +26,7 @@ window.EstateScenes = (() => {
         '<div class="cinema-actions"><a class="cinema-cta" href="#scene-1" data-scene-scroll="scene-1">เลื่อนดูเรื่องราว ' +
         icon('chevron',16) + '</a></div>') + '</div></section>').join('');
     return '<div class="cinema-page"><header class="cinema-nav"><a class="cinema-brand" href="#scene-0" data-scene-scroll="scene-0">' +
-      '<span class="cinema-brand-mark">' + icon('brand',23) + '</span><span>Sunday Estate</span></a>' +
+      brandImage + '<span>Sunday Estate</span></a>' +
       '<nav aria-label="หน้าแรก"><a href="#gallery" data-scene-scroll="gallery">แกลเลอรี</a>' +
       '<a class="cinema-cta" href="#overview">เปิดแดชบอร์ด ' + icon('arrow',17) + '</a></nav></header>' +
       '<main id="workspace" tabindex="-1"><div class="cinema-story">' + chapters + '</div>' +
