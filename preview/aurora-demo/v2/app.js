@@ -129,21 +129,11 @@
   const buttonIcon = (id, symbol, label, extra = '') => '<button class="icon-button" type="button" data-action="' + id + '" title="' + label + '" aria-label="' + label + '">' + icon(symbol) + extra + '</button>';
   const navLinks = () => Object.entries(pages).filter(([key]) => xp.allowedRoute(key)).map(([key, [title, glyph]]) => '<a href="#' + key + '"' +
     (page === key ? ' aria-current="page"' : '') + '>' + icon(glyph) + '<span>' + title + '</span></a>').join('');
-  const moduleImages = {
-    overview: {src:'assets/aurora-estate.webp'},
-    lending: {src:'assets/scenes/business.webp',mobile:'assets/scenes/business-828.webp'},
-    investments: {src:'assets/scenes/land.webp'},
-    profile: {src:'assets/scenes/family.webp',mobile:'assets/scenes/family-828.webp'},
-    contracts: {src:'assets/scenes/future.webp'},
-    reconciliation: {src:'assets/scenes/future.webp'},
-  };
-
-  function moduleHeader(module, {title, description, details = '', cover = ''}) {
-    const {src,mobile} = moduleImages[module];
-    const art = '<picture class="module-art" aria-hidden="true">' +
-      (mobile && !cover ? '<source media="(max-width: 639px)" srcset="' + mobile + '">' : '') +
-      '<img src="' + (cover || src) + '" alt="" decoding="async"></picture>';
-    return '<header class="module-intro" data-module="' + module + '"' + (cover ? ' data-personal-cover' : '') + '>' + art +
+  function moduleHeader(module, {title, description, details = ''}) {
+    const asset = 'assets/mastheads/' + module;
+    return '<header class="module-intro" data-module="' + module + '"><picture class="module-art" aria-hidden="true">' +
+      '<source media="(max-width: 639px)" srcset="' + asset + '-mobile.webp" width="864" height="446">' +
+      '<img src="' + asset + '.webp" width="1920" height="640" alt="" decoding="async"></picture>' +
       '<div class="module-heading"><h1>' + title + '</h1>' + (description ? '<p>' + description + '</p>' : '') + details + '</div></header>';
   }
 
@@ -334,13 +324,14 @@
       '" value="' + escape(p[key]) + '"' + (key === 'name' || key === 'email' ? ' required' : '') + '></label>';
     const toggle = (key, label, info) => '<label class="toggle-row"><span><strong>' + label + '</strong><small>' + info +
       '</small></span><input type="checkbox" name="' + key + '" role="switch"' + (pref[key] ? ' checked' : '') + '></label>';
-    const profileDetails = '<div class="profile-identity"><div class="profile-avatar">' + avatar(true) + '<button type="button" data-action="avatar" title="เปลี่ยนรูปโปรไฟล์" aria-label="เปลี่ยนรูปโปรไฟล์">' +
-      icon('image', 16) + '</button></div><div><h2>' + escape(p.name) + '</h2><span>' + escape(p.role) + ' · บัญชีจำลอง</span><p>' +
-      escape(p.bio) + '</p></div></div>' +
-      '<div class="v2-inline module-actions"><button type="button" class="control" data-action="cover">' + icon('image', 16) + ' เปลี่ยนภาพปก</button>' +
-      '<button type="button" class="control" data-action="accounts">' + icon('logout', 16) + ' จัดการบัญชีจำลอง</button>' +
-      '<a class="control" href="#hero">ดูหน้าแรก</a></div>';
-    return moduleHeader('profile',{title:'โปรไฟล์และการตั้งค่า',details:profileDetails,cover}) +
+    return '<header class="profile-intro"><div><h1>โปรไฟล์และการตั้งค่า</h1><p>ปรับพื้นที่ทำงานให้เหมาะกับคุณ</p></div>' +
+      '<div class="v2-inline"><a class="control" href="#hero">ดูหน้าแรก</a><button type="button" class="control" data-action="accounts">' + icon('logout', 17) + ' จัดการบัญชีจำลอง</button></div></header>' +
+      '<section class="card profile-hero" aria-labelledby="profile-name"><div class="profile-cover"' + (cover ? ' data-personal-cover' : '') + '>' +
+      '<img src="' + (cover || 'assets/aurora-estate.webp') + '" alt="" decoding="async">' +
+      '<button type="button" class="cover-button" data-action="cover">' + icon('image', 17) + '<span>เปลี่ยนภาพปก</span></button></div>' +
+      '<div class="profile-identity"><div class="profile-avatar">' + avatar(true) + '<button type="button" data-action="avatar" title="เปลี่ยนรูปโปรไฟล์" aria-label="เปลี่ยนรูปโปรไฟล์">' +
+      icon('image', 16) + '</button></div><div><h2 id="profile-name">' + escape(p.name) + '</h2><span>' + escape(p.role) + ' · บัญชีจำลอง</span><p>' +
+      escape(p.bio) + '</p></div></div></section>' +
       '<div class="profile-grid"><article class="card panel">' +
       cardHead('ข้อมูลส่วนตัว', 'ชื่อ บทบาท และข้อมูลติดต่อ', 'user','purple') + '<form id="profile-form" class="editor"><div class="form-grid">' +
       input('ชื่อที่แสดง','name') + input('บทบาท','role') + input('อีเมลติดต่อ','email','email',120) + input('เบอร์โทร','phone','tel',32) +
