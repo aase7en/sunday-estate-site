@@ -1,0 +1,62 @@
+.analytics-label{display:flex;align-items:center;gap:8px}
+.analytics-label .subtle{padding-inline:8px}
+.analytics-grid [data-widget] .card-title{user-select:none;-webkit-touch-callout:none}
+.cash-tools{display:flex;justify-content:flex-end}
+.cash-tools .subtle{padding-inline:8px}
+
+.layout-editor,.recon-dialog{display:grid;gap:12px}
+.layout-editor>p,.recon-dialog>p,.recon-instruction{color:var(--muted);font-size:13px}
+.layout-order,.recon-list,.recon-history ul{display:grid;gap:8px;list-style:none;padding:0;margin:0}
+.layout-item{
+  position:relative;display:grid;grid-template-columns:44px minmax(0,1fr) 44px 44px;align-items:center;min-height:51px;
+  border:1px solid var(--border);border-radius:11px;background:var(--panel)
+}
+.layout-name{font-size:13px;font-weight:600;line-height:1.3}
+.layout-grip,.layout-step{
+  display:grid;place-items:center;min-width:44px;min-height:44px;color:var(--accent);border-radius:8px
+}
+.layout-grip{align-self:stretch;cursor:grab;touch-action:none;user-select:none;-webkit-touch-callout:none}
+.layout-grip:active{cursor:grabbing}
+.layout-step:enabled:hover,.layout-grip:hover{background:var(--wash)}
+.layout-step:disabled{opacity:.32;cursor:default}
+.layout-item.is-grabbed{background:var(--purple-bg);border-color:var(--accent)}
+.layout-item.drop-before::before,.layout-item.drop-after::after{
+  content:"";position:absolute;inset-inline:5px;height:3px;border-radius:2px;background:var(--accent)
+}
+.layout-item.drop-before::before{top:-6px}
+.layout-item.drop-after::after{bottom:-6px}
+.layout-footer{margin-top:1px}
+
+.recon-workbench{display:grid;gap:9px;min-width:0}
+.recon-context{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;color:var(--accent)}
+.recon-context strong{font-size:14px}
+.recon-context span,.recon-row small,.recon-history small,.recon-preview small{font-size:11px;color:var(--muted)}
+.recon-instruction span,.recon-handle,.recon-receipts{display:none}
+.recon-grid{display:grid;gap:13px;min-width:0}
+.recon-grid h2,.recon-history h2{font-size:17px;margin-bottom:9px}
+.recon-row{display:grid;gap:4px;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--wash)}
+.recon-row-top{display:flex;align-items:center;gap:7px;min-height:20px;line-height:1.25}
+.recon-row-top strong{flex:1;min-width:0;font-size:13px}
+.recon-row-top b,.recon-preview strong{font-variant-numeric:tabular-nums;white-space:nowrap}
+.recon-row-actions{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.recon-row .control,.recon-row .status{justify-self:start}
+.recon-row .status{width:max-content}
+.recon-row small,.recon-history small,.recon-preview small{overflow-wrap:anywhere}
+.recon-history li+li{border-top:1px solid var(--border);padding-top:7px}
+.recon-history li{display:grid;gap:2px;font-size:13px}
+.recon-dialog>.status{justify-self:start}
+.recon-dialog>.risk-text{color:var(--risk)}
+.recon-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.recon-preview{display:grid;align-content:start;gap:3px;padding:9px;min-width:0}
+.recon-preview h3{font-size:12px;margin:0;overflow-wrap:anywhere}
+.recon-preview strong{font-size:16px}
+.recon-preview span{font-size:11px}
+@media (min-width:900px) and (pointer:fine){
+  .recon-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .recon-receipts,.recon-instruction span{display:revert}
+  .recon-handle{display:grid;place-items:center;width:36px;height:36px;flex:none;border-radius:8px;color:var(--accent);cursor:grab}
+  .recon-handle:active{cursor:grabbing}
+  .recon-handle:hover{background:var(--purple-bg)}
+  .recon-dragging .recon-target{border-style:dashed;border-color:var(--accent)}
+  .recon-dragging .recon-target.is-over{background:var(--purple-bg);border-style:solid}
+}

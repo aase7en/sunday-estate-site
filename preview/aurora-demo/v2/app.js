@@ -1,6 +1,7 @@
 (() => {
   const d = window.EstateData;
   const charts = window.EstateCharts;
+  const dashboardLayout = window.EstateDashboardLayout;
   const root = document.querySelector('#app');
   const dialog = document.querySelector('#dialog');
   const toast = document.querySelector('#toast');
@@ -32,6 +33,10 @@
     trend: '<path d="m3 17 6-6 4 4 7-8m-5 0h5v5"/>',
     down: '<path d="m3 7 6 6 4-4 7 8m-5 0h5v-5"/>',
     flat: '<path d="M5 12h14"/>',
+    grip: '<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3"/>',
+    upArrow: '<path d="M12 20V4m-6 6 6-6 6 6"/>',
+    downArrow: '<path d="M12 4v16m-6-6 6 6 6-6"/>',
+    order: '<path d="M3 5h10M3 12h7M3 19h4m8-3 3 3 3-3m-3 3V5m-3 3 3-3 3 3"/>',
     alert: '<path d="M10.2 4.5a2 2 0 0 1 3.6 0l7.5 13.4a2 2 0 0 1-1.8 3H4.5a2 2 0 0 1-1.8-3l7.5-13.4ZM12 9v4m0 3.5h.01"/>',
     arrow: '<path d="M4 12h15m-5-5 5 5-5 5"/>',
     chevron: '<path d="m6 9 6 6 6-6"/>',
@@ -97,6 +102,7 @@
     const target = location.hash.slice(1);
     if (target === 'hero') return 'hero';
     if (!account) return 'login';
+    if (target === 'reconciliation') return account === 'portfolio' ? target : 'overview';
     const chosen = Object.hasOwn(pages,target) ? target : pref.home;
     return xp.allowedRoute(chosen) ? chosen : 'overview';
   };
@@ -129,6 +135,7 @@
     investments: {src:'assets/scenes/land.webp'},
     profile: {src:'assets/scenes/family.webp',mobile:'assets/scenes/family-828.webp'},
     contracts: {src:'assets/scenes/future.webp'},
+    reconciliation: {src:'assets/scenes/future.webp'},
   };
 
   function moduleHeader(module, {title, description, details = '', cover = ''}) {
@@ -199,14 +206,18 @@
       {title:'เงินไหลออกเดือนนี้', value:monthly.expense, foot:'ยอดจ่าย ต.ค. 2569', glyph:'out', tone:'pink', money:true},
       {title:'หลักประกันสินเชื่อ', value:d.sum(active.filter(c=>c.type==='loan'),'appraisal'), foot:'ราคาประเมินของสัญญาปล่อยกู้', glyph:'layers', tone:'blue', money:true},
     ];
+    const widgets = rangeCards(r);
+    const tiles = Object.fromEntries(Object.entries(widgets).map(([id,card]) => [id,
+      '<div class="card-stage range-card-stage" data-widget="' + id + '"><div class="card-rotor range-card-rotor">' + card + '</div></div>']));
+    tiles.queue = '<article class="card panel queue" id="queue" data-widget="queue" tabindex="-1">' +
+      cardHead('สัญญาที่ต้องติดตาม', actions.length + ' สัญญา ณ ' + d.formatDate(d.asOf), 'calendar', 'amber',
+      '<a class="subtle text-data" href="#lending">ดูสัญญา ' + icon('arrow', 15) + '</a>') + queueMarkup(actions) + '</article>';
     return moduleHeader('overview',{title:'ภาพรวมธุรกิจ',description:'พอร์ตสินเชื่อ ขายฝาก และกระแสเงินสด',details:asOfBadge()}) +
       '<section class="kpis" aria-label="ตัวชี้วัดภาพรวม ณ วันที่สรุป">' + cards.map(kpi).join('') + '</section>' + status +
-      '<section class="analytics" aria-labelledby="analytics-title"><div class="analytics-head"><div><h2 id="analytics-title">วิเคราะห์พอร์ต</h2><p class="range-help">ช่วงเวลาสำหรับกราฟกระแสเงินสด สถานะสัญญา และแนวโน้ม</p><p class="range-mobile">' +
+      '<section class="analytics" aria-labelledby="analytics-title"><div class="analytics-head"><div><div class="analytics-label"><h2 id="analytics-title">วิเคราะห์พอร์ต</h2>' +
+      '<button class="subtle" id="layout-button" data-action="layout" type="button">' + icon('order',16) + 'จัดหน้า</button></div><p class="range-help">ช่วงเวลาสำหรับกราฟกระแสเงินสด สถานะสัญญา และแนวโน้ม</p><p class="range-mobile">' +
       rangeCaption(r) + '</p></div>' + chartControls(r) + '</div>' +
-      '<div class="analytics-grid">' + rangeCards(r).map(card =>
-        '<div class="card-stage range-card-stage"><div class="card-rotor range-card-rotor">' + card + '</div></div>').join('') +
-      '<article class="card panel queue" id="queue" tabindex="-1">' + cardHead('สัญญาที่ต้องติดตาม', actions.length + ' สัญญา ณ ' + d.formatDate(d.asOf), 'calendar', 'amber',
-      '<a class="subtle text-data" href="#lending">ดูสัญญา ' + icon('arrow', 15) + '</a>') + queueMarkup(actions) + '</article></div></section>' +
+      '<div class="analytics-grid">' + dashboardLayout.normalize(pref.dashboardOrder).map(id => tiles[id]).join('') + '</div></section>' +
       '<section class="insight-grid" aria-label="ตัวชี้วัดความเสี่ยง">' +
       '<article class="card insight">' + disk('percent','blue') + '<div><h2>สัดส่วนหนี้ต่อหลักประกัน (LTV)</h2><p>เฉพาะปล่อยกู้ · เงินต้นคงค้าง ÷ ราคาประเมิน</p></div><strong>' + d.ratioText(d.ratio(latest)) + '</strong></article>' +
       '<article class="card insight">' + disk('alert','pink') + '<div><h2>เงินต้นของสัญญาเกินกำหนด</h2><p>เงินต้นคงค้างของสัญญาค้างติดตาม</p></div><strong>' +
@@ -238,21 +249,22 @@
     const flow = d.totals(r.start,r.end,xp.scope());
     const dataButton = kind => '<button type="button" class="subtle text-data" data-table="' + kind + '" aria-label="ดูตาราง' +
       (kind === 'cash' ? 'กระแสเงินสด' : portfolioTrend) + '">' + icon('file', 15) + '<span>ข้อมูล</span></button>';
-    return ['<article class="card panel cash" data-range-card>' + cardHead('กระแสเงินสด', pref.mode === 'combined' ? 'เงินเข้าด้านบน · เงินออกด้านล่าง · บาท' : 'รับ จ่าย และยอดสุทธิ · หน่วยบาท', 'chart', 'purple',
+    return {cash: '<article class="card panel cash" data-range-card>' + cardHead('กระแสเงินสด', pref.mode === 'combined' ? 'เงินเข้าด้านบน · เงินออกด้านล่าง · บาท' : 'รับ จ่าย และยอดสุทธิ · หน่วยบาท', 'chart', 'purple',
       '<div class="head-actions">' + dataButton('cash') + '<button class="subtle mode-button" type="button" data-action="mode" aria-label="สลับเป็น' +
       (pref.mode === 'combined' ? 'กราฟเส้น' : 'กราฟผสม') + '" id="' + namespace + 'mode">' + icon(pref.mode === 'combined' ? 'chart' : 'trend', 16) +
       '<span>' + (pref.mode === 'combined' ? 'กราฟผสม' : 'กราฟเส้น') + '</span>' + icon('chevron', 12) + '</button></div>') +
       charts.legend(['income','expense','net'], pref.mode) + '<div class="chart-host" id="' + namespace + 'cash-chart"></div>' +
       '<div class="chart-summary"><span>รับรวม <b>' + d.baht(flow.income) + '</b></span><span>จ่ายรวม <b>' + d.baht(flow.expense) + '</b></span><span>สุทธิ <b class="' +
-      (flow.net < 0 ? 'risk-text' : 'gain-text') + '">' + charts.amount(flow.net,'net') + '</b></span></div></article>',
-      '<article class="card panel composition" data-range-card>' + cardHead('สัดส่วนสถานะสัญญา', 'จำนวนตามสถานะ ณ ' + d.formatDate(r.end), 'ring', 'cyan') +
+      (flow.net < 0 ? 'risk-text' : 'gain-text') + '">' + charts.amount(flow.net,'net') + '</b></span></div>' +
+      (account === 'portfolio' ? '<div class="cash-tools"><a class="subtle" href="#reconciliation">' + icon('wallet',16) + ' กระทบยอด ' + icon('right',14) + '</a></div>' : '') + '</article>',
+      composition: '<article class="card panel composition" data-range-card>' + cardHead('สัดส่วนสถานะสัญญา', 'จำนวนตามสถานะ ณ ' + d.formatDate(r.end), 'ring', 'cyan') +
       '<div class="donut-host" id="' + namespace + 'donut-chart"></div><p class="panel-note">นับสัญญาที่เริ่มแล้ว ณ วันสิ้นสุดช่วง · ใกล้ครบกำหนดภายใน 15 วัน</p></article>',
-      '<article class="card panel trend" data-range-card data-trend="' + trend.direction + '">' +
+      trend: '<article class="card panel trend" data-range-card data-trend="' + trend.direction + '">' +
       cardHead(portfolioTrend, 'เงินต้นคงค้างเฉพาะสัญญาปล่อยกู้', 'trend', 'purple', dataButton('trend')) +
       '<div class="trend-stat"><div class="trend-amount"><strong>' + d.baht(trend.current) + '</strong><span>ณ ' + d.formatDate(r.end) + '</span></div>' +
       '<div class="trend-change"><span class="trend-badge">' + icon(trend.direction === 'up' ? 'trend' : trend.direction, 15) + escape(trend.percent) +
       '</span><span class="trend-compare">' + trend.comparison + '</span></div></div>' +
-      '<div class="chart-host" id="' + namespace + 'trend-chart"></div></article>'];
+      '<div class="chart-host" id="' + namespace + 'trend-chart"></div></article>'};
   }
 
   const statusPill = c => '<span class="status ' + d.groupTone[c.status] + '">' + d.statusName[c.status] + '</span>';
@@ -367,6 +379,7 @@
     else if (page === 'profile') content = shell(profile());
     else if (page === 'lending') content = shell(lending());
     else if (page === 'investments') content = shell(xp.investmentPage());
+    else if (page === 'reconciliation') content = shell(reconciliation.page());
     else content = shell(xp.staff() ? dashboard() : xp.memberHome());
     root.innerHTML = content;
     window.EstateScenes.mount({read});
@@ -470,9 +483,13 @@
 
   function turnRange(from, to, next) {
     const control = period => root.querySelector(period === 'custom' ? '[data-action="dates"]' : '[data-period="' + period + '"]');
+    const rotors = [...root.querySelectorAll('.range-card-rotor')];
     turnCards({
-      rotors: [...root.querySelectorAll('.range-card-rotor')],
-      markup: namespace => rangeCards(next,namespace).join(''),
+      rotors,
+      markup: namespace => {
+        const faces = rangeCards(next,namespace);
+        return rotors.map(rotor => faces[rotor.parentElement.dataset.widget]).join('');
+      },
       left: turnsLeft(control(from),control(to)),
       prepare: namespace => renderCharts(next,namespace),
       onFinish: () => {
@@ -654,6 +671,7 @@
     const {action, period, type, table, contract: id, account: choice, reset} = btn.dataset;
     if (choice) { activateAccount(choice); return; }
     if (!account) return;
+    if (btn.dataset.recon) { reconciliation.click(btn); return; }
     if (period) { changeRange({period},btn); return; }
     if (type) { flip(type); return; }
     if (table) { dataTable(table); return; }
@@ -669,6 +687,7 @@
       return;
     }
     switch (action) {
+      case 'layout': layoutEditor.open(pref.dashboardOrder); break;
       case 'theme':
         settings({theme: pref.theme === 'light' ? 'dark' : 'light'});
         document.documentElement.dataset.theme = pref.theme;
@@ -774,6 +793,18 @@
   });
   const xp = window.createEstateExperience({icon,escape,read,write,notice,open:showDialog,person,settings,render,moduleHeader,
     account:()=>account,prefs:()=>pref,page:()=>page});
+  const layoutEditor = dashboardLayout.create({root,dialog,icon,open:showDialog,
+    active:() => page === 'overview' && xp.staff(),
+    save:order => {
+      const saved = settings({dashboardOrder:order});
+      dialog.close();
+      render('layout-button');
+      if (saved) notice('บันทึกลำดับการ์ดแล้ว');
+    }});
+  const reconciliation = window.createEstateReconciliation({root,dialog,icon,escape,read,write,notice,
+    open:showDialog,moduleHeader,render,
+    active:() => account === 'portfolio' && page === 'reconciliation',
+    reviewer:() => person().name});
   if (account && !location.hash) history.replaceState(null,'','#' + pref.home);
   render();
 })();
