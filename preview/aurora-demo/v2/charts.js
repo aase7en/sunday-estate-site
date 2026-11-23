@@ -2,8 +2,13 @@ window.EstateCharts = (() => {
   const d = window.EstateData;
   const label = {income: 'เงินไหลเข้า', expense: 'เงินไหลออก', net: 'เงินสดสุทธิ', balance: 'เงินต้นคงค้าง'};
   const tones = {income: 'cyan', expense: 'pink', net: 'purple', balance: 'purple'};
-  const barStops = Array.from({length:20}, (_,index) =>
-    '<stop offset="' + (index * 100 / 19).toFixed(3) + '%" stop-opacity="' + ((index + 1) * 5 / 100) + '"/>'
+  // Each pair gives the distance from zero and the transparency at that point.
+  const barStops = [
+    [0, 97], [10, 95], [22, 87], [30, 85], [38, 80], [45, 75], [51, 70],
+    [57, 65], [62, 60], [66, 55], [70, 50], [74, 45], [78, 40], [82, 35],
+    [85, 30], [88, 25], [91, 20], [94, 15], [96, 10], [98, 5], [100, 0],
+  ].map(([offset, transparency]) =>
+    '<stop offset="' + offset + '%" stop-opacity="' + (100 - transparency) / 100 + '"/>'
   ).join('');
   const amount = (n, key) => (n < 0 ? '−' : key === 'net' && n > 0 ? '+' : '') + d.baht(Math.abs(n));
   const legendMark = (tone, line = false) => '<i class="swatch ' + tone + (line ? ' line' : '') + '" aria-hidden="true"></i>';
