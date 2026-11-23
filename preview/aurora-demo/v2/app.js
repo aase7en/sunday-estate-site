@@ -80,6 +80,8 @@
   let lookup = '';
   let animation;
   let rangeFlip;
+  let rangeRevision = 0;
+  const rangeMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let resizeTimer;
   let dialogType;
   let dialogReturn;
@@ -174,7 +176,8 @@
       '<section class="kpis" aria-label="ตัวชี้วัดภาพรวม ณ วันที่สรุป">' + cards.map(kpi).join('') + '</section>' + status +
       '<section class="analytics" aria-labelledby="analytics-title"><div class="analytics-head"><div><h2 id="analytics-title">วิเคราะห์พอร์ต</h2><p class="range-help">ช่วงเวลาสำหรับกราฟกระแสเงินสด สถานะสัญญา และแนวโน้ม</p><p class="range-mobile">' +
       rangeCaption(r) + '</p></div>' + chartControls(r) + '</div>' +
-      '<div class="analytics-grid">' + rangeCards(r) +
+      '<div class="analytics-grid">' + rangeCards(r).map(card =>
+        '<div class="range-card-stage"><div class="range-card-rotor">' + card + '</div></div>').join('') +
       '<article class="card panel queue" id="queue" tabindex="-1">' + cardHead('สัญญาที่ต้องติดตาม', actions.length + ' สัญญา ณ ' + d.formatDate(d.asOf), 'calendar', 'amber',
       '<a class="subtle text-data" href="#lending">ดูสัญญา ' + icon('arrow', 15) + '</a>') + queueMarkup(actions) + '</article></div></section>' +
       '<section class="insight-grid" aria-label="ตัวชี้วัดความเสี่ยง">' +
@@ -183,23 +186,23 @@
       d.baht(d.sum(actions.filter(c => c.status === 'overdue'), 'balance')) + '</strong></article></section>';
   }
 
-  function rangeCards(r) {
+  function rangeCards(r, namespace = '') {
     const historical = xp.contracts(r.end);
     const flow = d.totals(r.start,r.end,xp.scope());
     const dataButton = kind => '<button type="button" class="subtle text-data" data-table="' + kind + '" aria-label="ดูตาราง' +
       (kind === 'cash' ? 'กระแสเงินสด' : 'แนวโน้มพอร์ต') + '">' + icon('file', 15) + '<span>ข้อมูล</span></button>';
-    return '<article class="card panel cash" data-range-card>' + cardHead('กระแสเงินสด', pref.mode === 'combined' ? 'เงินเข้าด้านบน · เงินออกด้านล่าง · บาท' : 'รับ จ่าย และยอดสุทธิ · หน่วยบาท', 'chart', 'purple',
+    return ['<article class="card panel cash" data-range-card>' + cardHead('กระแสเงินสด', pref.mode === 'combined' ? 'เงินเข้าด้านบน · เงินออกด้านล่าง · บาท' : 'รับ จ่าย และยอดสุทธิ · หน่วยบาท', 'chart', 'purple',
       '<div class="head-actions">' + dataButton('cash') + '<button class="subtle mode-button" type="button" data-action="mode" aria-label="สลับเป็น' +
-      (pref.mode === 'combined' ? 'กราฟเส้น' : 'กราฟผสม') + '" id="mode">' + icon(pref.mode === 'combined' ? 'chart' : 'trend', 16) +
+      (pref.mode === 'combined' ? 'กราฟเส้น' : 'กราฟผสม') + '" id="' + namespace + 'mode">' + icon(pref.mode === 'combined' ? 'chart' : 'trend', 16) +
       '<span>' + (pref.mode === 'combined' ? 'กราฟผสม' : 'กราฟเส้น') + '</span>' + icon('chevron', 12) + '</button></div>') +
-      charts.legend(['income','expense','net'], pref.mode) + '<div class="chart-host" id="cash-chart"></div>' +
+      charts.legend(['income','expense','net'], pref.mode) + '<div class="chart-host" id="' + namespace + 'cash-chart"></div>' +
       '<div class="chart-summary"><span>รับรวม <b>' + d.baht(flow.income) + '</b></span><span>จ่ายรวม <b>' + d.baht(flow.expense) + '</b></span><span>สุทธิ <b class="' +
-      (flow.net < 0 ? 'risk-text' : 'gain-text') + '">' + charts.amount(flow.net,'net') + '</b></span></div></article>' +
+      (flow.net < 0 ? 'risk-text' : 'gain-text') + '">' + charts.amount(flow.net,'net') + '</b></span></div></article>',
       '<article class="card panel composition" data-range-card>' + cardHead('สัดส่วนสถานะสัญญา', 'จำนวนตามสถานะ ณ ' + d.formatDate(r.end), 'ring', 'cyan') +
-      '<div class="donut-host" id="donut-chart"></div><p class="panel-note">นับสัญญาที่เริ่มแล้ว ณ วันสิ้นสุดช่วง · ใกล้ครบกำหนดภายใน 15 วัน</p></article>' +
+      '<div class="donut-host" id="' + namespace + 'donut-chart"></div><p class="panel-note">นับสัญญาที่เริ่มแล้ว ณ วันสิ้นสุดช่วง · ใกล้ครบกำหนดภายใน 15 วัน</p></article>',
       '<article class="card panel trend" data-range-card>' + cardHead('แนวโน้มเงินต้นคงค้าง', 'ยอดคงเหลือ ณ วันสิ้นสุดแต่ละช่วง · หน่วยบาท', 'trend', 'purple', dataButton('trend')) +
       '<div class="trend-stat"><strong>' + d.baht(d.sum(historical,'balance')) + '</strong><span>ณ ' + d.formatDate(r.end) + '</span></div>' +
-      '<div class="chart-host" id="trend-chart"></div></article>';
+      '<div class="chart-host" id="' + namespace + 'trend-chart"></div></article>'];
   }
 
   const statusPill = c => '<span class="status ' + d.groupTone[c.status] + '">' + d.statusName[c.status] + '</span>';
@@ -298,7 +301,7 @@
 
   function render(focusId) {
     animation?.cancel();
-    cancelRangeFlip();
+    settleRangeFlip();
     const currentTheme = account ? pref.theme : 'light';
     document.documentElement.dataset.theme = currentTheme;
     page = route();
@@ -318,24 +321,84 @@
     setTimeout(xp.checkBirthday,250);
   }
 
-  function renderCharts() {
-    const r = range();
-    const cash = document.querySelector('#cash-chart');
+  function renderCharts(r = range(), namespace = '') {
+    const cash = document.getElementById(namespace + 'cash-chart');
     if (!cash) return;
-    charts.draw(cash, r, 'cash', pref.mode,xp.scope());
-    charts.draw(document.querySelector('#trend-chart'), r, 'trend', pref.mode,xp.scope());
+    charts.draw(cash, r, 'cash', pref.mode,xp.scope(),namespace);
+    charts.draw(document.getElementById(namespace + 'trend-chart'), r, 'trend', pref.mode,xp.scope(),namespace);
     const rows = xp.contracts(r.end);
-    charts.donut(document.querySelector('#donut-chart'), Object.entries(d.statusName).map(([key,name]) =>
-      ({name, tone:d.groupTone[key], value:rows.filter(c=>c.status===key).length})),r.end);
+    charts.donut(document.getElementById(namespace + 'donut-chart'), Object.entries(d.statusName).map(([key,name]) =>
+      ({name, tone:d.groupTone[key], value:rows.filter(c=>c.status===key).length})),r.end,namespace);
   }
 
-  function cancelRangeFlip() {
+  const sameRange = (left,right) => left.start === right.start && left.end === right.end;
+
+  function settleRangeFlip(showBack = false) {
     if (!rangeFlip) return;
-    const {cards, animations} = rangeFlip;
+    const {entries, namespace} = rangeFlip;
     rangeFlip = undefined;
-    animations.forEach(item => item.cancel());
-    cards.forEach(card => { card.inert = false; });
+    for (const {rotor, front, back, rotation} of entries) {
+      const visible = showBack ? back : front;
+      (showBack ? front : back).remove();
+      visible.classList.remove('range-face','range-face-back');
+      visible.inert = false;
+      if (showBack) {
+        for (const node of visible.querySelectorAll('[id]')) {
+          if (node instanceof HTMLElement && node.id.startsWith(namespace)) node.id = node.id.slice(namespace.length);
+        }
+      }
+      rotor.classList.remove('is-turning');
+      rotation.cancel();
+    }
   }
+
+  function completeRangeFlip(turn) {
+    if (rangeFlip !== turn) return;
+    settleRangeFlip(true);
+    const latest = range();
+    if (!sameRange(latest,turn.range)) turnRange(latest);
+    else if (width() !== turn.width) renderCharts(latest);
+  }
+
+  function turnRange(next) {
+    const rotors = [...root.querySelectorAll('.range-card-rotor')];
+    const animated = !rangeMotion.matches && rotors[0]?.animate &&
+      CSS.supports('transform-style','preserve-3d') && CSS.supports('backface-visibility','hidden');
+    const namespace = animated ? 'range-' + (++rangeRevision) + '-' : '';
+    const template = document.createElement('template');
+    template.innerHTML = rangeCards(next,namespace).join('');
+    const faces = [...template.content.children];
+    if (!animated) {
+      rotors.forEach((rotor,index) => rotor.replaceChildren(faces[index]));
+      renderCharts(next);
+      return;
+    }
+
+    const entries = rotors.map((rotor,index) => {
+      const front = rotor.firstElementChild;
+      const back = faces[index];
+      front.classList.add('range-face');
+      back.classList.add('range-face','range-face-back');
+      front.inert = true;
+      back.inert = true;
+      rotor.append(back);
+      return {rotor,front,back};
+    });
+    // Draw the back while it is attached but still facing away from the viewer.
+    renderCharts(next,namespace);
+    for (const entry of entries) {
+      entry.rotor.classList.add('is-turning');
+      entry.rotation = entry.rotor.animate([{transform:'rotateY(0deg)'},{transform:'rotateY(-180deg)'}],
+        {duration:470,easing:'cubic-bezier(.55,.04,.28,1)',fill:'forwards'});
+    }
+    const turn = {entries,namespace,range:next,width:width()};
+    rangeFlip = turn;
+    Promise.all(entries.map(({rotation}) => rotation.finished)).then(() => completeRangeFlip(turn), () => {});
+  }
+
+  rangeMotion.addEventListener('change', () => {
+    if (rangeMotion.matches && rangeFlip) completeRangeFlip(rangeFlip);
+  });
 
   function changeRange(patch, focus) {
     const before = range();
@@ -349,46 +412,7 @@
       button.setAttribute('aria-pressed', String(button.dataset.period === pref.period));
     });
     focus.focus({preventScroll:true});
-    if (before.start === next.start && before.end === next.end) return;
-
-    const cards = [...root.querySelectorAll('[data-range-card]')];
-    const swapCards = () => {
-      const template = document.createElement('template');
-      template.innerHTML = rangeCards(next);
-      const replacements = [...template.content.children];
-      cards.forEach((card, index) => card.replaceWith(replacements[index]));
-      renderCharts();
-      return replacements;
-    };
-
-    const interrupted = Boolean(rangeFlip);
-    cancelRangeFlip();
-    if (interrupted || matchMedia('(prefers-reduced-motion: reduce)').matches || !cards[0]?.animate) {
-      swapCards();
-      return;
-    }
-    const threeD = CSS.supports('perspective', '1000px');
-    const pose = (degrees, opacity) => ({opacity, transform:threeD ?
-      'perspective(1200px) rotateY(' + degrees + 'deg) scale(' + (degrees ? '.985' : '1') + ')' : 'none'});
-    const play = (targets, keyframes, easing, fill) => targets.map(card => {
-      card.inert = true;
-      return card.animate(keyframes, {duration:175,easing,fill});
-    });
-    const turn = {cards, animations:play(cards,[pose(0,1),pose(-72,.22)],'cubic-bezier(.45,0,.55,1)','forwards')};
-    rangeFlip = turn;
-    const after = callback => Promise.all(turn.animations.map(item => item.finished)).then(() => {
-      if (rangeFlip === turn) callback();
-    }, () => {});
-    after(() => {
-      turn.cards = swapCards();
-      const layoutWidth = width();
-      turn.animations.forEach(item => item.cancel());
-      turn.animations = play(turn.cards,[pose(72,.22),pose(0,1)],'cubic-bezier(.22,.61,.36,1)','none');
-      after(() => {
-        cancelRangeFlip();
-        if (width() !== layoutWidth) renderCharts();
-      });
-    });
+    if (!rangeFlip && !sameRange(before,next)) turnRange(next);
   }
 
   function showDialog(title, content, type) {

@@ -57,7 +57,8 @@ window.EstateCharts = (() => {
     return {min, max, ticks: Array.from({length: Math.round((max - min) / step) + 1}, (_, i) => min + step * i)};
   }
 
-  function draw(host, range, kind, mode, scope) {
+  function draw(host, range, kind, mode, scope, namespace = '') {
+    const graphId = namespace + kind;
     const isFlow = kind === 'cash';
     const keys = isFlow ? ['income', 'expense', 'net'] : ['balance'];
     const width = host.clientWidth;
@@ -89,7 +90,7 @@ window.EstateCharts = (() => {
 
     const defs = chartBars ? ['income','expense'].map(key => {
       const up = key === 'income';
-      return '<linearGradient id="' + kind + '-' + key + '" class="cash-bar-gradient ' + tones[key] +
+      return '<linearGradient id="' + graphId + '-' + key + '" class="cash-bar-gradient ' + tones[key] +
         '" x1="0" x2="0" y1="' + (up ? 1 : 0) + '" y2="' + (up ? 0 : 1) + '" gradientUnits="objectBoundingBox">' +
         barStops + '</linearGradient>';
     }).join('') : '';
@@ -106,7 +107,7 @@ window.EstateCharts = (() => {
       const right = left + barWidth;
       const radius = Math.min(5, Math.abs(zeroY - edge), barWidth / 2);
       const tangent = edge + direction * radius;
-      return '<path data-bar="' + key + '" fill="url(#' + kind + '-' + key + ')" d="M' + left + ' ' + zeroY + ' V' + tangent +
+      return '<path data-bar="' + key + '" fill="url(#' + graphId + '-' + key + ')" d="M' + left + ' ' + zeroY + ' V' + tangent +
         ' Q' + left + ' ' + edge + ' ' + (left + radius) + ' ' + edge + ' H' + (right - radius) +
         ' Q' + right + ' ' + edge + ' ' + right + ' ' + tangent + ' V' + zeroY + ' Z"/>';
     }).join('')).join('') : '';
@@ -114,12 +115,12 @@ window.EstateCharts = (() => {
       const points = rows.map((row, i) => [at(i), y(row[key])]);
       const curve = path(points);
       const area = key === 'balance' && points.length > 1
-        ? '<path d="' + curve + ' L' + points.at(-1)[0] + ' ' + bottom + ' H' + points[0][0] + ' Z" fill="url(#trend-area)"/>' : '';
+        ? '<path d="' + curve + ' L' + points.at(-1)[0] + ' ' + bottom + ' H' + points[0][0] + ' Z" fill="url(#' + graphId + '-area)"/>' : '';
       return area + '<path class="chart-stroke ' + tones[key] + '" d="' + curve + '"/>' +
         points.map(([x, pointY]) => '<circle class="chart-point ' + tones[key] + '" cx="' + x + '" cy="' + pointY + '" r="' + (chartBars ? 3.4 : 3) + '"/>').join('');
     }).join('');
     host.innerHTML = '<svg height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '" aria-hidden="true">' +
-      '<defs>' + defs + '<linearGradient id="' + kind + '-area" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop class="area-start"/><stop class="area-end" offset="100%"/></linearGradient></defs>' +
+      '<defs>' + defs + '<linearGradient id="' + graphId + '-area" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop class="area-start"/><stop class="area-end" offset="100%"/></linearGradient></defs>' +
       grids + axisLabels + '<line class="chart-guide" x1="0" x2="0" y1="' + top + '" y2="' + bottom + '" visibility="hidden"/>' + bars + lines + '</svg>' +
       '<div class="chart-selectors" aria-label="เลือกช่วงข้อมูล">' + rows.map((r, i) =>
         '<button class="chart-hit" type="button" tabindex="' + (i === 0 ? 0 : -1) + '" style="left:' + (left + cell * i) + 'px;width:' + cell + 'px;height:' + (bottom + 14) +
@@ -158,7 +159,8 @@ window.EstateCharts = (() => {
     });
   }
 
-  function donut(host, items, end) {
+  function donut(host, items, end, namespace = '') {
+    const ringId = namespace + 'ring-';
     const total = d.sum(items, 'value');
     const arcLength = 2 * Math.PI * 62;
     let offset = 0;
@@ -167,13 +169,13 @@ window.EstateCharts = (() => {
       if (!value || !total) return '';
       const len = value / total * arcLength;
       const gap = value === total ? 0 : Math.min(18, len * .55);
-      const markup = circle('class="ring-arc ' + tone + '" stroke="url(#ring-' + tone + ')" stroke-dasharray="' + (len - gap) + ' ' + (arcLength - len + gap) +
+      const markup = circle('class="ring-arc ' + tone + '" stroke="url(#' + ringId + tone + ')" stroke-dasharray="' + (len - gap) + ' ' + (arcLength - len + gap) +
         '" stroke-dashoffset="' + -(offset + gap / 2) + '"', i);
       offset += len;
       return markup;
     }).join('');
     host.innerHTML = '<div class="ring-layout"><div class="ring-visual"><svg viewBox="0 0 160 160" aria-hidden="true"><defs>' +
-      items.map(({tone}) => '<linearGradient id="ring-' + tone + '" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop class="gradient-' +
+      items.map(({tone}) => '<linearGradient id="' + ringId + tone + '" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop class="gradient-' +
         tone + ' start"/><stop offset="100%" class="gradient-' + tone + ' end"/></linearGradient>').join('') +
       '</defs>' + circle('class="ring-track"', -1) + arcs + '</svg><div class="ring-total"><strong>' + total +
       '</strong><span>สัญญา</span></div></div><div class="ring-legend">' + items.map(({name,value,tone},i) =>
