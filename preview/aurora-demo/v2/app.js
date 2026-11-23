@@ -78,10 +78,9 @@
   let page = 'overview';
   let statusFilter = 'all';
   let lookup = '';
-  let animation;
-  let rangeFlip;
-  let rangeRevision = 0;
-  const rangeMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let cardFlip;
+  let flipRevision = 0;
+  const flipMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let resizeTimer;
   let dialogType;
   let dialogReturn;
@@ -177,7 +176,7 @@
       '<section class="analytics" aria-labelledby="analytics-title"><div class="analytics-head"><div><h2 id="analytics-title">วิเคราะห์พอร์ต</h2><p class="range-help">ช่วงเวลาสำหรับกราฟกระแสเงินสด สถานะสัญญา และแนวโน้ม</p><p class="range-mobile">' +
       rangeCaption(r) + '</p></div>' + chartControls(r) + '</div>' +
       '<div class="analytics-grid">' + rangeCards(r).map(card =>
-        '<div class="range-card-stage"><div class="range-card-rotor">' + card + '</div></div>').join('') +
+        '<div class="card-stage range-card-stage"><div class="card-rotor range-card-rotor">' + card + '</div></div>').join('') +
       '<article class="card panel queue" id="queue" tabindex="-1">' + cardHead('สัญญาที่ต้องติดตาม', actions.length + ' สัญญา ณ ' + d.formatDate(d.asOf), 'calendar', 'amber',
       '<a class="subtle text-data" href="#lending">ดูสัญญา ' + icon('arrow', 15) + '</a>') + queueMarkup(actions) + '</article></div></section>' +
       '<section class="insight-grid" aria-label="ตัวชี้วัดความเสี่ยง">' +
@@ -220,15 +219,20 @@
       Object.entries(d.labels).map(([key, name]) => '<button role="tab" type="button" id="tab-' + key + '" data-type="' + key +
       '" aria-controls="contract-panel" tabindex="' + (pref.type === key ? 0 : -1) + '" aria-selected="' + (pref.type === key) + '">' +
       icon(key === 'loan' ? 'wallet' : 'layers', 18) + name + '</button>').join('') +
-      '</div>' + xp.adminTools() + '<div class="lending-perspective"><section id="contract-panel" role="tabpanel" tabindex="0" aria-labelledby="tab-' + pref.type +
-      '" class="contract-panel">' + lendingPanel() + '</section></div>';
+      '</div>' + xp.adminTools() + '<div class="card-stage"><div class="card-rotor" id="contract-rotor">' +
+      lendingFace(pref.type) + '</div></div>';
   }
 
-  function lendingPanel() {
-    const rows = xp.contracts(d.asOf,pref.type);
+  function lendingFace(type, namespace = '') {
+    return '<section id="' + namespace + 'contract-panel" role="tabpanel" tabindex="0" aria-labelledby="tab-' + type +
+      '" class="contract-panel">' + lendingPanel(type,namespace) + '</section>';
+  }
+
+  function lendingPanel(type, namespace) {
+    const rows = xp.contracts(d.asOf,type);
     const active = rows.filter(c=>c.balance > 0);
     const actions = rows.filter(c=>c.status === 'overdue' || c.status === 'soon');
-    const isLoan = pref.type === 'loan';
+    const isLoan = type === 'loan';
     const cards = [
       {title:'เงินต้นคงค้าง', value:d.sum(active,'balance'), foot:'เฉพาะสัญญาที่ยังเปิด', glyph:'wallet', tone:'purple', money:true},
       {title:'เงินต้นตามสัญญา', value:d.sum(rows,'principal'), foot:'รวมทุกสัญญาในชุดจำลอง', glyph:'layers', tone:'cyan', money:true},
@@ -237,16 +241,16 @@
     ];
     const stat = isLoan ? '<strong>' + d.ratioText(d.ratio(rows)) + '</strong><span>เงินต้นคงค้างเทียบราคาประเมิน</span>' :
       '<strong>' + d.baht(d.sum(active.filter(c => c.status === 'soon'), 'balance')) + '</strong><span>เงินต้นของสัญญาที่ใกล้ครบกำหนดภายใน 15 วัน</span>';
-    return '<section class="kpis lending-kpis" aria-label="ตัวชี้วัด' + d.labels[pref.type] + '">' + cards.map(kpi).join('') + '</section>' +
+    return '<section class="kpis lending-kpis" aria-label="ตัวชี้วัด' + d.labels[type] + '">' + cards.map(kpi).join('') + '</section>' +
       '<div class="lending-grid"><article class="card panel records">' + cardHead('ทะเบียนสัญญา', 'ดูรายละเอียดจากรายการสัญญา', 'file', 'purple') +
       '<div class="record-tools"><label class="field-search">' + icon('search', 17) + '<input type="search" aria-label="ค้นหาในทะเบียนสัญญา" placeholder="เลขสัญญาหรือพื้นที่" value="' +
-      escape(lookup) + '"></label><label><span class="sr-only">สถานะสัญญา</span><select id="contract-status" aria-label="สถานะสัญญา"><option value="all">ทุกสถานะ</option>' +
+      escape(lookup) + '"></label><label><span class="sr-only">สถานะสัญญา</span><select id="' + namespace + 'contract-status" aria-label="สถานะสัญญา"><option value="all">ทุกสถานะ</option>' +
       Object.entries(d.statusName).map(([key, text]) => '<option value="' + key + '"' + (statusFilter === key ? ' selected' : '') + '>' + text + '</option>').join('') +
-      '</select></label></div><div id="record-results">' + recordRows(rows) + '</div></article>' +
+      '</select></label></div><div id="' + namespace + 'record-results">' + recordRows(rows) + '</div></article>' +
       '<div class="lending-aside"><article class="card panel risk-panel">' +
       cardHead(isLoan ? 'สัดส่วนหนี้ต่อหลักประกัน (LTV)' : 'ยอดใกล้ครบกำหนดไถ่ถอน', isLoan ? 'สัญญาปล่อยกู้ที่ยังเปิด' : 'สัญญาขายฝากที่ยังเปิด', isLoan ? 'percent' : 'clock', 'cyan') +
       '<div class="risk-stat">' + stat + '</div></article><article class="card panel queue">' +
-      cardHead('คิวติดตาม', d.labels[pref.type] + ' · ' + actions.length + ' สัญญา', 'calendar', 'amber') + queueMarkup(actions) + '</article></div></div>';
+      cardHead('คิวติดตาม', d.labels[type] + ' · ' + actions.length + ' สัญญา', 'calendar', 'amber') + queueMarkup(actions) + '</article></div></div>';
   }
   function recordRows(rows) {
     const query = lookup.trim().toLowerCase();
@@ -300,8 +304,7 @@
   }
 
   function render(focusId) {
-    animation?.cancel();
-    settleRangeFlip();
+    settleCardFlip();
     const currentTheme = account ? pref.theme : 'light';
     document.documentElement.dataset.theme = currentTheme;
     page = route();
@@ -333,44 +336,46 @@
 
   const sameRange = (left,right) => left.start === right.start && left.end === right.end;
 
-  function settleRangeFlip(showBack = false) {
-    if (!rangeFlip) return;
-    const {entries, namespace} = rangeFlip;
-    rangeFlip = undefined;
+  // The controls are rendered in left-to-right order on both desktop and mobile.
+  const turnsLeft = (from,to) => Boolean(from.compareDocumentPosition(to) & Node.DOCUMENT_POSITION_PRECEDING);
+
+  function restoreFaceIds(face, namespace) {
+    for (const node of [face, ...face.querySelectorAll('[id]')]) {
+      if (node instanceof HTMLElement && node.id.startsWith(namespace)) node.id = node.id.slice(namespace.length);
+    }
+  }
+
+  function settleCardFlip(showBack = false) {
+    if (!cardFlip) return;
+    const {entries, namespace} = cardFlip;
+    cardFlip = undefined;
     for (const {rotor, front, back, rotation} of entries) {
       const visible = showBack ? back : front;
       (showBack ? front : back).remove();
       visible.classList.remove('range-face','range-face-back');
       visible.inert = false;
-      if (showBack) {
-        for (const node of visible.querySelectorAll('[id]')) {
-          if (node instanceof HTMLElement && node.id.startsWith(namespace)) node.id = node.id.slice(namespace.length);
-        }
-      }
-      rotor.classList.remove('is-turning');
+      if (showBack) restoreFaceIds(visible,namespace);
+      rotor.classList.remove('is-turning','turns-left');
       rotation.cancel();
     }
   }
 
-  function completeRangeFlip(turn) {
-    if (rangeFlip !== turn) return;
-    settleRangeFlip(true);
-    const latest = range();
-    if (!sameRange(latest,turn.range)) turnRange(latest);
-    else if (width() !== turn.width) renderCharts(latest);
+  function completeCardFlip(turn) {
+    if (cardFlip !== turn) return;
+    settleCardFlip(true);
+    turn.onFinish();
   }
 
-  function turnRange(next) {
-    const rotors = [...root.querySelectorAll('.range-card-rotor')];
-    const animated = !rangeMotion.matches && rotors[0]?.animate &&
+  function turnCards({rotors,markup,left,prepare,onFinish}) {
+    const animated = !flipMotion.matches && rotors[0].animate &&
       CSS.supports('transform-style','preserve-3d') && CSS.supports('backface-visibility','hidden');
-    const namespace = animated ? 'range-' + (++rangeRevision) + '-' : '';
+    const namespace = animated ? 'flip-' + (++flipRevision) + '-' : '';
     const template = document.createElement('template');
-    template.innerHTML = rangeCards(next,namespace).join('');
+    template.innerHTML = markup(namespace);
     const faces = [...template.content.children];
     if (!animated) {
       rotors.forEach((rotor,index) => rotor.replaceChildren(faces[index]));
-      renderCharts(next);
+      prepare?.(namespace);
       return;
     }
 
@@ -385,22 +390,41 @@
       return {rotor,front,back};
     });
     // Draw the back while it is attached but still facing away from the viewer.
-    renderCharts(next,namespace);
+    prepare?.(namespace);
+    const angle = left ? 180 : -180;
     for (const entry of entries) {
       entry.rotor.classList.add('is-turning');
-      entry.rotation = entry.rotor.animate([{transform:'rotateY(0deg)'},{transform:'rotateY(-180deg)'}],
+      entry.rotor.classList.toggle('turns-left',left);
+      entry.rotation = entry.rotor.animate([{transform:'rotateY(0deg)'},{transform:'rotateY(' + angle + 'deg)'}],
         {duration:470,easing:'cubic-bezier(.55,.04,.28,1)',fill:'forwards'});
     }
-    const turn = {entries,namespace,range:next,width:width()};
-    rangeFlip = turn;
-    Promise.all(entries.map(({rotation}) => rotation.finished)).then(() => completeRangeFlip(turn), () => {});
+    const turn = {entries,namespace,onFinish};
+    cardFlip = turn;
+    Promise.all(entries.map(({rotation}) => rotation.finished)).then(() => completeCardFlip(turn), () => {});
   }
 
-  rangeMotion.addEventListener('change', () => {
-    if (rangeMotion.matches && rangeFlip) completeRangeFlip(rangeFlip);
+  flipMotion.addEventListener('change', () => {
+    if (flipMotion.matches && cardFlip) completeCardFlip(cardFlip);
   });
 
+  function turnRange(from, to, next) {
+    const control = period => root.querySelector(period === 'custom' ? '[data-action="dates"]' : '[data-period="' + period + '"]');
+    const initialWidth = width();
+    turnCards({
+      rotors: [...root.querySelectorAll('.range-card-rotor')],
+      markup: namespace => rangeCards(next,namespace).join(''),
+      left: turnsLeft(control(from),control(to)),
+      prepare: namespace => renderCharts(next,namespace),
+      onFinish: () => {
+        const latest = range();
+        if (!sameRange(latest,next)) turnRange(to,pref.period,latest);
+        else if (width() !== initialWidth) renderCharts(latest);
+      }
+    });
+  }
+
   function changeRange(patch, focus) {
+    const from = pref.period;
     const before = range();
     settings(patch);
     const next = range();
@@ -412,7 +436,7 @@
       button.setAttribute('aria-pressed', String(button.dataset.period === pref.period));
     });
     focus.focus({preventScroll:true});
-    if (!rangeFlip && !sameRange(before,next)) turnRange(next);
+    if (!cardFlip && !sameRange(before,next)) turnRange(from,pref.period,next);
   }
 
   function showDialog(title, content, type) {
@@ -525,7 +549,6 @@
 
   function flip(to) {
     if (to === pref.type) return;
-    const section = document.getElementById('contract-panel');
     const nextTab = document.getElementById('tab-' + to);
     const from = pref.type;
     xp.sound();
@@ -535,37 +558,18 @@
       b.tabIndex = b === nextTab ? 0 : -1;
     });
     if (nextTab !== document.activeElement) nextTab.focus({preventScroll:true});
-    const swap = () => {
-      section.innerHTML = lendingPanel();
-      section.setAttribute('aria-labelledby', 'tab-' + to);
-    };
-    animation?.cancel();
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches || !section.animate) {
-      swap();
-      section.inert = false;
-      section.style.minHeight = '';
-      return;
-    }
-    const supports3d = CSS.supports('backface-visibility', 'hidden') && CSS.supports('perspective', '800px');
-    const direction = from === 'loan' ? 1 : -1;
-    const hidden = supports3d ? {opacity:.2,transform:'rotateY(' + (direction * -84) + 'deg)'} : {opacity:0};
-    const entering = supports3d ? {opacity:.2,transform:'rotateY(' + (direction * 84) + 'deg)'} : {opacity:0};
-    const visible = {opacity:1,transform:'none'};
-    const previousHeight = section.offsetHeight;
-    section.style.minHeight = previousHeight + 'px';
-    section.inert = true;
-    const out = animation = section.animate([visible,hidden],{duration:175,easing:'cubic-bezier(.45,0,.55,1)',fill:'forwards'});
-    out.onfinish = () => {
-      if (animation !== out) return;
-      swap();
-      out.cancel();
-      const incoming = animation = section.animate([entering,visible],{duration:175,easing:'cubic-bezier(.22,.61,.36,1)'});
-      incoming.onfinish = () => {
-        if (animation !== incoming) return;
-        section.inert = false;
-        section.style.minHeight = '';
-      };
-    };
+    if (!cardFlip) turnLending(from,to);
+  }
+
+  function turnLending(from,to) {
+    turnCards({
+      rotors: [document.getElementById('contract-rotor')],
+      markup: namespace => lendingFace(to,namespace),
+      left: turnsLeft(document.getElementById('tab-' + from),document.getElementById('tab-' + to)),
+      onFinish: () => {
+        if (pref.type !== to) turnLending(to,pref.type);
+      }
+    });
   }
 
   function toQueue() {
@@ -715,7 +719,7 @@
     resizeTimer = setTimeout(() => {
       if (width() === lastWidth) return;
       lastWidth = width();
-      if (page === 'overview' && account && !rangeFlip) renderCharts();
+      if (page === 'overview' && account && !cardFlip) renderCharts();
     }, 130);
   });
   const xp = window.createEstateExperience({icon,escape,read,write,notice,open:showDialog,person,settings,render,
