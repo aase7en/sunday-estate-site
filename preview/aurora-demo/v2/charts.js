@@ -57,15 +57,18 @@ window.EstateCharts = (() => {
     return {min, max, ticks: Array.from({length: Math.round((max - min) / step) + 1}, (_, i) => min + step * i)};
   }
 
-  function draw(host, range, kind, mode, maxPeriods, scope) {
+  function draw(host, range, kind, mode, scope) {
     const isFlow = kind === 'cash';
     const keys = isFlow ? ['income', 'expense', 'net'] : ['balance'];
-    const rows = d.periods(range, maxPeriods, scope);
     const width = host.clientWidth;
     if (!width) return;
     const height = isFlow ? 246 : 182;
     const left = 55;
     const right = width - 10;
+    const plotWidth = right - left;
+    const capacity = plotWidth >= 540 ? 24 : Math.max(4, Math.floor(plotWidth / 43));
+    const rows = d.periods(range, capacity, scope);
+    const group = rows[0].months;
     const top = 11;
     const bottom = height - 32;
     const chartBars = isFlow && mode === 'combined';
@@ -79,7 +82,9 @@ window.EstateCharts = (() => {
     const at = i => left + cell * (i + .5);
     const zeroY = y(0);
     const barWidth = Math.min(31, cell * .48);
-    const labelFreq = (right - left) / rows.length < 48 ? 2 : 1;
+    const labelWidth = group > 1 ? 67 : 48;
+    const labelFreq = Math.max(1, Math.ceil(labelWidth / cell));
+    const lastLabel = rows.length - 1;
     const tickText = n => n === 0 ? '0' : Math.abs(n) >= 1000000 ? (n / 1000000) + ' ล.' : (n / 1000) + 'k';
 
     const defs = chartBars ? ['income','expense'].map(key => {
@@ -89,7 +94,8 @@ window.EstateCharts = (() => {
         barStops + '</linearGradient>';
     }).join('') : '';
     const grids = scale.ticks.map(t => '<line x1="' + left + '" x2="' + right + '" y1="' + y(t) + '" y2="' + y(t) + '" class="' + (t === 0 ? 'axis-zero' : 'axis-grid') + '"/><text class="axis-label" x="' + (left - 9) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + tickText(t) + '</text>').join('');
-    const axisLabels = rows.map((row, i) => i % labelFreq === 0 || (i === rows.length - 1 && rows.length % labelFreq === 0 && cell > 39)
+    const axisLabels = rows.map((row, i) => i === 0 || i === lastLabel ||
+      (i % labelFreq === 0 && (lastLabel - i) * cell >= labelWidth)
       ? '<text class="axis-label" x="' + at(i) + '" y="' + (height - 9) + '" text-anchor="middle">' + row.label + '</text>' : '').join('');
 
     const bars = chartBars ? rows.map((row, i) => ['income','expense'].map(key => {
@@ -118,7 +124,9 @@ window.EstateCharts = (() => {
       '<div class="chart-selectors" aria-label="เลือกช่วงข้อมูล">' + rows.map((r, i) =>
         '<button class="chart-hit" type="button" tabindex="' + (i === 0 ? 0 : -1) + '" style="left:' + (left + cell * i) + 'px;width:' + cell + 'px;height:' + (bottom + 14) +
         'px" aria-label="' + r.title + ', ' + keys.map(k => label[k] + ' ' + amount(r[k], k)).join(', ') + '"></button>').join('') +
-      '</div><div class="chart-tooltip" role="tooltip" hidden></div>';
+      '</div><div class="chart-tooltip" role="tooltip" hidden></div>' +
+      '<p class="chart-period-note">' + (group > 1 ? (isFlow ? 'รวมยอดช่วงละ ' : 'ยอด ณ วันสิ้นช่วงกลุ่มละ ') +
+        group + ' เดือน · เลือกจุดเพื่อดูวันที่' : '') + '</p>';
     const tip = host.querySelector('.chart-tooltip');
     const guide = host.querySelector('.chart-guide');
     const leave = () => {

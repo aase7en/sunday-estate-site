@@ -11,7 +11,7 @@
     partner: {name:'นพดล ภูวดล',initials:'นภ',role:'ผู้ร่วมทุน',email:'partner@example.test',bio:'บัญชีตัวอย่างสำหรับดูสัดส่วนของตัวเอง'},
     partner2: {name:'ดาริน รุ่งเรือง',initials:'ดร',role:'ผู้ร่วมทุน',email:'partner2@example.test',bio:'บัญชีตัวอย่างสำหรับตรวจสิทธิ์รายดีล'},
   };
-  const defaults = {theme: 'light', period: 'auto', custom: null, mode: 'combined', type: 'loan', home: 'overview', reminders: true, digest: false, sound: false, birthday: false, profile: {}};
+  const defaults = {theme: 'light', period: '24', custom: null, mode: 'combined', type: 'loan', home: 'overview', reminders: true, digest: false, sound: false, birthday: false, profile: {}};
   const pages = {overview: ['ภาพรวม', 'overview'], lending: ['ปล่อยกู้ / ขายฝาก', 'layers'], investments: ['ลงทุนที่ดิน','trend'], profile: ['โปรไฟล์', 'user']};
   const shapes = {
     ai: '<path d="M2 14l8-8 6 6M6 11v8h9v-4M18.5 2v7M15 5.5h7M19.5 12v5m-2.5-2.5h5"/><path d="M3 22h16"/>',
@@ -69,18 +69,21 @@
   const sessions = {};
   let account = read('session');
   if (!Object.hasOwn(accounts, account)) account = account === 'signed-out' ? null : 'portfolio';
-  const load = key => sessions[key] ??= {...defaults, ...read(key)};
+  const load = key => {
+    const saved = sessions[key] ??= {...defaults, ...read(key)};
+    if (saved.period === 'auto') saved.period = defaults.period;
+    return saved;
+  };
   let pref = account ? load(account) : {...defaults};
   let page = 'overview';
   let statusFilter = 'all';
   let lookup = '';
   let animation;
+  let rangeFlip;
   let resizeTimer;
   let dialogType;
   let dialogReturn;
   const width = () => document.documentElement.clientWidth;
-  const autoPeriod = () => width() < 640 ? 3 : width() < 1150 ? 6 : 12;
-  const density = () => width() < 420 ? 4 : width() < 640 ? 6 : width() < 1150 ? 8 : 12;
   const route = () => {
     const target = location.hash.slice(1);
     if (target === 'hero') return 'hero';
@@ -94,7 +97,7 @@
   };
   function range() {
     if (pref.period === 'custom' && pref.custom) return pref.custom;
-    const months = pref.period === 'auto' ? autoPeriod() : Number(pref.period);
+    const months = Number(pref.period) || Number(defaults.period);
     return {start: d.month(d.asOf, 1 - months), end: d.asOf};
   }
   const safeImage = value => typeof value === 'string' && /^data:image\/(?:jpeg|webp|png);base64,[A-Za-z0-9+/=]+$/.test(value) ? value : '';
@@ -144,22 +147,19 @@
   }
   const rangeCaption = r => d.formatDate(r.start) + ' – ' + d.formatDate(r.end);
   function chartControls(r) {
-    const selected = pref.period === 'auto' ? String(autoPeriod()) : pref.period;
     return '<div class="range-tools"><button class="control date-button' + (pref.period === 'custom' ? ' chosen' : '') +
       '" type="button" data-action="dates" aria-label="เลือกช่วงวันที่">' + icon('calendar', 17) + '<span>' + rangeCaption(r) + '</span></button>' +
-      '<div class="segments ranges" role="group" aria-label="ช่วงเวลาวิเคราะห์">' + [3,6,12].map(n =>
-        '<button type="button" id="period-' + n + '" data-period="' + n + '" aria-pressed="' + (selected === String(n)) + '">' + n + ' เดือน</button>').join('') +
+      '<div class="segments ranges" role="group" aria-label="ช่วงเวลาวิเคราะห์">' + [24,12,6,3].map(n =>
+        '<button type="button" id="period-' + n + '" data-period="' + n + '" aria-pressed="' + (pref.period === String(n)) + '">' + n + ' เดือน</button>').join('') +
       '</div></div>';
   }
 
   function dashboard() {
     const r = range();
     const latest = xp.contracts();
-    const historical = xp.contracts(r.end);
     const monthly = d.totals(d.month(d.asOf),d.asOf,xp.scope());
     const active = latest.filter(c => c.balance > 0);
     const actions = latest.filter(c => c.status === 'overdue' || c.status === 'soon');
-    const flow = d.totals(r.start,r.end,xp.scope());
     const overdue = actions.filter(c => c.status === 'overdue').length;
     const status = overdue > 0 ? '<button class="attention" data-action="alerts" type="button">' + icon('alert', 16) +
       '<span><strong>' + overdue + ' สัญญาเกินกำหนด</strong> <span class="attention-extra">· ติดตามในคิวงาน</span></span>' + icon('right', 14) + '</button>' : '';
@@ -169,31 +169,37 @@
       {title:'เงินไหลออกเดือนนี้', value:monthly.expense, foot:'ยอดจ่าย ต.ค. 2569', glyph:'out', tone:'pink', money:true},
       {title:'หลักประกันสินเชื่อ', value:d.sum(active.filter(c=>c.type==='loan'),'appraisal'), foot:'ราคาประเมินของสัญญาปล่อยกู้', glyph:'layers', tone:'blue', money:true},
     ];
-    const dataButton = kind => '<button type="button" class="subtle text-data" data-table="' + kind + '" aria-label="ดูตาราง' +
-      (kind === 'cash' ? 'กระแสเงินสด' : 'แนวโน้มพอร์ต') + '">' + icon('file', 15) + '<span>ข้อมูล</span></button>';
     return '<section class="intro overview-intro"><div><h1>ภาพรวมธุรกิจ</h1><p>พอร์ตสินเชื่อ ขายฝาก และกระแสเงินสด</p></div><span class="as-of">' + icon('clock', 15) +
       ' ข้อมูล ณ ' + d.formatDate(d.asOf) + '</span></section>' +
       '<section class="kpis" aria-label="ตัวชี้วัดภาพรวม ณ วันที่สรุป">' + cards.map(kpi).join('') + '</section>' + status +
       '<section class="analytics" aria-labelledby="analytics-title"><div class="analytics-head"><div><h2 id="analytics-title">วิเคราะห์พอร์ต</h2><p class="range-help">ช่วงเวลาสำหรับกราฟกระแสเงินสด สถานะสัญญา และแนวโน้ม</p><p class="range-mobile">' +
       rangeCaption(r) + '</p></div>' + chartControls(r) + '</div>' +
-      '<div class="analytics-grid"><article class="card panel cash">' + cardHead('กระแสเงินสด', pref.mode === 'combined' ? 'เงินเข้าด้านบน · เงินออกด้านล่าง · บาท' : 'รับ จ่าย และยอดสุทธิ · หน่วยบาท', 'chart', 'purple',
-      '<div class="head-actions">' + dataButton('cash') + '<button class="subtle mode-button" type="button" data-action="mode" aria-label="สลับเป็น' +
-      (pref.mode === 'combined' ? 'กราฟเส้น' : 'กราฟผสม') + '" id="mode">' + icon(pref.mode === 'combined' ? 'chart' : 'trend', 16) +
-      '<span>' + (pref.mode === 'combined' ? 'กราฟผสม' : 'กราฟเส้น') + '</span>' + icon('chevron', 12) + '</button></div>') +
-      charts.legend(['income','expense','net'], pref.mode) + '<div class="chart-host" id="cash-chart"></div>' +
-      '<div class="chart-summary"><span>รับรวม <b>' + d.baht(flow.income) + '</b></span><span>จ่ายรวม <b>' + d.baht(flow.expense) + '</b></span><span>สุทธิ <b class="' +
-      (flow.net < 0 ? 'risk-text' : 'gain-text') + '">' + charts.amount(flow.net,'net') + '</b></span></div></article>' +
-      '<article class="card panel composition">' + cardHead('สัดส่วนสถานะสัญญา', 'จำนวนตามสถานะ ณ ' + d.formatDate(r.end), 'ring', 'cyan') +
-      '<div class="donut-host" id="donut-chart"></div><p class="panel-note">นับสัญญาที่เริ่มแล้ว ณ วันสิ้นสุดช่วง · ใกล้ครบกำหนดภายใน 15 วัน</p></article>' +
-      '<article class="card panel trend">' + cardHead('แนวโน้มเงินต้นคงค้าง', 'ยอดคงเหลือ ณ วันสิ้นสุดแต่ละช่วง · หน่วยบาท', 'trend', 'purple', dataButton('trend')) +
-      '<div class="trend-stat"><strong>' + d.baht(d.sum(historical,'balance')) + '</strong><span>ณ ' + d.formatDate(r.end) + '</span></div>' +
-      '<div class="chart-host" id="trend-chart"></div></article>' +
+      '<div class="analytics-grid">' + rangeCards(r) +
       '<article class="card panel queue" id="queue" tabindex="-1">' + cardHead('สัญญาที่ต้องติดตาม', actions.length + ' สัญญา ณ ' + d.formatDate(d.asOf), 'calendar', 'amber',
       '<a class="subtle text-data" href="#lending">ดูสัญญา ' + icon('arrow', 15) + '</a>') + queueMarkup(actions) + '</article></div></section>' +
       '<section class="insight-grid" aria-label="ตัวชี้วัดความเสี่ยง">' +
       '<article class="card insight">' + disk('percent','blue') + '<div><h2>สัดส่วนหนี้ต่อหลักประกัน (LTV)</h2><p>เฉพาะปล่อยกู้ · เงินต้นคงค้าง ÷ ราคาประเมิน</p></div><strong>' + d.ratioText(d.ratio(latest)) + '</strong></article>' +
       '<article class="card insight">' + disk('alert','pink') + '<div><h2>เงินต้นของสัญญาเกินกำหนด</h2><p>เงินต้นคงค้างของสัญญาค้างติดตาม</p></div><strong>' +
       d.baht(d.sum(actions.filter(c => c.status === 'overdue'), 'balance')) + '</strong></article></section>';
+  }
+
+  function rangeCards(r) {
+    const historical = xp.contracts(r.end);
+    const flow = d.totals(r.start,r.end,xp.scope());
+    const dataButton = kind => '<button type="button" class="subtle text-data" data-table="' + kind + '" aria-label="ดูตาราง' +
+      (kind === 'cash' ? 'กระแสเงินสด' : 'แนวโน้มพอร์ต') + '">' + icon('file', 15) + '<span>ข้อมูล</span></button>';
+    return '<article class="card panel cash" data-range-card>' + cardHead('กระแสเงินสด', pref.mode === 'combined' ? 'เงินเข้าด้านบน · เงินออกด้านล่าง · บาท' : 'รับ จ่าย และยอดสุทธิ · หน่วยบาท', 'chart', 'purple',
+      '<div class="head-actions">' + dataButton('cash') + '<button class="subtle mode-button" type="button" data-action="mode" aria-label="สลับเป็น' +
+      (pref.mode === 'combined' ? 'กราฟเส้น' : 'กราฟผสม') + '" id="mode">' + icon(pref.mode === 'combined' ? 'chart' : 'trend', 16) +
+      '<span>' + (pref.mode === 'combined' ? 'กราฟผสม' : 'กราฟเส้น') + '</span>' + icon('chevron', 12) + '</button></div>') +
+      charts.legend(['income','expense','net'], pref.mode) + '<div class="chart-host" id="cash-chart"></div>' +
+      '<div class="chart-summary"><span>รับรวม <b>' + d.baht(flow.income) + '</b></span><span>จ่ายรวม <b>' + d.baht(flow.expense) + '</b></span><span>สุทธิ <b class="' +
+      (flow.net < 0 ? 'risk-text' : 'gain-text') + '">' + charts.amount(flow.net,'net') + '</b></span></div></article>' +
+      '<article class="card panel composition" data-range-card>' + cardHead('สัดส่วนสถานะสัญญา', 'จำนวนตามสถานะ ณ ' + d.formatDate(r.end), 'ring', 'cyan') +
+      '<div class="donut-host" id="donut-chart"></div><p class="panel-note">นับสัญญาที่เริ่มแล้ว ณ วันสิ้นสุดช่วง · ใกล้ครบกำหนดภายใน 15 วัน</p></article>' +
+      '<article class="card panel trend" data-range-card>' + cardHead('แนวโน้มเงินต้นคงค้าง', 'ยอดคงเหลือ ณ วันสิ้นสุดแต่ละช่วง · หน่วยบาท', 'trend', 'purple', dataButton('trend')) +
+      '<div class="trend-stat"><strong>' + d.baht(d.sum(historical,'balance')) + '</strong><span>ณ ' + d.formatDate(r.end) + '</span></div>' +
+      '<div class="chart-host" id="trend-chart"></div></article>';
   }
 
   const statusPill = c => '<span class="status ' + d.groupTone[c.status] + '">' + d.statusName[c.status] + '</span>';
@@ -271,7 +277,7 @@
       '<div class="form-footer"><button class="primary" type="submit">บันทึกโปรไฟล์</button></div></form></article>' +
       '<article class="card panel">' + cardHead('การตั้งค่าพื้นที่ทำงาน','บันทึกแยกตามบัญชีในเบราว์เซอร์นี้','globe','cyan') +
       '<form id="prefs-form" class="editor"><div class="form-grid"><label>ธีม<select name="theme">' + choose(themeOptions, pref.theme) +
-      '</select></label><label>ช่วงเวลากราฟ<select name="period">' + choose('<option value="auto">อัตโนมัติตามหน้าจอ</option><option value="3">3 เดือน</option><option value="6">6 เดือน</option><option value="12">12 เดือน</option>' +
+      '</select></label><label>ช่วงเวลากราฟ<select name="period">' + choose('<option value="24">24 เดือน (ค่าเริ่มต้น)</option><option value="12">12 เดือน</option><option value="6">6 เดือน</option><option value="3">3 เดือน</option>' +
       (pref.custom ? '<option value="custom">ช่วงวันที่ที่บันทึกไว้</option>' : ''), pref.period) + '</select></label><label>รูปแบบกราฟ<select name="mode">' +
       choose('<option value="combined">ผสมแท่งและเส้น</option><option value="lines">เส้น</option>',pref.mode) + '</select></label><label>หน้าเริ่มต้น<select name="home">' +
       choose('<option value="overview">ภาพรวม</option><option value="lending">ปล่อยกู้ / ขายฝาก</option><option value="profile">โปรไฟล์</option>',pref.home) +
@@ -292,6 +298,7 @@
 
   function render(focusId) {
     animation?.cancel();
+    cancelRangeFlip();
     const currentTheme = account ? pref.theme : 'light';
     document.documentElement.dataset.theme = currentTheme;
     page = route();
@@ -315,11 +322,73 @@
     const r = range();
     const cash = document.querySelector('#cash-chart');
     if (!cash) return;
-    charts.draw(cash, r, 'cash', pref.mode,density(),xp.scope());
-    charts.draw(document.querySelector('#trend-chart'), r, 'trend', pref.mode,density(),xp.scope());
+    charts.draw(cash, r, 'cash', pref.mode,xp.scope());
+    charts.draw(document.querySelector('#trend-chart'), r, 'trend', pref.mode,xp.scope());
     const rows = xp.contracts(r.end);
     charts.donut(document.querySelector('#donut-chart'), Object.entries(d.statusName).map(([key,name]) =>
       ({name, tone:d.groupTone[key], value:rows.filter(c=>c.status===key).length})),r.end);
+  }
+
+  function cancelRangeFlip() {
+    if (!rangeFlip) return;
+    const {cards, animations} = rangeFlip;
+    rangeFlip = undefined;
+    animations.forEach(item => item.cancel());
+    cards.forEach(card => { card.inert = false; });
+  }
+
+  function changeRange(patch, focus) {
+    const before = range();
+    settings(patch);
+    const next = range();
+    const date = root.querySelector('[data-action="dates"]');
+    date.querySelector('span').textContent = rangeCaption(next);
+    date.classList.toggle('chosen', pref.period === 'custom');
+    root.querySelector('.range-mobile').textContent = rangeCaption(next);
+    root.querySelectorAll('[data-period]').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.period === pref.period));
+    });
+    focus.focus({preventScroll:true});
+    if (before.start === next.start && before.end === next.end) return;
+
+    const cards = [...root.querySelectorAll('[data-range-card]')];
+    const swapCards = () => {
+      const template = document.createElement('template');
+      template.innerHTML = rangeCards(next);
+      const replacements = [...template.content.children];
+      cards.forEach((card, index) => card.replaceWith(replacements[index]));
+      renderCharts();
+      return replacements;
+    };
+
+    const interrupted = Boolean(rangeFlip);
+    cancelRangeFlip();
+    if (interrupted || matchMedia('(prefers-reduced-motion: reduce)').matches || !cards[0]?.animate) {
+      swapCards();
+      return;
+    }
+    const threeD = CSS.supports('perspective', '1000px');
+    const pose = (degrees, opacity) => ({opacity, transform:threeD ?
+      'perspective(1200px) rotateY(' + degrees + 'deg) scale(' + (degrees ? '.985' : '1') + ')' : 'none'});
+    const play = (targets, keyframes, easing, fill) => targets.map(card => {
+      card.inert = true;
+      return card.animate(keyframes, {duration:175,easing,fill});
+    });
+    const turn = {cards, animations:play(cards,[pose(0,1),pose(-72,.22)],'cubic-bezier(.45,0,.55,1)','forwards')};
+    rangeFlip = turn;
+    const after = callback => Promise.all(turn.animations.map(item => item.finished)).then(() => {
+      if (rangeFlip === turn) callback();
+    }, () => {});
+    after(() => {
+      turn.cards = swapCards();
+      const layoutWidth = width();
+      turn.animations.forEach(item => item.cancel());
+      turn.animations = play(turn.cards,[pose(72,.22),pose(0,1)],'cubic-bezier(.22,.61,.36,1)','none');
+      after(() => {
+        cancelRangeFlip();
+        if (width() !== layoutWidth) renderCharts();
+      });
+    });
   }
 
   function showDialog(title, content, type) {
@@ -343,13 +412,13 @@
       rangeCaption({start:d.first,end:d.asOf}) + '</p><div class="form-grid"><label>วันที่เริ่มต้น<input type="date" name="start" min="' + d.first +
       '" max="' + d.asOf + '" value="' + r.start + '" required></label><label>วันที่สิ้นสุด<input type="date" name="end" min="' + d.first +
       '" max="' + d.asOf + '" value="' + r.end + '" required></label></div><p id="date-error" class="risk-text" role="alert"></p>' +
-      '<div class="form-footer"><button class="control" data-action="date-auto" type="button">ใช้ค่าอัตโนมัติ</button><button class="primary" type="submit">ใช้ช่วงวันที่</button></div></form>', 'dates');
+      '<div class="form-footer"><button class="control" data-action="date-auto" type="button">กลับไป 24 เดือน</button><button class="primary" type="submit">ใช้ช่วงวันที่</button></div></form>', 'dates');
   }
   function dataTable(kind) {
     const r = range();
     const isFlow = kind === 'cash';
     const keys = isFlow ? ['income','expense','net'] : ['balance'];
-    const rows = d.periods(r,12,xp.scope());
+    const rows = d.periods(r,24,xp.scope());
     showDialog(isFlow ? 'ข้อมูลกระแสเงินสด' : 'ข้อมูลแนวโน้มเงินต้นคงค้าง', '<div class="table-wrap"><table class="data-table"><caption>' +
       rangeCaption(r) + ' · รายเดือน · บาท</caption><thead><tr><th scope="col">ช่วง</th>' + keys.map(k=>'<th scope="col">' + charts.label[k] + '</th>').join('') +
       '</tr></thead><tbody>' + rows.map(row => '<tr><th scope="row">' + row.title + '</th>' + keys.map(k=>'<td>' + charts.amount(row[k],k) +
@@ -497,7 +566,7 @@
     const {action, period, type, table, contract: id, account: choice, reset} = btn.dataset;
     if (choice) { activateAccount(choice); return; }
     if (!account) return;
-    if (period) { settings({period}); render(btn.id); return; }
+    if (period) { changeRange({period},btn); return; }
     if (type) { flip(type); return; }
     if (table) { dataTable(table); return; }
     if (id) { contract(id); return; }
@@ -525,10 +594,8 @@
       case 'alerts': toQueue(); break;
       case 'dates': dateDialog(); break;
       case 'date-auto':
-        settings({period:'auto'});
         dialog.close();
-        render();
-        root.querySelector('[data-action="dates"]').focus();
+        changeRange({period:defaults.period},root.querySelector('[data-action="dates"]'));
         break;
       case 'mode': settings({mode:pref.mode === 'combined' ? 'lines' : 'combined'}); render('mode'); break;
       case 'search': globalSearch(); break;
@@ -580,10 +647,8 @@
         form.elements.end.focus();
         return;
       }
-      settings({period:'custom', custom:{start,end}});
       dialog.close();
-      render();
-      root.querySelector('[data-action="dates"]').focus();
+      changeRange({period:'custom',custom:{start,end}},root.querySelector('[data-action="dates"]'));
     }
     if (form.id === 'profile-form') {
       const cleaned = Object.fromEntries(Object.entries(values).map(([key,value])=>[key,value.trim()]));
@@ -625,11 +690,8 @@
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       if (width() === lastWidth) return;
-      const previous = lastWidth < 640 ? 3 : lastWidth < 1150 ? 6 : 12;
       lastWidth = width();
-      if (page !== 'overview' || !account) return;
-      if (pref.period === 'auto' && previous !== autoPeriod()) render(document.activeElement?.id);
-      else renderCharts();
+      if (page === 'overview' && account && !rangeFlip) renderCharts();
     }, 130);
   });
   const xp = window.createEstateExperience({icon,escape,read,write,notice,open:showDialog,person,settings,render,
