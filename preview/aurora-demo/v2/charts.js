@@ -2,6 +2,9 @@ window.EstateCharts = (() => {
   const d = window.EstateData;
   const label = {income: 'เงินไหลเข้า', expense: 'เงินไหลออก', net: 'เงินสดสุทธิ', balance: 'เงินต้นคงค้าง'};
   const tones = {income: 'cyan', expense: 'pink', net: 'purple', balance: 'purple'};
+  const barStops = Array.from({length:20}, (_,index) =>
+    '<stop offset="' + (index * 100 / 19).toFixed(3) + '%" stop-opacity="' + ((index + 1) * 5 / 100) + '"/>'
+  ).join('');
   const amount = (n, key) => (n < 0 ? '−' : key === 'net' && n > 0 ? '+' : '') + d.baht(Math.abs(n));
   const legendMark = (tone, line = false) => '<i class="swatch ' + tone + (line ? ' line' : '') + '" aria-hidden="true"></i>';
   const legend = (keys, mode) => '<div class="legend">' + keys.map(k => '<span>' + legendMark(tones[k], k === 'net' || k === 'balance' || mode === 'lines') + label[k] + '</span>').join('') + '</div>';
@@ -78,7 +81,7 @@ window.EstateCharts = (() => {
       const up = key === 'income';
       return '<linearGradient id="' + kind + '-' + key + '" class="cash-bar-gradient ' + tones[key] +
         '" x1="0" x2="0" y1="' + (up ? 1 : 0) + '" y2="' + (up ? 0 : 1) + '" gradientUnits="objectBoundingBox">' +
-        '<stop class="bar-base"/><stop offset="47%" class="bar-middle"/><stop offset="100%" class="bar-tip"/></linearGradient>';
+        barStops + '</linearGradient>';
     }).join('') : '';
     const grids = scale.ticks.map(t => '<line x1="' + left + '" x2="' + right + '" y1="' + y(t) + '" y2="' + y(t) + '" class="' + (t === 0 ? 'axis-zero' : 'axis-grid') + '"/><text class="axis-label" x="' + (left - 9) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + tickText(t) + '</text>').join('');
     const axisLabels = rows.map((row, i) => i % labelFreq === 0 || (i === rows.length - 1 && rows.length % labelFreq === 0 && cell > 39)
