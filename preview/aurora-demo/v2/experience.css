@@ -14,7 +14,8 @@
 .v2-ai-launch:hover{background:var(--wash)}
 .v2-ai-launch svg{width:19px;height:19px}
 .workspace{padding-bottom:max(148px,calc(144px + env(safe-area-inset-bottom)))}
-.v2-chat{display:grid;gap:12px}
+dialog[data-kind="v2-chat"]{width:min(calc(100% - 20px),460px);max-height:calc(100dvh - 20px)}
+.v2-chat{display:grid;gap:8px}
 .v2-chat-note{font-size:12px;color:var(--muted)}
 .v2-chat-scope{display:grid;gap:4px;font-size:12px;color:var(--muted)}
 .v2-chat-scope select,.v2-chat-input input{
@@ -23,10 +24,11 @@
 }
 .v2-chat-log{
   display:flex;flex-direction:column;gap:8px;align-items:flex-start;
-  max-height:36dvh;min-height:90px;overflow:auto;overscroll-behavior:contain;
+  height:clamp(110px,34dvh,298px);overflow:auto;overscroll-behavior:contain;
   border:1px solid var(--border);border-radius:12px;padding:9px;background:var(--wash)
 }
-.v2-message{max-width:96%;border-radius:11px;padding:8px 10px;font-size:13px;overflow-wrap:anywhere}
+.v2-message{flex:none;max-width:94%;border-radius:11px;padding:8px 10px;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.v2-message p{white-space:pre-line}
 .v2-message.estate{background:var(--paper);border:1px solid var(--border)}
 .v2-message.me{align-self:flex-end;background:var(--purple-bg);color:var(--ink)}
 .v2-message.estate strong{font-size:11px;color:var(--accent)}
@@ -34,8 +36,13 @@
 .v2-message a{color:var(--accent);font-weight:600}
 .v2-message small{color:var(--muted)}
 .v2-chat-input{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+.v2-chat-input input{font-size:16px}
+.v2-suggestions summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--accent);padding:3px 0}
+.v2-suggestions[open] summary{margin-bottom:5px}
 .v2-prompts{display:flex;flex-wrap:wrap;gap:6px}
 .v2-prompts .control{padding-inline:8px;font-size:11px}
+.shortcut-contracts{display:grid;gap:7px}
+.shortcut-contracts .control{justify-content:flex-start;text-align:start}
 .v2-workflows{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:9px}
 .v2-workflows h2,.v2-invest h2{font-size:18px;line-height:1.2}
 .v2-workflows p,.v2-invest p{font-size:12px;margin-top:3px}

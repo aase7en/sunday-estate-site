@@ -128,9 +128,13 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .icon-button:hover,.profile-link:hover{background:var(--wash);color:var(--accent)}
 .notification-dot{position:absolute;top:9px;right:9px;width:7px;height:7px;background:var(--pink-lo);border-radius:50%;box-shadow:0 0 0 2px var(--paper)}
 .avatar{display:grid;place-items:center;width:31px;height:31px;flex:0 0 31px;border-radius:50%;overflow:hidden;color:white;background:linear-gradient(145deg,#a280e8,#6440ad);font-weight:700;font-size:11px}
-.bottom-nav{position:fixed;z-index:6;bottom:0;inset-inline:0;display:flex;gap:5px;justify-content:space-around;padding:5px 6px max(5px,env(safe-area-inset-bottom));background:var(--chrome);backdrop-filter:blur(18px);border-top:1px solid var(--border);box-shadow:0 -4px 18px #0805180d}
-.bottom-nav a{flex:1;display:grid;justify-items:center;align-content:center;gap:2px;min-height:51px;border-radius:11px;font-size:11px;color:var(--muted)}
+.bottom-nav{position:fixed;z-index:6;bottom:0;inset-inline:0;display:grid;grid-template-columns:minmax(0,1fr) 60px minmax(0,1fr);gap:4px;padding:5px 6px max(5px,env(safe-area-inset-bottom));background:var(--chrome);backdrop-filter:blur(18px);border-top:1px solid var(--border);box-shadow:0 -4px 18px #0805180d}
+.nav-rail{display:flex;gap:3px;min-width:0}
+.nav-rail a{flex:1;min-width:0;display:grid;justify-items:center;align-content:center;gap:2px;min-height:51px;border-radius:11px;padding:0 2px;text-align:center;font-size:clamp(9px,2.7vw,11px);line-height:1.25;color:var(--muted)}
 .bottom-nav a[aria-current]{color:var(--nav-active-ink);background:var(--nav-active-fill);font-weight:700}
+.nav-shortcut{min-width:60px;min-height:51px;display:grid;align-content:end;justify-items:center;gap:2px;margin-top:-18px;padding:0 0 3px;border:0;background:none;color:var(--accent);font-size:10px;font-weight:700;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.nav-shortcut i{display:grid;place-items:center;width:48px;height:48px;border:2px solid var(--paper);border-radius:50%;background:var(--primary);color:white;box-shadow:0 5px 13px #6236bd57,inset 0 1px 2px #ffffff72}
+[data-theme="dark"] .nav-shortcut i{background:linear-gradient(150deg,#664c31,#352945 72%);color:#ffdfaa;box-shadow:0 5px 13px #04081880,inset 0 1px 2px #ffe3b25c}
 .workspace{width:min(100%,1470px);margin:auto;padding:13px 12px 84px;display:grid;gap:13px}
 .workspace:focus{outline:none}
 .module-intro{position:relative;isolation:isolate;display:grid;align-items:center;min-height:144px;padding:12px 0}

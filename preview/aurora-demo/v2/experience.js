@@ -115,8 +115,8 @@ window.createEstateExperience = api => {
   }
   function paymentForm(id) {
     if (!staff()) return;
-    const c = lookup(id) || contracts().find(row=>row.type === 'loan' && row.balance > 0);
-    if (!c) return;
+    const c = id ? lookup(id) : contracts().find(row=>row.type === 'loan' && row.balance > 0);
+    if (!c || c.type !== 'loan') return;
     sound();
     const remaining = c.balance - d.sum(readList('demo-payments').filter(receipt => receipt.contract === c.id),'amount');
     if (remaining <= 0) { notice('สัญญานี้ปิดยอดในพื้นที่ทดลองแล้ว'); return; }
@@ -130,7 +130,7 @@ window.createEstateExperience = api => {
   function submitPayment(form,values) {
     if (!staff() || payInProgress || attempted.has(form.dataset.request)) return;
     const c = lookup(form.dataset.contractId);
-    if (!c) return;
+    if (!c || c.type !== 'loan') return;
     const previous = readList('demo-payments');
     const cents = Math.round(Number(values.amount)*100);
     const left = c.balance * 100 - Math.round(d.sum(previous.filter(item => item.contract === c.id),'amount')*100);
@@ -151,12 +151,33 @@ window.createEstateExperience = api => {
   }
   function receiptView() {
     if (!staff()) return;
-    const r = readList('demo-payments').at(-1);
+    const r = readList('demo-payments').findLast(row=>lookup(row.contract));
     if (!r) return;
     open('ใบรับชำระตัวอย่าง','<dl class="details"><div><dt>เลขที่</dt><dd>' + r.id + '</dd></div><div><dt>สัญญา</dt><dd>' + r.contract +
       '</dd></div><div><dt>ยอดที่รับ</dt><dd>' + baht(r.amount) + '</dd></div><div><dt>วันที่บันทึก</dt><dd>' +
       new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(r.timestamp)) +
       '</dd></div></dl>','v2-receipt');
+  }
+
+  function paymentShortcut() {
+    if (!staff() && actor() !== 'client') return;
+    const candidates = contracts().filter(c=>c.balance > 0 && (!staff() || c.type === 'loan'));
+    open(staff() ? 'เลือกรายการรับชำระ' : 'ชำระเงินตามสัญญา',
+      '<div class="editor"><p class="muted">' + (staff() ? 'เลือกสัญญาสินเชื่อเพื่อทดลองบันทึกรับชำระ' :
+        'เลือกสัญญาเพื่อดูยอดตามข้อมูลจำลอง เดโมยังไม่มีช่องทางจ่ายเงินจริง') +
+      '</p><div class="shortcut-contracts">' + (candidates.map(c=>btn((staff() ? 'payment:' : 'pay-preview:') + c.id,
+        c.id + ' · ' + escape(c.property) + ' · ' + d.labels[c.type])).join('') || '<p>ไม่มีสัญญาที่มียอดคงเหลือ</p>') + '</div></div>','payment-shortcut');
+  }
+
+  function paymentPreview(id) {
+    if (actor() !== 'client') return;
+    const c = lookup(id);
+    if (!c || c.balance <= 0) return;
+    open('ยอดตามสัญญา '+c.id,'<div class="editor"><p class="muted">ข้อมูลจำลอง · ณ '+d.formatDate(d.asOf)+'</p>' +
+      '<dl class="details"><div><dt>'+loanLabel(c)+'</dt><dd>'+baht(balance(c))+'</dd></div>' +
+      '<div><dt>กำหนดตามสัญญา</dt><dd>'+d.formatDate(c.due)+'</dd></div></dl>' +
+      '<p>ตรวจยอดที่ต้องชำระและช่องทางกับทีมดูแลสัญญาก่อนโอน</p>' +
+      '<button class="control" type="button" data-contract="'+c.id+'">ดูรายละเอียดสัญญา</button></div>','pay-preview');
   }
 
   const questions = {
@@ -165,7 +186,7 @@ window.createEstateExperience = api => {
       ['due','ใกล้ครบกำหนดหรือยัง'],['contact','ติดต่อทีมดูแล'],
     ],
     staff: [['due','สัญญาใกล้ครบกำหนด'],['arrears','สัญญาที่เกินกำหนด'],['cost','รายจ่ายรอตรวจ'],
-      ['balance','ยอดเงินต้นคงค้าง'],['contact','ขั้นตอนติดต่อทีมดูแล']],
+      ['balance','ยอดเงินต้นคงค้าง'],['deals','ดีลและโฉนด']],
     partner: [['ownAmount','ยอดลงทุนของฉัน'],['ownShare','สัดส่วนของฉันในแต่ละดีล'],['ownReturns','ส่วนแบ่งของฉัน'],['contact','ติดต่อทีมดูแล']],
   };
   const general = [['generalRedemption','ขายฝากและสินไถ่คืออะไร'],['generalDue','ต้องเตรียมอะไรเมื่อถึงกำหนด']];
@@ -176,19 +197,19 @@ window.createEstateExperience = api => {
       ['installments', /งวด|installment/i], ['arrears', /ค้างชำระ|ค้างจ่าย|เกินกำหนด|overdue/i],
       ['due', /ครบกำหนด|วันไถ่|due date/i], ['cost', /รายจ่าย|ค่าใช้จ่าย/],
       ['ownReturns', /ส่วนแบ่ง|ผลตอบแทน/], ['ownShare', /เปอร์เซ็นต์|สัดส่วน/],
-      ['ownAmount', /ลงทุน/], ['contact', /ติดต่อ|เบอร์/], ['balance', /ยอด|หนี้|สินไถ่|balance/i],
+      ['deals', /โฉนด|ดีล|INV-/i], ['ownAmount', /ลงทุน/], ['contact', /ติดต่อ|เบอร์/], ['balance', /ยอด|หนี้|สินไถ่|balance/i],
     ];
     return patterns.find(([,pattern])=>pattern.test(text))?.[0];
   }
-  function answer(topic,id) {
+  function answer(topic,id,dealCodes) {
     const role = actor();
     if (topic === 'generalRedemption') return {text:'ขายฝากเป็นนิติกรรมที่สงวนสิทธิไถ่ตามเงื่อนไข สินไถ่คือจำนวนสำหรับใช้สิทธิไถ่ ตรวจยอดและวันจากสัญญาของคุณ',
       link:'https://www.dol.go.th/dol-services/public-service-manual/citizen-guide/', label:'คู่มือกรมที่ดิน'};
     if (topic === 'generalDue') return {text:'เปิดสัญญาและตรวจวันครบกำหนด ยอดตามเอกสาร และหลักฐานชำระรายการก่อนหน้า หากต้องนัดหมายหรือยอดไม่ชัด ให้ติดต่อทีมดูแลจากหน้าสัญญา'};
-    if (!questions[role].some(([allowed]) => allowed === topic)) return {text:'เลือกคำถามที่ตรงกับข้อมูลในบัญชีของคุณ หรือถามเรื่องทั่วไป เช่น “ขายฝากคืออะไร”'};
+    if (!questions[role].some(([allowed]) => allowed === topic) && !(role === 'staff' && topic === 'contact')) return {text:'เลือกคำถามที่ตรงกับข้อมูลในบัญชีของคุณ หรือถามเรื่องทั่วไป เช่น “ขายฝากคืออะไร”'};
     if (topic === 'contact') return {text:contact};
     if (role === 'partner') {
-      const rows = investments().flatMap(deal => deal.allocations
+      const rows = investments().filter(deal=>!dealCodes.length || dealCodes.includes(deal.id.toUpperCase())).flatMap(deal => deal.allocations
         .filter(row=>row.person === api.account()).map(row=>({...row,deal:deal.name})));
       if (!rows.length) return {text:'บัญชีนี้ยังไม่มีข้อมูลดีลที่ได้รับสิทธิ์'};
       const text = topic === 'ownAmount' ? 'ยอดลงเงินจริงรวม ' + baht(d.sum(rows,'paid')) :
@@ -200,7 +221,13 @@ window.createEstateExperience = api => {
     if (id && !c) return {text:'ไม่พบสัญญาในขอบเขตบัญชีนี้'};
     if (role === 'staff') {
       const rows = c ? [c] : contracts();
-      const text = topic === 'cost' ? 'รายจ่ายรอตรวจ ' + expenses().filter(item=>!item.confirmed && (!c || item.contract === c.id)).length + ' รายการ' :
+      if (topic === 'deals') {
+        const deals = investments().filter(deal=>!dealCodes.length || dealCodes.includes(deal.id.toUpperCase()));
+        const names = deals.slice(0,3).map(deal=>deal.name+' ('+deal.deeds.map(deed=>deed.name).join(', ')+')');
+        return {text:deals.length ? deals.length+' ดีล · '+deals.reduce((total,deal)=>total+deal.deeds.length,0)+' โฉนด\n'+names.join('\n') :
+          'ยังไม่มีดีลในขอบเขตบัญชีนี้',link:'#investments',label:'เปิดทะเบียนดีล'};
+      }
+      const text = topic === 'cost' ? 'รายจ่ายรอตรวจ ' + visibleExpenses(c?.id).filter(item=>!item.confirmed).length + ' รายการ' :
         topic === 'due' ? 'สัญญาใกล้ครบกำหนด ' + rows.filter(row=>row.status === 'soon').length + ' รายการ' :
           topic === 'arrears' ? 'สัญญาเกินกำหนด ' + rows.filter(row=>row.status === 'overdue').length + ' รายการ' :
             'เงินต้นคงค้าง ' + baht(d.sum(rows,'balance'));
@@ -210,7 +237,7 @@ window.createEstateExperience = api => {
     const text = topic === 'balance' ? loanLabel(c) + ' ' + baht(balance(c)) :
       topic === 'due' ? (c.type === 'redemption' ? 'กำหนดไถ่ ' : 'กำหนดสิ้นสุดสัญญา ') + d.formatDate(c.due) :
         c.type === 'redemption' ? 'สัญญาขายฝากตัวอย่างนี้ไม่มีตารางผ่อน เปิดดูวันไถ่และสินไถ่ได้จากรายละเอียด' :
-          topic === 'arrears' ? 'ยอดค้างตามตารางตัวอย่าง ' + baht(42000) :
+          topic === 'arrears' ? 'สัญญานี้ยังไม่มีข้อมูลยอดค้างรายงวดในเดโม ตรวจสอบกับทีมดูแลจากหน้าสัญญาได้' :
             'ชำระแล้ว ' + c.repayments.filter(row=>row.date<=d.asOf).length + ' งวดตามตารางตัวอย่าง';
     return {text,contract:c.id,label:'เปิดสัญญา'};
   }
@@ -219,11 +246,13 @@ window.createEstateExperience = api => {
     if (chatOwner !== api.account()) { chat = []; chatOwner = api.account(); }
     const role = actor();
     const choices = questions[role];
-    open('ผู้ช่วย Sunday Estate','<div class="v2-chat"><p class="v2-chat-note">ข้อมูลจำลอง · คำตอบตามสิทธิ์ของบัญชีที่กำลังทดลอง</p>' +
+    const access = admin() ? 'ทุกพอร์ตและทุกดีล' : staff() ? 'พอร์ตบริษัทและดีลที่บริษัทลงทุน' :
+      role === 'partner' ? 'เฉพาะส่วนลงทุนของคุณ' : 'เฉพาะสัญญาที่ผูกกับบัญชีคุณ';
+    open('ผู้ช่วย Sunday Estate','<div class="v2-chat"><p class="v2-chat-note">ข้อมูลจำลอง · '+access+'</p>' +
       (role === 'partner' ? '' : '<label class="v2-chat-scope">ขอบเขตข้อมูล<select id="v2-chat-scope">' +
       (staff() ? '<option value="">พอร์ตในขอบเขตบัญชี</option>' : '<option value="">เลือกสัญญาของคุณ</option>') + contractOptions() + '</select></label>') +
-      '<div class="v2-chat-log" aria-live="polite" role="log"></div><div class="v2-prompts" aria-label="คำถามแนะนำ">' +
-      [...choices, ...general.slice(0,choices.length < 5 ? 1 : 0)].map(([id,label])=>btn('ask:'+id,label)).join('') + '</div>' +
+      '<div class="v2-chat-log" aria-live="polite" role="log"></div><details class="v2-suggestions" open><summary>คำถามแนะนำ</summary><div class="v2-prompts">' +
+      [...choices, ...general.slice(0,choices.length < 5 ? 1 : 0)].map(([id,label])=>btn('ask:'+id,label)).join('') + '</div></details>' +
       '<form class="v2-chat-input" id="v2-chat-form"><input name="message" type="text" maxlength="250" aria-label="พิมพ์คำถาม" placeholder="พิมพ์คำถาม…" required>' +
       '<button class="primary" type="submit">ส่ง</button></form></div>','v2-chat');
     if (role === 'client' && contracts().length) document.getElementById('v2-chat-scope').value = contracts()[0].id;
@@ -245,8 +274,11 @@ window.createEstateExperience = api => {
     const selected = document.getElementById('v2-chat-scope')?.value ?? '';
     const explicitIds = normalized.match(/\bSE-\d{4}\b/gi);
     const id = explicitIds ? explicitIds[0].toUpperCase() : selected;
+    const dealCodes = [...new Set(normalized.toUpperCase().match(/\bINV-[0-9A-F]{3,8}\b/g) ?? [])];
+    const detected = topic ?? topicFrom(normalized);
     const result = explicitIds?.some(code=>!lookup(code.toUpperCase())) ? {text:'ไม่พบสัญญาในขอบเขตบัญชีนี้'} :
-      answer(topic ?? topicFrom(normalized),id);
+      dealCodes.some(code=>!investments().some(deal=>deal.id.toUpperCase() === code)) ? {text:'ไม่พบดีลในขอบเขตบัญชีนี้'} :
+      answer(detected === 'deals' && actor() === 'partner' ? 'ownAmount' : detected,id,dealCodes);
     chat.push({question:normalized,...result});
     chat = chat.slice(-16);
     paintChat();
@@ -273,7 +305,7 @@ window.createEstateExperience = api => {
 
   function investments() {
     const deals = allDeals();
-    if (staff()) return admin() ? deals : deals.filter(deal=>deal.mode !== 'ส่วนบุคคล');
+    if (staff()) return admin() ? deals : deals.filter(deal=>deal.mode !== 'ส่วนบุคคล' && hasMember(deal,'company'));
     return deals.filter(deal => grants()[deal.id]?.includes(api.account()) && hasMember(deal,api.account()));
   }
 
@@ -642,6 +674,8 @@ window.createEstateExperience = api => {
       case 'ask': ask([...questions[actor()], ...general].find(([id])=>id === arg)?.[1] ?? '',arg); break;
       case 'dismiss': close(); break;
       case 'payment': paymentForm(arg); break;
+      case 'payment-shortcut': paymentShortcut(); break;
+      case 'pay-preview': paymentPreview(arg); break;
       case 'fill-balance': {
         const field = document.querySelector('#v2-payment [name="amount"]');
         field.value = field.max;

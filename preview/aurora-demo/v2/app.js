@@ -28,6 +28,7 @@
     in: '<path d="M12 3v12m-4-4 4 4 4-4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>',
     out: '<path d="M12 16V4m-4 4 4-4 4 4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>',
     wallet: '<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M21 10h-5a2.5 2.5 0 0 0 0 5h5m-5-2.5h.1M4 5l11-3"/>',
+    pay: '<rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M3 9.5h18M6.5 14.5h3m4.5 0 1.7 1.7 3.2-3.2"/>',
     chart: '<path d="M3 3v17h18M7 15v-4m4 4V7m4 8V9m4 6V5"/>',
     ring: '<path d="M11 3a9 9 0 1 0 10 10h-10V3Z"/><path d="M14 2.5V10h7.5A8 8 0 0 0 14 2.5Z"/>',
     trend: '<path d="m3 17 6-6 4 4 7-8m-5 0h5v5"/>',
@@ -129,6 +130,21 @@
   const buttonIcon = (id, symbol, label, extra = '') => '<button class="icon-button" type="button" data-action="' + id + '" title="' + label + '" aria-label="' + label + '">' + icon(symbol) + extra + '</button>';
   const navLinks = () => Object.entries(pages).filter(([key]) => xp.allowedRoute(key)).map(([key, [title, glyph]]) => '<a href="#' + key + '"' +
     (page === key ? ' aria-current="page"' : '') + '>' + icon(glyph) + '<span>' + title + '</span></a>').join('');
+  function mobileNav() {
+    const links = (keys) => keys.map(key => {
+      const [title,glyph] = pages[key];
+      return '<a href="#' + key + '"' + (page === key ? ' aria-current="page"' : '') + '>' + icon(glyph) +
+        '<span>' + (key === 'overview' && xp.actor() === 'client' ? 'สัญญาของฉัน' : title) + '</span></a>';
+    }).join('');
+    const rail = keys => '<div class="nav-rail">' + links(keys) + '</div>';
+    const role = xp.actor();
+    const staff = xp.staff();
+    const label = staff ? 'รับชำระ' : 'ชำระเงิน';
+    const shortcut = role === 'partner' ? '<a href="#investments" class="nav-shortcut"><i>' + icon('trend',25) + '</i><span>ดีลของฉัน</span></a>' :
+      '<button type="button" class="nav-shortcut" data-v2="payment-shortcut"><i>' + icon('pay',26) + '</i><span>' + label + '</span></button>';
+    return rail(staff ? ['overview','lending'] : ['overview']) + shortcut +
+      rail(staff ? ['investments','profile'] : ['profile']);
+  }
   function moduleHeader(module, {title, description, details = ''}) {
     const asset = 'assets/mastheads/' + module;
     return '<header class="module-intro" data-module="' + module + '"><picture class="module-art" aria-hidden="true">' +
@@ -153,7 +169,7 @@
       buttonIcon('theme', pref.theme === 'light' ? 'moon' : 'sun', pref.theme === 'light' ? 'เปลี่ยนเป็นธีมมืด' : 'เปลี่ยนเป็นธีมสว่าง') +
       '<a class="profile-link" href="#profile" aria-label="เปิดโปรไฟล์">' + avatar() + '</a></div></header>' +
       '<main class="workspace" id="workspace" tabindex="-1">' + content + '</main>' +
-      '<nav class="bottom-nav" aria-label="เมนูหลักบนมือถือ">' + navLinks() + '</nav>' + xp.launchers() + '</div>';
+      '<nav class="bottom-nav" aria-label="เมนูหลักบนมือถือ">' + mobileNav() + '</nav>' + xp.launchers() + '</div>';
   }
 
   function kpi({title, value, foot, glyph, tone, money = false}) {
@@ -605,6 +621,9 @@
   function activateAccount(key) {
     if (!Object.hasOwn(accounts, key) || key === account) { if (dialog.open) dialog.close(); return; }
     if (dialog.open) dialog.close();
+    clearTimeout(toastTimer);
+    toast.classList.remove('shown');
+    toast.textContent = '';
     account = key;
     pref = load(account);
     lookup = '';

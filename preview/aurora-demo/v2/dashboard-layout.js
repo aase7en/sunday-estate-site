@@ -28,7 +28,7 @@ window.EstateDashboardLayout = (() => {
     function openEditor(saved) {
       if (!active() || dialog.open) return;
       draft = normalize(saved);
-      open('จัดหน้า Dashboard','<div class="layout-editor"><p>ลากจากหูจับ หรือใช้ลูกศรเพื่อย้ายการ์ดขึ้นลง</p>' +
+      open('จัดหน้า Dashboard','<div class="layout-editor"><p>กดค้างที่การ์ดแล้วลาก หรือแตะลูกศรขึ้นลง</p>' +
         '<ol id="layout-order" class="layout-order" aria-label="ลำดับการ์ด">' + rows() + '</ol>' +
         '<p class="sr-only" role="status" id="layout-live"></p>' +
         '<div class="form-footer layout-footer"><button type="button" class="control" data-layout-reset>คืนค่าเริ่มต้น</button>' +
@@ -66,8 +66,10 @@ window.EstateDashboardLayout = (() => {
 
     function endDrag(event) {
       if (!drag || event.pointerId !== drag.pointerId) return;
-      const {list,source,target} = drag;
+      const {list,source,target,ghost,timer} = drag;
       drag = undefined;
+      clearTimeout(timer);
+      ghost?.remove();
       source.classList.remove('is-grabbed');
       target?.classList.remove('drop-before','drop-after');
       if (event.type === 'pointerup' && target && dialog.open && dialog.dataset.kind === 'layout') {
@@ -76,19 +78,36 @@ window.EstateDashboardLayout = (() => {
       if (list.hasPointerCapture(event.pointerId)) list.releasePointerCapture(event.pointerId);
     }
 
-    dialog.addEventListener('pointerdown', event => {
-      const grip = event.target.closest('[data-layout-grip]');
-      if (!grip || event.button !== 0 || drag) return;
-      const list = grip.closest('#layout-order');
-      const source = grip.closest('[data-layout-id]');
-      list.setPointerCapture(event.pointerId);
-      drag = {list,source,pointerId:event.pointerId,x:event.clientX,y:event.clientY};
+    function lift() {
+      if (!drag || drag.ghost || !dialog.open) return;
+      const {source,rect} = drag;
+      const ghost = source.cloneNode(true);
+      ghost.classList.add('layout-floating');
+      delete ghost.dataset.layoutId;
+      ghost.setAttribute('aria-hidden','true');
+      ghost.inert = true;
+      Object.assign(ghost.style,{left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px'});
+      dialog.append(ghost);
+      drag.ghost = ghost;
       source.classList.add('is-grabbed');
+    }
+
+    dialog.addEventListener('pointerdown', event => {
+      const source = event.target.closest('[data-layout-id]');
+      if (!source || event.target.closest('button') || event.button !== 0 || drag) return;
+      const list = source.closest('#layout-order');
+      list.setPointerCapture(event.pointerId);
+      drag = {list,source,rect:source.getBoundingClientRect(),pointerId:event.pointerId,x:event.clientX,y:event.clientY};
+      if (event.pointerType === 'mouse') lift();
+      else drag.timer = setTimeout(lift, 260);
     });
     dialog.addEventListener('pointermove', event => {
       if (!drag || event.pointerId !== drag.pointerId) return;
       const {list,source,x,y} = drag;
-      if (Math.hypot(event.clientX-x,event.clientY-y) < 5 && !drag.target) return;
+      if (!drag.ghost && Math.hypot(event.clientX-x,event.clientY-y) < 8) return;
+      lift();
+      if (!drag.ghost) return;
+      drag.ghost.style.translate = (event.clientX-x) + 'px ' + (event.clientY-y) + 'px';
       drag.target?.classList.remove('drop-before','drop-after');
       const row = document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-layout-id]');
       drag.target = row !== source && list.contains(row) ? row : null;
@@ -128,7 +147,12 @@ window.EstateDashboardLayout = (() => {
       if (press?.id === event.pointerId) cancelPress();
     });
     window.addEventListener('scroll',cancelPress,{capture:true,passive:true});
-    dialog.addEventListener('close', () => { drag = undefined; });
+    dialog.addEventListener('close', () => {
+      if (drag && !dialog.open) endDrag({type:'close',pointerId:drag.pointerId});
+    });
+    dialog.addEventListener('contextmenu', event => {
+      if (event.pointerType === 'touch' && event.target.closest('[data-layout-id]')) event.preventDefault();
+    });
 
     return {open:openEditor};
   }
