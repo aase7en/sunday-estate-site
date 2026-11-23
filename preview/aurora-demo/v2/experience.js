@@ -1,6 +1,6 @@
 window.createEstateExperience = api => {
   const d = window.EstateData;
-  const {icon, escape, read, write, notice, open} = api;
+  const {icon, escape, read, write, notice, open, moduleHeader} = api;
   const money = new Intl.NumberFormat('th-TH',{style:'currency',currency:'THB',maximumFractionDigits:2});
   const baht = n => money.format(n);
   const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -17,8 +17,6 @@ window.createEstateExperience = api => {
     return Array.isArray(value) ? value : [];
   };
   const copy = (title, description) => '<div><h2>' + title + '</h2><p class="muted">' + description + '</p></div>';
-  const title = (label,description,actions='') => '<section class="intro"><div><h1>' + label + '</h1><p>' +
-    description + '</p></div>' + actions + '</section>';
   const btn = (key,label,primary=false) => '<button type="button" class="' + (primary ? 'primary' : 'control') +
     '" data-v2="' + key + '">' + label + '</button>';
   const close = () => document.getElementById('dialog').close();
@@ -284,8 +282,9 @@ window.createEstateExperience = api => {
   function investmentPage() {
     const deals = investments();
     const isStaff = staff();
-    return title('ลงทุนที่ดิน',isStaff ? 'ติดตามโฉนดและเงินลงทุนในแต่ละโครงการ · ข้อมูลจำลอง' : 'เงินลงทุนและผลตอบแทนของบัญชีนี้ · ข้อมูลจำลอง',
-      admin() ? btn('deal-edit:new','สร้างดีลจำลอง',true) : '') +
+    return moduleHeader('investments',{title:'ลงทุนที่ดิน',
+      description:isStaff ? 'ติดตามโฉนดและเงินลงทุนในแต่ละโครงการ · ข้อมูลจำลอง' : 'เงินลงทุนและผลตอบแทนของบัญชีนี้ · ข้อมูลจำลอง',
+      details:admin() ? '<div class="module-actions">' + btn('deal-edit:new','สร้างดีลจำลอง',true) + '</div>' : ''}) +
       (deals.length ? '<div class="v2-invest-grid">' + deals.map(deal => {
         const visible = isStaff ? deal.allocations : deal.allocations.filter(row=>row.person === api.account());
         const pledged = baht(d.sum(visible,'pledged'));
@@ -620,7 +619,7 @@ window.createEstateExperience = api => {
   }
   function memberHome() {
     if (actor() === 'partner') return investmentPage();
-    return title('สัญญาของฉัน','ยอดและกำหนดตามข้อมูลจำลอง ณ ' + d.formatDate(d.asOf)) +
+    return moduleHeader('contracts',{title:'สัญญาของฉัน',description:'ยอดและกำหนดตามข้อมูลจำลอง ณ ' + d.formatDate(d.asOf)}) +
       '<div class="v2-invest-grid">' + contracts().map(c=>'<article class="card panel v2-invest">' +
         copy(c.id + ' · ' + c.property,d.labels[c.type] + ' · กำหนด ' + d.formatDate(c.due)) +
         '<div class="v2-invest-total"><span>' + loanLabel(c) + '</span><strong>' + baht(balance(c)) +

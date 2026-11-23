@@ -123,6 +123,24 @@
   const buttonIcon = (id, symbol, label, extra = '') => '<button class="icon-button" type="button" data-action="' + id + '" title="' + label + '" aria-label="' + label + '">' + icon(symbol) + extra + '</button>';
   const navLinks = () => Object.entries(pages).filter(([key]) => xp.allowedRoute(key)).map(([key, [title, glyph]]) => '<a href="#' + key + '"' +
     (page === key ? ' aria-current="page"' : '') + '>' + icon(glyph) + '<span>' + title + '</span></a>').join('');
+  const moduleImages = {
+    overview: {src:'assets/aurora-estate.webp'},
+    lending: {src:'assets/scenes/business.webp',mobile:'assets/scenes/business-828.webp'},
+    investments: {src:'assets/scenes/land.webp'},
+    profile: {src:'assets/scenes/family.webp',mobile:'assets/scenes/family-828.webp'},
+    contracts: {src:'assets/scenes/future.webp'},
+  };
+
+  function moduleHeader(module, {title, description, details = '', cover = ''}) {
+    const {src,mobile} = moduleImages[module];
+    const art = '<picture class="module-art" aria-hidden="true">' +
+      (mobile && !cover ? '<source media="(max-width: 639px)" srcset="' + mobile + '">' : '') +
+      '<img src="' + (cover || src) + '" alt="" decoding="async"></picture>';
+    return '<header class="module-intro" data-module="' + module + '"' + (cover ? ' data-personal-cover' : '') + '>' + art +
+      '<div class="module-heading"><h1>' + title + '</h1>' + (description ? '<p>' + description + '</p>' : '') + details + '</div></header>';
+  }
+
+  const asOfBadge = () => '<span class="as-of">' + icon('clock',15) + ' ข้อมูล ณ ' + d.formatDate(d.asOf) + '</span>';
 
   function shell(content) {
     const p = person();
@@ -181,8 +199,7 @@
       {title:'เงินไหลออกเดือนนี้', value:monthly.expense, foot:'ยอดจ่าย ต.ค. 2569', glyph:'out', tone:'pink', money:true},
       {title:'หลักประกันสินเชื่อ', value:d.sum(active.filter(c=>c.type==='loan'),'appraisal'), foot:'ราคาประเมินของสัญญาปล่อยกู้', glyph:'layers', tone:'blue', money:true},
     ];
-    return '<section class="intro overview-intro"><div><h1>ภาพรวมธุรกิจ</h1><p>พอร์ตสินเชื่อ ขายฝาก และกระแสเงินสด</p></div><span class="as-of">' + icon('clock', 15) +
-      ' ข้อมูล ณ ' + d.formatDate(d.asOf) + '</span></section>' +
+    return moduleHeader('overview',{title:'ภาพรวมธุรกิจ',description:'พอร์ตสินเชื่อ ขายฝาก และกระแสเงินสด',details:asOfBadge()}) +
       '<section class="kpis" aria-label="ตัวชี้วัดภาพรวม ณ วันที่สรุป">' + cards.map(kpi).join('') + '</section>' + status +
       '<section class="analytics" aria-labelledby="analytics-title"><div class="analytics-head"><div><h2 id="analytics-title">วิเคราะห์พอร์ต</h2><p class="range-help">ช่วงเวลาสำหรับกราฟกระแสเงินสด สถานะสัญญา และแนวโน้ม</p><p class="range-mobile">' +
       rangeCaption(r) + '</p></div>' + chartControls(r) + '</div>' +
@@ -248,8 +265,8 @@
   }
 
   function lending() {
-    return '<section class="intro lending-intro"><div><h1>ปล่อยกู้ / ขายฝาก</h1><p>ติดตามยอดเงินต้น สัญญาที่เปิด และกำหนดชำระหรือไถ่ถอน</p></div><span class="as-of">' +
-      icon('clock', 15) + ' ข้อมูล ณ ' + d.formatDate(d.asOf) + '</span></section><div class="contract-tabs segments" role="tablist" aria-label="ประเภทสัญญา">' +
+    return moduleHeader('lending',{title:'ปล่อยกู้ / ขายฝาก',description:'ติดตามยอดเงินต้น สัญญาที่เปิด และกำหนดชำระหรือไถ่ถอน',details:asOfBadge()}) +
+      '<div class="contract-tabs segments" role="tablist" aria-label="ประเภทสัญญา">' +
       Object.entries(d.labels).map(([key, name]) => '<button role="tab" type="button" id="tab-' + key + '" data-type="' + key +
       '" aria-controls="contract-panel" tabindex="' + (pref.type === key ? 0 : -1) + '" aria-selected="' + (pref.type === key) + '">' +
       icon(key === 'loan' ? 'wallet' : 'layers', 18) + name + '</button>').join('') +
@@ -305,13 +322,14 @@
       '" value="' + escape(p[key]) + '"' + (key === 'name' || key === 'email' ? ' required' : '') + '></label>';
     const toggle = (key, label, info) => '<label class="toggle-row"><span><strong>' + label + '</strong><small>' + info +
       '</small></span><input type="checkbox" name="' + key + '" role="switch"' + (pref[key] ? ' checked' : '') + '></label>';
-    return '<section class="intro profile-intro"><div><h1>โปรไฟล์และการตั้งค่า</h1><p>ปรับพื้นที่ทำงานให้เหมาะกับคุณ</p></div>' +
-      '<div class="v2-inline"><a class="control" href="#hero">ดูหน้าแรก</a><button type="button" class="control" data-action="accounts">' + icon('logout', 17) + ' จัดการบัญชีจำลอง</button></div></section>' +
-      '<section class="card profile-hero"><div class="profile-cover"><img src="' + (cover || 'assets/aurora-estate.webp') + '" alt="">' +
-      '<button type="button" class="cover-button" data-action="cover">' + icon('image', 17) + '<span>เปลี่ยนภาพปก</span></button></div>' +
-      '<div class="profile-identity"><div class="profile-avatar">' + avatar(true) + '<button type="button" data-action="avatar" title="เปลี่ยนรูปโปรไฟล์" aria-label="เปลี่ยนรูปโปรไฟล์">' +
+    const profileDetails = '<div class="profile-identity"><div class="profile-avatar">' + avatar(true) + '<button type="button" data-action="avatar" title="เปลี่ยนรูปโปรไฟล์" aria-label="เปลี่ยนรูปโปรไฟล์">' +
       icon('image', 16) + '</button></div><div><h2>' + escape(p.name) + '</h2><span>' + escape(p.role) + ' · บัญชีจำลอง</span><p>' +
-      escape(p.bio) + '</p></div></div></section><div class="profile-grid"><article class="card panel">' +
+      escape(p.bio) + '</p></div></div>' +
+      '<div class="v2-inline module-actions"><button type="button" class="control" data-action="cover">' + icon('image', 16) + ' เปลี่ยนภาพปก</button>' +
+      '<button type="button" class="control" data-action="accounts">' + icon('logout', 16) + ' จัดการบัญชีจำลอง</button>' +
+      '<a class="control" href="#hero">ดูหน้าแรก</a></div>';
+    return moduleHeader('profile',{title:'โปรไฟล์และการตั้งค่า',details:profileDetails,cover}) +
+      '<div class="profile-grid"><article class="card panel">' +
       cardHead('ข้อมูลส่วนตัว', 'ชื่อ บทบาท และข้อมูลติดต่อ', 'user','purple') + '<form id="profile-form" class="editor"><div class="form-grid">' +
       input('ชื่อที่แสดง','name') + input('บทบาท','role') + input('อีเมลติดต่อ','email','email',120) + input('เบอร์โทร','phone','tel',32) +
       '</div><label>เกี่ยวกับคุณ<textarea name="bio" maxlength="160" rows="2">' + escape(p.bio) + '</textarea></label>' +
@@ -754,7 +772,7 @@
     render('workspace');
     window.scrollTo(0,0);
   });
-  const xp = window.createEstateExperience({icon,escape,read,write,notice,open:showDialog,person,settings,render,
+  const xp = window.createEstateExperience({icon,escape,read,write,notice,open:showDialog,person,settings,render,moduleHeader,
     account:()=>account,prefs:()=>pref,page:()=>page});
   if (account && !location.hash) history.replaceState(null,'','#' + pref.home);
   render();
