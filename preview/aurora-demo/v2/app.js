@@ -83,10 +83,16 @@
   let cardFlip;
   let flipRevision = 0;
   const flipMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  let resizeTimer;
+  const chartWidths = new WeakMap();
+  let chartFrame = 0;
+  const chartResize = new ResizeObserver(entries => {
+    const needsRedraw = () => !cardFlip && entries.some(({target}) => target.isConnected && target.clientWidth !== chartWidths.get(target));
+    if (!needsRedraw()) return;
+    cancelAnimationFrame(chartFrame);
+    chartFrame = requestAnimationFrame(() => { if (needsRedraw()) renderCharts(); });
+  });
   let dialogType;
   let dialogReturn;
-  const width = () => document.documentElement.clientWidth;
   const route = () => {
     const target = location.hash.slice(1);
     if (target === 'hero') return 'hero';
@@ -333,6 +339,7 @@
 
   function render(focusId) {
     settleCardFlip();
+    chartResize.disconnect();
     const currentTheme = account ? pref.theme : 'light';
     document.documentElement.dataset.theme = currentTheme;
     page = route();
@@ -355,11 +362,19 @@
   function renderCharts(r = range(), namespace = '') {
     const cash = document.getElementById(namespace + 'cash-chart');
     if (!cash) return;
-    charts.draw(cash, r, 'cash', pref.mode,xp.scope(),namespace);
-    charts.draw(document.getElementById(namespace + 'trend-chart'), r, 'trend', pref.mode,xp.scope(),namespace);
+    for (const [kind,host] of [['cash',cash], ['trend',document.getElementById(namespace + 'trend-chart')]]) {
+      chartWidths.set(host,host.clientWidth);
+      charts.draw(host,r,kind,pref.mode,xp.scope(),namespace);
+    }
     const rows = xp.contracts(r.end);
     charts.donut(document.getElementById(namespace + 'donut-chart'), Object.entries(d.statusName).map(([key,name]) =>
       ({name, tone:d.groupTone[key], value:rows.filter(c=>c.status===key).length})),r.end,namespace);
+    if (!namespace) observeChartLayout();
+  }
+
+  function observeChartLayout() {
+    chartResize.disconnect();
+    root.querySelectorAll('#cash-chart,#trend-chart').forEach(host => chartResize.observe(host));
   }
 
   const sameRange = (left,right) => left.start === right.start && left.end === right.end;
@@ -437,7 +452,6 @@
 
   function turnRange(from, to, next) {
     const control = period => root.querySelector(period === 'custom' ? '[data-action="dates"]' : '[data-period="' + period + '"]');
-    const initialWidth = width();
     turnCards({
       rotors: [...root.querySelectorAll('.range-card-rotor')],
       markup: namespace => rangeCards(next,namespace).join(''),
@@ -446,7 +460,7 @@
       onFinish: () => {
         const latest = range();
         if (!sameRange(latest,next)) turnRange(to,pref.period,latest);
-        else if (width() !== initialWidth) renderCharts(latest);
+        else observeChartLayout();
       }
     });
   }
@@ -739,16 +753,6 @@
     if (dialog.open) dialog.close();
     render('workspace');
     window.scrollTo(0,0);
-  });
-  let lastWidth = width();
-  window.addEventListener('resize', () => {
-    if (width() === lastWidth) return;
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      if (width() === lastWidth) return;
-      lastWidth = width();
-      if (page === 'overview' && account && !cardFlip) renderCharts();
-    }, 130);
   });
   const xp = window.createEstateExperience({icon,escape,read,write,notice,open:showDialog,person,settings,render,
     account:()=>account,prefs:()=>pref,page:()=>page});
