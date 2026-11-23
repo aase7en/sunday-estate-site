@@ -65,7 +65,7 @@ window.EstateData = (() => {
     const expense = -sum(rows.filter(p => p.amount < 0), 'amount') || 0;
     return {income, expense, net: income - expense};
   }
-  function periods(range, maxPeriods, scope) {
+  function periods(range, maxPeriods, scope, balanceType) {
     const months = [];
     for (let d = month(range.start); d <= range.end; d = month(d, 1)) months.push(d);
     const step = Math.ceil(months.length / maxPeriods);
@@ -78,7 +78,7 @@ window.EstateData = (() => {
         thMonth.format(dates(months[i])) + (months[i] !== through ? '–' + thMonth.format(dates(through)) : '');
       const full = start === months[i] && end === monthEnd(through);
       const title = full && start.slice(0,7) === end.slice(0,7) ? thMonthYear.format(dates(start)) : formatDate(start) + ' – ' + formatDate(end);
-      buckets.push({label, title, start, end, months: Math.min(step, months.length - i), ...totals(start, end, scope), balance: sum(portfolio(end,undefined,scope), 'balance')});
+      buckets.push({label, title, start, end, months: Math.min(step, months.length - i), ...totals(start, end, scope), balance: sum(portfolio(end,balanceType,scope), 'balance')});
     }
     return buckets;
   }

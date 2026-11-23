@@ -30,6 +30,8 @@
     chart: '<path d="M3 3v17h18M7 15v-4m4 4V7m4 8V9m4 6V5"/>',
     ring: '<path d="M11 3a9 9 0 1 0 10 10h-10V3Z"/><path d="M14 2.5V10h7.5A8 8 0 0 0 14 2.5Z"/>',
     trend: '<path d="m3 17 6-6 4 4 7-8m-5 0h5v5"/>',
+    down: '<path d="m3 7 6 6 4-4 7 8m-5 0h5v-5"/>',
+    flat: '<path d="M5 12h14"/>',
     alert: '<path d="M10.2 4.5a2 2 0 0 1 3.6 0l7.5 13.4a2 2 0 0 1-1.8 3H4.5a2 2 0 0 1-1.8-3l7.5-13.4ZM12 9v4m0 3.5h.01"/>',
     arrow: '<path d="M4 12h15m-5-5 5 5-5 5"/>',
     chevron: '<path d="m6 9 6 6 6-6"/>',
@@ -147,6 +149,8 @@
       subtitle + '</p></div></div>' + action + '</div>';
   }
   const rangeCaption = r => d.formatDate(r.start) + ' – ' + d.formatDate(r.end);
+  const portfolioTrend = 'แนวโน้มพอร์ตสินเชื่อ';
+  const trendPercent = new Intl.NumberFormat('th-TH', {style:'percent', maximumFractionDigits:1, signDisplay:'exceptZero'});
   function chartControls(r) {
     return '<div class="range-tools"><button class="control date-button' + (pref.period === 'custom' ? ' chosen' : '') +
       '" type="button" data-action="dates" aria-label="เลือกช่วงวันที่">' + icon('calendar', 17) + '<span>' + rangeCaption(r) + '</span></button>' +
@@ -185,11 +189,31 @@
       d.baht(d.sum(actions.filter(c => c.status === 'overdue'), 'balance')) + '</strong></article></section>';
   }
 
+  function loanTrend(r) {
+    let baseDate = r.start;
+    let base = d.sum(xp.contracts(baseDate,'loan'),'balance');
+    const current = d.sum(xp.contracts(r.end,'loan'),'balance');
+    if (!base) {
+      const firstBalance = d.periods(r,24,xp.scope(),'loan').find(row => row.balance > 0);
+      if (firstBalance && firstBalance.end < r.end) {
+        base = firstBalance.balance;
+        baseDate = firstBalance.end;
+      }
+    }
+    const change = base > 0 && baseDate < r.end ? (current - base) / base : null;
+    const direction = change > 0 ? 'up' : change < 0 ? 'down' : 'flat';
+    const comparison = change === null ? 'ไม่มีฐานเปรียบเทียบในช่วงนี้' : 'เทียบกับ ' + d.formatDate(baseDate);
+    const percent = change === null ? '—' : change && Math.abs(change) < .0005
+      ? (change > 0 ? '+' : '−') + '<0.1%' : trendPercent.format(change);
+    return {current,direction,comparison,percent};
+  }
+
   function rangeCards(r, namespace = '') {
+    const trend = loanTrend(r);
     const historical = xp.contracts(r.end);
     const flow = d.totals(r.start,r.end,xp.scope());
     const dataButton = kind => '<button type="button" class="subtle text-data" data-table="' + kind + '" aria-label="ดูตาราง' +
-      (kind === 'cash' ? 'กระแสเงินสด' : 'แนวโน้มพอร์ต') + '">' + icon('file', 15) + '<span>ข้อมูล</span></button>';
+      (kind === 'cash' ? 'กระแสเงินสด' : portfolioTrend) + '">' + icon('file', 15) + '<span>ข้อมูล</span></button>';
     return ['<article class="card panel cash" data-range-card>' + cardHead('กระแสเงินสด', pref.mode === 'combined' ? 'เงินเข้าด้านบน · เงินออกด้านล่าง · บาท' : 'รับ จ่าย และยอดสุทธิ · หน่วยบาท', 'chart', 'purple',
       '<div class="head-actions">' + dataButton('cash') + '<button class="subtle mode-button" type="button" data-action="mode" aria-label="สลับเป็น' +
       (pref.mode === 'combined' ? 'กราฟเส้น' : 'กราฟผสม') + '" id="' + namespace + 'mode">' + icon(pref.mode === 'combined' ? 'chart' : 'trend', 16) +
@@ -199,8 +223,11 @@
       (flow.net < 0 ? 'risk-text' : 'gain-text') + '">' + charts.amount(flow.net,'net') + '</b></span></div></article>',
       '<article class="card panel composition" data-range-card>' + cardHead('สัดส่วนสถานะสัญญา', 'จำนวนตามสถานะ ณ ' + d.formatDate(r.end), 'ring', 'cyan') +
       '<div class="donut-host" id="' + namespace + 'donut-chart"></div><p class="panel-note">นับสัญญาที่เริ่มแล้ว ณ วันสิ้นสุดช่วง · ใกล้ครบกำหนดภายใน 15 วัน</p></article>',
-      '<article class="card panel trend" data-range-card>' + cardHead('แนวโน้มเงินต้นคงค้าง', 'ยอดคงเหลือ ณ วันสิ้นสุดแต่ละช่วง · หน่วยบาท', 'trend', 'purple', dataButton('trend')) +
-      '<div class="trend-stat"><strong>' + d.baht(d.sum(historical,'balance')) + '</strong><span>ณ ' + d.formatDate(r.end) + '</span></div>' +
+      '<article class="card panel trend" data-range-card data-trend="' + trend.direction + '">' +
+      cardHead(portfolioTrend, 'เงินต้นคงค้างเฉพาะสัญญาปล่อยกู้', 'trend', 'purple', dataButton('trend')) +
+      '<div class="trend-stat"><div class="trend-amount"><strong>' + d.baht(trend.current) + '</strong><span>ณ ' + d.formatDate(r.end) + '</span></div>' +
+      '<div class="trend-change"><span class="trend-badge">' + icon(trend.direction === 'up' ? 'trend' : trend.direction, 15) + escape(trend.percent) +
+      '</span><span class="trend-compare">' + trend.comparison + '</span></div></div>' +
       '<div class="chart-host" id="' + namespace + 'trend-chart"></div></article>'];
   }
 
@@ -466,8 +493,8 @@
     const r = range();
     const isFlow = kind === 'cash';
     const keys = isFlow ? ['income','expense','net'] : ['balance'];
-    const rows = d.periods(r,24,xp.scope());
-    showDialog(isFlow ? 'ข้อมูลกระแสเงินสด' : 'ข้อมูลแนวโน้มเงินต้นคงค้าง', '<div class="table-wrap"><table class="data-table"><caption>' +
+    const rows = d.periods(r,24,xp.scope(),isFlow ? undefined : 'loan');
+    showDialog(isFlow ? 'ข้อมูลกระแสเงินสด' : 'ข้อมูล' + portfolioTrend, '<div class="table-wrap"><table class="data-table"><caption>' +
       rangeCaption(r) + ' · รายเดือน · บาท</caption><thead><tr><th scope="col">ช่วง</th>' + keys.map(k=>'<th scope="col">' + charts.label[k] + '</th>').join('') +
       '</tr></thead><tbody>' + rows.map(row => '<tr><th scope="row">' + row.title + '</th>' + keys.map(k=>'<td>' + charts.amount(row[k],k) +
       '</td>').join('') + '</tr>').join('') + '</tbody></table></div>', 'table');

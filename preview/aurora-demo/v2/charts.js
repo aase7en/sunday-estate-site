@@ -7,9 +7,13 @@ window.EstateCharts = (() => {
     [0, 97], [10, 95], [22, 87], [30, 85], [38, 80], [45, 75], [51, 70],
     [57, 65], [62, 60], [66, 55], [70, 50], [74, 45], [78, 40], [82, 35],
     [85, 30], [88, 25], [91, 20], [94, 15], [96, 10], [98, 5], [100, 0],
-  ].map(([offset, transparency]) =>
-    '<stop offset="' + offset + '%" stop-opacity="' + (100 - transparency) / 100 + '"/>'
-  ).join('');
+  ].map(([offset, transparency]) => {
+    // Let the cyan and rose midtones show before the mint and pink tips.
+    const pastMid = offset > 74;
+    const mix = pastMid ? (offset - 74) / 26 : offset / 74;
+    return '<stop offset="' + offset + '%" stop-opacity="' + (100 - transparency) / 100 +
+      '" class="' + (pastMid ? 'tip-mix' : 'mid-mix') + '" style="--bar-mix:' + Math.round(mix * 100) + '%"/>';
+  }).join('');
   const amount = (n, key) => (n < 0 ? '−' : key === 'net' && n > 0 ? '+' : '') + d.baht(Math.abs(n));
   const legendMark = (tone, line = false) => '<i class="swatch ' + tone + (line ? ' line' : '') + '" aria-hidden="true"></i>';
   const legend = (keys, mode) => '<div class="legend">' + keys.map(k => '<span>' + legendMark(tones[k], k === 'net' || k === 'balance' || mode === 'lines') + label[k] + '</span>').join('') + '</div>';
@@ -68,7 +72,7 @@ window.EstateCharts = (() => {
     const right = width - 10;
     const plotWidth = right - left;
     const capacity = plotWidth >= 540 ? 24 : Math.max(4, Math.floor(plotWidth / 43));
-    const rows = d.periods(range, capacity, scope);
+    const rows = d.periods(range, capacity, scope, isFlow ? undefined : 'loan');
     const group = rows[0].months;
     const top = 11;
     const bottom = height - 32;
@@ -88,12 +92,14 @@ window.EstateCharts = (() => {
     const lastLabel = rows.length - 1;
     const tickText = n => n === 0 ? '0' : Math.abs(n) >= 1000000 ? (n / 1000000) + ' ล.' : (n / 1000) + 'k';
 
-    const defs = chartBars ? ['income','expense'].map(key => {
+    const barGradients = chartBars ? ['income','expense'].map(key => {
       const up = key === 'income';
       return '<linearGradient id="' + graphId + '-' + key + '" class="cash-bar-gradient ' + tones[key] +
         '" x1="0" x2="0" y1="' + (up ? 1 : 0) + '" y2="' + (up ? 0 : 1) + '" gradientUnits="objectBoundingBox">' +
         barStops + '</linearGradient>';
     }).join('') : '';
+    const netGradient = isFlow ? '<linearGradient id="' + graphId + '-net" x1="' + left + '" x2="' + right +
+      '" y1="0" y2="0" gradientUnits="userSpaceOnUse"><stop class="net-from"/><stop class="net-to" offset="100%"/></linearGradient>' : '';
     const grids = scale.ticks.map(t => '<line x1="' + left + '" x2="' + right + '" y1="' + y(t) + '" y2="' + y(t) + '" class="' + (t === 0 ? 'axis-zero' : 'axis-grid') + '"/><text class="axis-label" x="' + (left - 9) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + tickText(t) + '</text>').join('');
     const axisLabels = rows.map((row, i) => i === 0 || i === lastLabel ||
       (i % labelFreq === 0 && (lastLabel - i) * cell >= labelWidth)
@@ -116,11 +122,16 @@ window.EstateCharts = (() => {
       const curve = path(points);
       const area = key === 'balance' && points.length > 1
         ? '<path d="' + curve + ' L' + points.at(-1)[0] + ' ' + bottom + ' H' + points[0][0] + ' Z" fill="url(#' + graphId + '-area)"/>' : '';
-      return area + '<path class="chart-stroke ' + tones[key] + '" d="' + curve + '"/>' +
-        points.map(([x, pointY]) => '<circle class="chart-point ' + tones[key] + '" cx="' + x + '" cy="' + pointY + '" r="' + (chartBars ? 3.4 : 3) + '"/>').join('');
+      const netStyle = key === 'net' ? ' style="stroke:url(#' + graphId + '-net)"' : '';
+      return area + '<path class="chart-stroke ' + tones[key] + '"' + netStyle + ' d="' + curve + '"/>' +
+        points.map(([x, pointY], i) => {
+          const last = i === points.length - 1;
+          return '<circle class="chart-point ' + tones[key] + (last ? ' last-point' : '') + '" cx="' + x + '" cy="' + pointY +
+            '" r="' + (last ? 4 : points.length > 12 ? 2.4 : 3.1) + '"/>';
+        }).join('');
     }).join('');
     host.innerHTML = '<svg height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '" aria-hidden="true">' +
-      '<defs>' + defs + '<linearGradient id="' + graphId + '-area" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop class="area-start"/><stop class="area-end" offset="100%"/></linearGradient></defs>' +
+      '<defs>' + barGradients + netGradient + '<linearGradient id="' + graphId + '-area" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop class="area-start"/><stop class="area-end" offset="100%"/></linearGradient></defs>' +
       grids + axisLabels + '<line class="chart-guide" x1="0" x2="0" y1="' + top + '" y2="' + bottom + '" visibility="hidden"/>' + bars + lines + '</svg>' +
       '<div class="chart-selectors" aria-label="เลือกช่วงข้อมูล">' + rows.map((r, i) =>
         '<button class="chart-hit" type="button" tabindex="' + (i === 0 ? 0 : -1) + '" style="left:' + (left + cell * i) + 'px;width:' + cell + 'px;height:' + (bottom + 14) +
@@ -168,7 +179,7 @@ window.EstateCharts = (() => {
     const arcs = items.map(({value,tone},i) => {
       if (!value || !total) return '';
       const len = value / total * arcLength;
-      const gap = value === total ? 0 : Math.min(18, len * .55);
+      const gap = value === total ? 0 : Math.min(4, len * .3);
       const markup = circle('class="ring-arc ' + tone + '" stroke="url(#' + ringId + tone + ')" stroke-dasharray="' + (len - gap) + ' ' + (arcLength - len + gap) +
         '" stroke-dashoffset="' + -(offset + gap / 2) + '"', i);
       offset += len;
