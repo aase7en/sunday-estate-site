@@ -551,7 +551,7 @@
     }
   });
   document.addEventListener('input', e => {
-    if (e.target.matches('#v2-deal [data-share]')) xp.updateDealShares(e.target.closest('fieldset'));
+    if (e.target.matches('#v2-deal input')) xp.updateDeal(e.target.form);
     if (e.target.closest('#v2-expense')) xp.updateExpensePreview(e.target.closest('form'));
     if (e.target.id === 'global-lookup') updateSearch(e.target.value);
     if (e.target.matches('.record-tools input')) {
@@ -560,6 +560,7 @@
     }
   });
   document.addEventListener('change', e => {
+    if (e.target.matches('#v2-deal select')) xp.changeDeal(e.target.form,e.target);
     if (e.target.closest('#v2-expense')) xp.updateExpensePreview(e.target.closest('form'));
     if (e.target.id === 'contract-status') {
       statusFilter = e.target.value;

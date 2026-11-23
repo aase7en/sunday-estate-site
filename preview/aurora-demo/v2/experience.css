@@ -55,14 +55,28 @@
 .v2-expense-list{margin-block:9px}
 .v2-expense-item{border-top:1px solid var(--border)}
 .v2-expense-item>span:last-child{display:grid;justify-items:end;gap:4px}
-.v2-fieldset,.v2-allocation{min-width:0;display:grid;gap:8px}
-.v2-fieldset{border:1px solid var(--border);border-radius:12px;padding:9px;margin:0}
-.v2-fieldset legend{padding:0 5px;font-weight:700}
-.v2-three small{font-size:.7rem;color:var(--muted)}
-.v2-three input[aria-invalid="true"]{border-color:var(--danger)}
-.v2-share-total{margin:0;padding:4px 6px;font-size:.83rem;font-weight:700}
-.v2-allocation{padding:7px;border-radius:9px;background:var(--wash)}
-.v2-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;align-items:start}
+.v2-fieldset,.v2-allocation{min-width:0;display:grid;gap:10px}
+.v2-fieldset{border:1px solid var(--border);border-radius:14px;padding:12px;margin:0}
+.v2-fieldset legend{padding:0 6px;font-weight:750}
+.v2-deed-list{display:flex;flex-wrap:wrap;gap:6px;padding:0;list-style:none;margin:6px 0 3px}
+.v2-deed-list li{padding:4px 8px;border-radius:7px;background:var(--wash);font-size:12px;overflow-wrap:anywhere}
+.v2-deal-hint,.v2-cap{margin:0;font-size:.78rem;color:var(--muted)}
+.v2-deed-input{display:flex;gap:6px;align-items:end;min-width:0}
+.v2-deed-input label{flex:1}
+.v2-deed-input .control{flex:none}
+.v2-allocation{padding:10px;border-radius:11px;background:var(--wash)}
+.v2-allocation .control{justify-self:start}
+.v2-allocation details{font-size:.78rem;color:var(--muted)}
+.v2-allocation summary{cursor:pointer;padding-block:6px}
+.v2-funding-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.v2-funding-fields input[aria-invalid="true"]{border-color:var(--danger)}
+.v2-deal-output{display:grid;gap:4px;font-size:.75rem;font-weight:600;color:var(--muted)}
+.v2-deal-output output{display:flex;align-items:center;min-height:44px;padding:6px 9px;border:1px solid var(--border);border-radius:9px;
+  color:var(--accent);background:var(--purple-bg);font-size:.9rem;font-weight:750;overflow-wrap:anywhere}
+.v2-deal-summary{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;padding:10px 12px;
+  border:1px solid var(--border);border-radius:10px;background:var(--purple-bg);font-size:.85rem}
+.v2-deal-summary strong{color:var(--accent);font-variant-numeric:tabular-nums}
+.v2-deal-summary p{margin:0;grid-column:1/-1;font-size:.76rem}
 .v2-grants,.v2-gallery-list{list-style:none;margin:0;padding:0}
 .v2-grants li{border-bottom:1px solid var(--border);overflow-wrap:anywhere}
 .v2-gallery-list li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:9px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}

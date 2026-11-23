@@ -168,7 +168,7 @@ window.createEstateExperience = api => {
     ],
     staff: [['due','สัญญาใกล้ครบกำหนด'],['arrears','สัญญาที่เกินกำหนด'],['cost','รายจ่ายรอตรวจ'],
       ['balance','ยอดเงินต้นคงค้าง'],['contact','ขั้นตอนติดต่อทีมดูแล']],
-    partner: [['ownAmount','ยอดลงทุนของฉัน'],['ownShare','สัดส่วนรายโฉนด'],['ownReturns','ส่วนแบ่งของฉัน'],['contact','ติดต่อทีมดูแล']],
+    partner: [['ownAmount','ยอดลงทุนของฉัน'],['ownShare','สัดส่วนของฉันในแต่ละดีล'],['ownReturns','ส่วนแบ่งของฉัน'],['contact','ติดต่อทีมดูแล']],
   };
   const general = [['generalRedemption','ขายฝากและสินไถ่คืออะไร'],['generalDue','ต้องเตรียมอะไรเมื่อถึงกำหนด']];
   function topicFrom(text) {
@@ -190,12 +190,12 @@ window.createEstateExperience = api => {
     if (!questions[role].some(([allowed]) => allowed === topic)) return {text:'เลือกคำถามที่ตรงกับข้อมูลในบัญชีของคุณ หรือถามเรื่องทั่วไป เช่น “ขายฝากคืออะไร”'};
     if (topic === 'contact') return {text:contact};
     if (role === 'partner') {
-      const rows = investments().flatMap(deal => deal.deeds.flatMap(deed => deed.allocations
-        .filter(row=>row.person === api.account()).map(row=>({...row,deed:deed.name}))));
+      const rows = investments().flatMap(deal => deal.allocations
+        .filter(row=>row.person === api.account()).map(row=>({...row,deal:deal.name})));
       if (!rows.length) return {text:'บัญชีนี้ยังไม่มีข้อมูลดีลที่ได้รับสิทธิ์'};
       const text = topic === 'ownAmount' ? 'ยอดลงเงินจริงรวม ' + baht(d.sum(rows,'paid')) :
         topic === 'ownReturns' ? 'ส่วนแบ่งที่บันทึก ' + baht(d.sum(rows,'returns')) :
-          rows.map(row=>row.deed + ' ' + row.share.toFixed(2) + '%').join(' · ');
+          rows.map(row=>row.deal + ' ' + shareLabel(row)).join(' · ');
       return {text,link:'#investments',label:'เปิดการลงทุนของฉัน'};
     }
     const c = id ? lookup(id) : null;
@@ -255,128 +255,202 @@ window.createEstateExperience = api => {
   }
 
   const startingDeals = [
-    {id:'INV-001',name:'ที่ดินคลองหลวง',mode:'ร่วมทุน',deeds:[
-      {name:'โฉนดตัวอย่าง K-014', allocations:[{person:'company',share:55,pledged:1100000,paid:1100000,returns:0},
-        {person:'partner',share:25,pledged:500000,paid:480000,returns:12000},{person:'partner2',share:20,pledged:400000,paid:400000,returns:9000}]},
-      {name:'โฉนดตัวอย่าง K-015', allocations:[{person:'company',share:60,pledged:960000,paid:960000,returns:0},
-        {person:'partner',share:30,pledged:480000,paid:440000,returns:9600},{person:'partner2',share:10,pledged:160000,paid:150000,returns:3200}]},
-    ]},
-    {id:'INV-002',name:'ที่ดินบางใหญ่',mode:'บริษัท',deeds:[
-      {name:'โฉนดตัวอย่าง B-021', allocations:[{person:'company',share:100,pledged:3200000,paid:3200000,returns:0}]},
-    ]},
-    {id:'INV-003',name:'ที่ดินลำลูกกา',mode:'ส่วนบุคคล',deeds:[
-      {name:'โฉนดตัวอย่าง L-008', allocations:[{person:'portfolio',share:100,pledged:1800000,paid:1800000,returns:0}]},
-    ]},
+    {id:'INV-001',name:'ที่ดินคลองหลวง',mode:'ร่วมทุน',basis:'amount',
+      deeds:[{name:'โฉนดตัวอย่าง K-014'},{name:'โฉนดตัวอย่าง K-015'}],
+      allocations:[{person:'company',share:57.22,pledged:2060000,paid:2060000,returns:0},
+        {person:'partner',share:27.22,pledged:980000,paid:920000,returns:21600},
+        {person:'partner2',share:15.56,pledged:560000,paid:550000,returns:12200}]},
+    {id:'INV-002',name:'ที่ดินบางใหญ่',mode:'บริษัท',basis:'amount',
+      deeds:[{name:'โฉนดตัวอย่าง B-021'}],allocations:[{person:'company',share:100,pledged:3200000,paid:3200000,returns:0}]},
+    {id:'INV-003',name:'ที่ดินลำลูกกา',mode:'ส่วนบุคคล',basis:'amount',
+      deeds:[{name:'โฉนดตัวอย่าง L-008'}],allocations:[{person:'portfolio',share:100,pledged:1800000,paid:1800000,returns:0}]},
   ];
   const memberNames = {company:'Sunday Estate · บริษัท', portfolio:'กิตติพงศ์ · ส่วนบุคคล', partner:'นพดล · ผู้ร่วมทุน', partner2:'ดาริน · ผู้ร่วมทุน'};
   const memberEmails = {partner:'partner@example.test',partner2:'partner2@example.test'};
   const defaultGrants = {'INV-001':['partner','partner2']};
   const grants = () => read('investment-grants') ?? defaultGrants;
+  const investment = window.EstateInvestment;
+  const allDeals = () => (read('investment-deals') ?? startingDeals).map(investment.normalize);
+  const hasMember = (deal,person) => deal?.allocations.some(row=>row.person === person);
+
   function investments() {
-    const deals = read('investment-deals') ?? startingDeals;
+    const deals = allDeals();
     if (staff()) return admin() ? deals : deals.filter(deal=>deal.mode !== 'ส่วนบุคคล');
-    return deals.filter(deal => grants()[deal.id]?.includes(api.account()) &&
-      deal.deeds.some(deed=>deed.allocations.some(row=>row.person === api.account())));
+    return deals.filter(deal => grants()[deal.id]?.includes(api.account()) && hasMember(deal,api.account()));
   }
-  const memberAllocations = deed => staff() ? deed.allocations : deed.allocations.filter(row=>row.person===api.account());
+
+  const shareText = share => share.toLocaleString('th-TH', {maximumFractionDigits:2}) + '%';
+  const shareLabel = row => row.pledged > 0 && !row.share ? '<0.01%' : shareText(row.share);
   function investmentPage() {
     const deals = investments();
-    return title('ลงทุนที่ดิน',staff() ? 'โครงการ โฉนด และสัดส่วนเงินลงทุน · ข้อมูลจำลอง' : 'เงินลงทุนและผลตอบแทนของบัญชีนี้ · ข้อมูลจำลอง',
+    const isStaff = staff();
+    return title('ลงทุนที่ดิน',isStaff ? 'ติดตามโฉนดและเงินลงทุนในแต่ละโครงการ · ข้อมูลจำลอง' : 'เงินลงทุนและผลตอบแทนของบัญชีนี้ · ข้อมูลจำลอง',
       admin() ? btn('deal-edit:new','สร้างดีลจำลอง',true) : '') +
       (deals.length ? '<div class="v2-invest-grid">' + deals.map(deal => {
-        const all = deal.deeds.flatMap(memberAllocations);
-        return '<article class="card panel v2-invest">' + copy(escape(deal.name),escape(deal.mode) + ' · ' + deal.deeds.filter(deed=>memberAllocations(deed).length).length + ' โฉนด') +
-          '<div class="v2-invest-total"><span>ยอดลงเงินจริง</span><strong>' + baht(d.sum(all,'paid')) + '</strong></div>' +
-          deal.deeds.filter(deed=>memberAllocations(deed).length).map(deed => '<section class="v2-deed"><h3>' + escape(deed.name) + '</h3>' +
-            memberAllocations(deed).map(row=>'<div><span><b>' + escape(staff() ? memberNames[row.person] : 'สัดส่วนของฉัน') + '</b><small>' +
-              baht(row.paid) + ' / ตกลง ' + baht(row.pledged) + '</small></span><strong>' + row.share.toFixed(2) + '%</strong></div>').join('') +
-            (!staff() ? '<p class="muted">ส่วนแบ่งที่บันทึก ' + baht(d.sum(memberAllocations(deed),'returns')) + '</p>' : '') + '</section>').join('') +
+        const visible = isStaff ? deal.allocations : deal.allocations.filter(row=>row.person === api.account());
+        const pledged = baht(d.sum(visible,'pledged'));
+        return '<article class="card panel v2-invest">' + copy(escape(deal.name),escape(deal.mode) + ' · ' + deal.deeds.length + ' โฉนด') +
+          '<div class="v2-invest-total"><span>' + (isStaff ? 'ทุนตกลงทั้งโครงการ' : 'ทุนตกลงของฉัน') + '</span><strong>' +
+          pledged + '</strong><small>จ่ายจริงแล้ว ' + baht(d.sum(visible,'paid')) + '</small></div>' +
+          '<section class="v2-deed"><h3>โฉนดในดีล</h3><ul class="v2-deed-list">' +
+          deal.deeds.map(deed=>'<li>' + escape(deed.name) + '</li>').join('') + '</ul></section>' +
+          '<section class="v2-deed"><h3>' + (isStaff ? 'สัดส่วนผู้ร่วมลงทุนทั้งดีล' : 'สัดส่วนของฉันในดีล') + '</h3>' +
+          visible.map(row=>'<div><span><b>' + escape(isStaff ? memberNames[row.person] : 'เงินลงทุนที่ตกลง') + '</b><small>' +
+            baht(row.pledged) + '</small></span><strong>' + escape(shareLabel(row)) + '</strong></div>').join('') +
+          (!isStaff ? '<p class="muted">ส่วนแบ่งที่บันทึก ' + baht(d.sum(visible,'returns')) + '</p>' : '') + '</section>' +
+          (admin() && deal.needsReview ? '<p class="muted">รวมยอดจากข้อมูลเดิมรายโฉนดแล้ว โปรดตรวจสัดส่วนทั้งดีลก่อนยืนยัน</p>' : '') +
           (admin() ? '<div class="v2-inline">' + btn('deal-edit:'+deal.id,'แก้ไขดีล') + btn('grants:'+deal.id,'จัดการสิทธิ์') + '</div>' : '') + '</article>';
       }).join('') + '</div>' : '<p class="card panel">ยังไม่มีดีลในบัญชีที่ได้รับสิทธิ์</p>');
   }
 
-  const shareUnits = value => Math.round(Number(value) * 100);
-  const shareText = units => (units / 100).toLocaleString('th-TH', {maximumFractionDigits:2}) + '%';
-
-  function updateDealShares(fieldset) {
-    let allocated = 0;
-    for (const input of fieldset.querySelectorAll('[data-share]')) {
-      const limit = Math.max(10000 - allocated, 0);
-      input.max = String(limit / 100);
-      input.closest('label').querySelector('small').textContent = 'ลงได้สูงสุด ' + shareText(limit);
-      const overLimit = input.validity.rangeOverflow;
-      input.setCustomValidity(overLimit ? 'โฉนดนี้เหลือให้ลงได้ไม่เกิน ' + shareText(limit) : '');
-      input.setAttribute('aria-invalid', String(overLimit));
-      allocated += Math.max(shareUnits(input.value), 0);
-    }
-    const total = fieldset.querySelector('[data-share-total]');
-    const remaining = 10000 - allocated;
-    total.classList.toggle('risk-text', remaining < 0);
-    total.textContent = remaining < 0 ? 'สัดส่วนเกิน ' + shareText(-remaining) :
-      remaining === 0 ? 'จัดสรรครบ 100%' : 'สัดส่วนคงเหลือ ' + shareText(remaining);
-  }
-
   let dealDraft;
+  const newAllocation = person => ({person,share:'',pledged:'',paid:'',returns:0});
   function dealEdit(id) {
     if (!admin()) return;
     const existing = investments().find(deal=>deal.id === id);
-    dealDraft = existing ? structuredClone(existing) : {id:null,name:'',mode:'ร่วมทุน',deeds:[{name:'',allocations:[{person:'company',share:100,pledged:0,paid:0,returns:0}]}]};
+    dealDraft = existing ? structuredClone(existing) : {name:'',mode:'ร่วมทุน',basis:'percent',deeds:[{name:''}],allocations:[newAllocation('company')]};
     paintDeal();
   }
+
+  function fundingInput(label,name,value,max,min,optional = false) {
+    return '<label>' + label + '<input name="' + name + '" type="number" inputmode="decimal" step="0.01" min="' + min +
+      '" max="' + max + '" value="' + escape(String(value ?? '')) + '"' + (optional ? '' : ' required') + '></label>';
+  }
+
   function paintDeal() {
     const deal = dealDraft;
-    open(deal.id ? 'แก้ไขดีลจำลอง' : 'สร้างดีลจำลอง','<form class="editor" id="v2-deal"><label>ชื่อดีล<input name="name" maxlength="70" value="' +
-      escape(deal.name) + '" required></label><label>รูปแบบ<select name="mode">' + ['ส่วนบุคคล','บริษัท','ร่วมทุน'].map(mode=>option(mode,mode,deal.mode)).join('') +
-      '</select></label>' + deal.deeds.map((deed,i)=>'<fieldset class="v2-fieldset"><legend>โฉนด ' + (i+1) + '</legend>' +
-      '<label>เลขโฉนด / ชื่อแปลง' +
-      '<input name="deed-' + i + '" value="' + escape(deed.name) + '" maxlength="70" required></label>' + deed.allocations.map((row,j)=>
-        '<div class="v2-allocation"><label>ผู้ร่วมทุน<select name="person-' + i + '-' + j + '">' +
+    const percent = deal.basis === 'percent';
+    const maxMoney = 1e10;
+    const fields = deal.allocations.map((row,index) => {
+      const share = percent ? fundingInput('สัดส่วน (%)','share-'+index,row.share,100,0.01) :
+        '<div class="v2-deal-output"><span>สัดส่วนที่คำนวณ</span><output data-result-share="' + index + '">—</output></div>';
+      const money = percent && index !== 0 ?
+        '<div class="v2-deal-output"><span>เงินลงทุนที่คำนวณ</span><output data-result-amount="' + index + '">—</output></div>' :
+        fundingInput(percent ? 'เงินลงทุนอ้างอิง (บาท)' : 'เงินลงทุน (บาท)','pledged-'+index,row.pledged,maxMoney,0.01);
+      return '<div class="v2-allocation"><label>' + (index === 0 && percent ? 'ผู้ร่วมทุนคนแรก · ใช้อ้างอิง' : 'ผู้ร่วมทุน ' + (index+1)) +
+        '<select name="person-' + index + '" data-deal-person="' + index + '">' +
         Object.entries(memberNames).map(([key,name])=>option(key,name,row.person)).join('') + '</select></label>' +
-        '<div class="v2-three">' + [['share','สัดส่วน (%)',100],['pledged','ตกลง (บาท)',1e10],['paid','จ่ายจริง (บาท)',1e10]].map(([key,label,max])=>
-          '<label>' + label + '<input name="' + key + '-' + i + '-' + j + '" type="number" inputmode="decimal" step="0.01" min="' +
-          (key === 'share' ? '0.01' : '0') + '" max="' + max + '" value="' + row[key] + '" required' +
-          (key === 'share' ? ' data-share aria-describedby="v2-share-' + i + '-' + j + '"><small id="v2-share-' + i + '-' + j + '"></small>' : '>') +
-          '</label>').join('') + '</div>' +
-        (deed.allocations.length > 1 ? btn('remove-allocation:'+i+','+j,'ลบผู้ร่วมทุน') : '') + '</div>').join('') +
-      '<p class="v2-share-total" role="status" data-share-total></p>' +
-      '<div class="v2-inline">' + (deed.allocations.length < Object.keys(memberNames).length ? btn('add-allocation:'+i,'เพิ่มผู้ร่วมทุน') : '') +
-      (deal.deeds.length > 1 ? btn('remove-deed:'+i,'ลบโฉนด') : '') + '</div></fieldset>').join('') +
-      errorLine + formFooter('ยืนยันดีลจำลอง',btn('add-deed','เพิ่มโฉนด')) + '</form>','v2-deal');
-    document.querySelectorAll('#v2-deal fieldset').forEach(updateDealShares);
+        '<div class="v2-funding-fields">' + share + money + '</div>' +
+        (percent ? '<small class="v2-cap" id="v2-cap-' + index + '" data-cap="' + index + '"></small>' : '') +
+        '<details' + (Number(row.paid) > 0 ? ' open' : '') + '><summary>เงินที่จ่ายจริง (ถ้ามี)</summary>' +
+        fundingInput('จ่ายจริง (บาท)','paid-'+index,row.paid,maxMoney,0,true) + '</details>' +
+        (deal.allocations.length > 1 ? btn('remove-allocation:'+index,'ลบผู้ร่วมทุน') : '') + '</div>';
+    }).join('');
+    open(deal.id ? 'แก้ไขดีลจำลอง' : 'สร้างดีลจำลอง','<form class="editor" id="v2-deal"><div class="form-grid">' +
+      '<label>ชื่อโครงการ<input name="name" maxlength="70" value="' + escape(deal.name) + '" required></label>' +
+      '<label>รูปแบบ<select name="mode">' + ['ส่วนบุคคล','บริษัท','ร่วมทุน'].map(mode=>option(mode,mode,deal.mode)).join('') + '</select></label></div>' +
+      '<fieldset class="v2-fieldset"><legend>โฉนดในดีล</legend><p class="v2-deal-hint">เพิ่มทุกแปลงที่ซื้อในโครงการนี้</p>' +
+      deal.deeds.map((deed,index)=>'<div class="v2-deed-input"><label>เลขโฉนด / ชื่อแปลง ' + (index+1) +
+        '<input name="deed-' + index + '" value="' + escape(deed.name) + '" maxlength="70" required></label>' +
+        (deal.deeds.length > 1 ? btn('remove-deed:'+index,'ลบแปลง') : '') + '</div>').join('') +
+      '<div class="v2-inline">' + btn('add-deed','เพิ่มโฉนด') + '</div></fieldset>' +
+      '<fieldset class="v2-fieldset"><legend>ผู้ร่วมลงทุนทั้งดีล</legend><p class="v2-deal-hint">ตั้งสัดส่วนครั้งเดียว ใช้กับทุกโฉนดในโครงการ</p>' +
+      '<label>วิธีคำนวณ<select name="basis">' + option('percent','กรอกเปอร์เซ็นต์ → คำนวณเงิน',deal.basis) +
+      option('amount','กรอกจำนวนเงิน → คำนวณเปอร์เซ็นต์',deal.basis) + '</select></label>' +
+      '<p class="v2-deal-hint">' + (percent ? 'กรอกเปอร์เซ็นต์และยอดเงินของคนแรกเพื่อคำนวณทุนทั้งดีล แล้วกรอกเปอร์เซ็นต์คนที่เหลือให้ครบ 100%' :
+        'กรอกเงินลงทุนของแต่ละคน ระบบรวมยอดและคำนวณเปอร์เซ็นต์ก่อนบันทึก') + '</p>' + fields +
+      (deal.allocations.length < Object.keys(memberNames).length ? '<div class="v2-inline">' + btn('add-allocation','เพิ่มผู้ร่วมทุน') + '</div>' : '') +
+      '<div class="v2-deal-summary"><span>ทุนทั้งดีล</span><strong data-deal-total>—</strong><p data-share-total role="status"></p></div>' +
+      '</fieldset>' + errorLine + formFooter('บันทึกดีลจำลอง') + '</form>','v2-deal');
+    updateDeal(document.getElementById('v2-deal'));
   }
-  function readDeal(values) {
-    dealDraft.name = values.name.trim();
-    dealDraft.mode = values.mode;
-    dealDraft.deeds.forEach((deed,i)=>{
-      deed.name = values['deed-'+i].trim();
-      deed.allocations.forEach((row,j)=>{
-        const person = values['person-'+i+'-'+j];
-        if (person !== row.person) row.returns = 0;
-        row.person = person;
-        for (const key of ['share','pledged','paid']) row[key] = Number(values[key+'-'+i+'-'+j]);
-      });
-    });
+
+  function fundingRows(form) {
+    return dealDraft.allocations.map((row,index)=>({
+      ...row,
+      share:form.elements['share-'+index]?.value ?? row.share,
+      pledged:form.elements['pledged-'+index]?.value ?? row.pledged,
+    }));
   }
-  function submitDeal(form,values) {
-    if (!admin()) return;
-    readDeal(values);
-    for (const deed of dealDraft.deeds) {
-      if (!deed.name || deed.allocations.reduce((n,row)=>n+shareUnits(row.share),0) !== 10000 ||
-        new Set(deed.allocations.map(row=>row.person)).size !== deed.allocations.length ||
-        deed.allocations.some(row=>row.paid > row.pledged || row.share <= 0)) {
-        error(form,'กรอกโฉนด ใช้ผู้ร่วมทุนไม่ซ้ำ รวมสัดส่วนให้ครบ 100% และให้ยอดจ่ายจริงไม่เกินยอดตกลง');
-        return;
+
+  function updateDeal(form) {
+    const percent = dealDraft.basis === 'percent';
+    const result = investment.calculate(fundingRows(form),dealDraft.basis);
+    let allocated = 0;
+    result.shares.forEach((share,index) => {
+      if (percent) {
+        const input = form.elements['share-'+index];
+        const cap = Math.max(10000 - allocated,0) / 100;
+        const hint = form.querySelector('[data-cap="' + index + '"]');
+        input.max = String(cap);
+        input.setAttribute('aria-describedby',hint.id);
+        hint.textContent = 'ลงได้สูงสุด ' + shareText(cap);
+        const overflow = input.validity.rangeOverflow;
+        input.setAttribute('aria-invalid',String(overflow));
+        input.setCustomValidity(overflow ? 'ดีลนี้เหลือให้ลงได้ไม่เกิน ' + shareText(cap) : '');
+        allocated += Number.isFinite(Number(input.value)) ? Math.max(investment.units(input.value),0) : 0;
+        const output = form.querySelector('[data-result-amount="' + index + '"]');
+        if (output) output.value = result.amounts[index] === null ? '—' : baht(result.amounts[index]);
+      } else {
+        const output = form.querySelector('[data-result-share="' + index + '"]');
+        output.value = share === null || result.amounts[index] === 0 ? '—' : shareLabel({share,pledged:result.amounts[index]});
       }
+    });
+    form.querySelector('[data-deal-total]').textContent = result.total > 0 ? baht(result.total) : '—';
+    const status = form.querySelector('[data-share-total]');
+    const delta = 10000 - allocated;
+    status.classList.toggle('risk-text',percent && delta < 0);
+    status.textContent = percent ? delta < 0 ? 'สัดส่วนเกิน ' + shareText(-delta / 100) :
+      delta === 0 ? 'จัดสรรครบ 100%' : 'สัดส่วนคงเหลือ ' + shareText(delta / 100) :
+      result.total > 0 ? 'สัดส่วนคำนวณจากทุนรวม' : 'กรอกเงินลงทุนเพื่อคำนวณสัดส่วน';
+    return result;
+  }
+
+  function readDeal(form) {
+    dealDraft.name = form.elements.name.value.trim();
+    dealDraft.mode = form.elements.mode.value;
+    dealDraft.deeds.forEach((deed,index)=>{ deed.name = form.elements['deed-'+index].value.trim(); });
+    const result = updateDeal(form);
+    dealDraft.allocations = dealDraft.allocations.map((row,index)=>{
+      const person = form.elements['person-'+index].value;
+      return {
+        person,
+        share:form.elements['share-'+index]?.value || result.shares[index] || '',
+        pledged:form.elements['pledged-'+index]?.value || result.amounts[index] || '',
+        paid:form.elements['paid-'+index].value,
+        returns:person === row.person ? row.returns : 0,
+      };
+    });
+    return result;
+  }
+
+  function changeDeal(form,target) {
+    if (target.name === 'basis') {
+      readDeal(form);
+      dealDraft.basis = target.value;
+      paintDeal();
+      document.getElementById('v2-deal').elements.basis.focus();
     }
-    if (!dealDraft.name || new Set(dealDraft.deeds.map(deed=>deed.name.toLowerCase())).size!==dealDraft.deeds.length) {
-      error(form,'กรอกชื่อดีลและใช้ชื่อโฉนดไม่ซ้ำ'); return;
+    if (target.dataset.dealPerson !== undefined) {
+      const index = Number(target.dataset.dealPerson);
+      if (target.value !== dealDraft.allocations[index].person) form.elements['paid-'+index].value = '';
     }
-    const all = read('investment-deals') ?? startingDeals;
-    if (!dealDraft.id) dealDraft.id = 'INV-' + crypto.randomUUID().slice(0,8);
-    if (!write('investment-deals',[...all.filter(deal=>deal.id !== dealDraft.id),dealDraft])) return;
+  }
+
+  function submitDeal(form) {
+    if (!admin()) return;
+    const {shares,amounts,total} = readDeal(form);
+    if (!dealDraft.name || dealDraft.deeds.some(deed=>!deed.name) ||
+      new Set(dealDraft.deeds.map(deed=>deed.name.toLowerCase())).size !== dealDraft.deeds.length) {
+      return error(form,'กรอกชื่อโครงการและเลขโฉนด / ชื่อแปลงให้ครบและไม่ซ้ำกัน');
+    }
+    if (new Set(dealDraft.allocations.map(row=>row.person)).size !== dealDraft.allocations.length) {
+      return error(form,'เลือกผู้ร่วมทุนแต่ละคนเพียงครั้งเดียว');
+    }
+    if (!(total > 0) || shares.reduce((sum,share)=>sum+investment.units(share),0) !== 10000 ||
+        amounts.some(amount=>!investment.validMoney(amount) || amount <= 0)) {
+      return error(form,dealDraft.basis === 'percent' ? 'ตรวจยอดเงินอ้างอิง และจัดสัดส่วนทั้งดีลให้ครบ 100%' : 'กรอกเงินลงทุนของผู้ร่วมทุนทุกคน');
+    }
+    const allocations = dealDraft.allocations.map((row,index)=>({...row,share:shares[index],pledged:amounts[index],paid:Number(row.paid)}));
+    if (allocations.some(row=>!investment.validMoney(row.paid) || row.paid > row.pledged)) {
+      return error(form,'ยอดจ่ายจริงต้องไม่เกินเงินลงทุนที่ตกลงของแต่ละคน');
+    }
+    const id = dealDraft.id ?? 'INV-' + crypto.randomUUID().slice(0,8);
+    const deal = {...dealDraft,id,allocations,needsReview:false};
+    if (!write('investment-deals',[...allDeals().filter(record=>record.id !== id),deal])) return;
     close();
     api.render();
-    notice('ยืนยันดีลจำลองแล้ว');
+    notice('บันทึกดีลจำลองแล้ว');
   }
   function grantsDialog(id) {
     if (!admin()) return;
@@ -385,7 +459,7 @@ window.createEstateExperience = api => {
     const granted = grants()[id] ?? [];
     open('การเข้าถึงดีล','<form id="v2-grants" data-deal-id="' + id + '" class="editor"><p>' + escape(deal.name) +
       ' · อีเมลตัวอย่างที่ยืนยันแล้ว</p><ul class="v2-grants">' + Object.entries(memberEmails).map(([person,email])=>{
-        const eligible = deal.deeds.some(deed=>deed.allocations.some(row=>row.person===person));
+        const eligible = hasMember(deal,person);
         return '<li><span>' + escape(email) + '</span>' + (eligible ? (granted.includes(person) ?
           btn('revoke:'+id+','+person,'เพิกถอน') : '<small>ยังไม่มีสิทธิ์</small>') : '<small>ไม่มีส่วนลงทุน</small>') + '</li>';
       }).join('') + '</ul><label>อีเมลผู้ร่วมทุน<input name="email" type="email" required></label>' + errorLine +
@@ -396,7 +470,7 @@ window.createEstateExperience = api => {
     const id = form.dataset.dealId;
     const deal = investments().find(row=>row.id===id);
     const match = Object.entries(memberEmails).find(([,email])=>email === values.email.trim().toLowerCase());
-    if (!match || !deal?.deeds.some(deed=>deed.allocations.some(row=>row.person===match[0]))) {
+    if (!match || !hasMember(deal,match[0])) {
       error(form,'เลือกอีเมลบัญชีตัวอย่างที่มีส่วนลงทุนในดีลนี้'); return;
     }
     const next = {...grants(),[id]:[...new Set([...(grants()[id] ?? []),match[0]])]};
@@ -596,24 +670,32 @@ window.createEstateExperience = api => {
         break;
       }
       case 'add-deed': case 'remove-deed': case 'add-allocation': case 'remove-allocation': {
-        if (!admin()) return;
-        readDeal(Object.fromEntries(new FormData(document.getElementById('v2-deal'))));
-        const [i,j] = arg.split(',').map(Number);
-        const blank = {person:'company',share:0,pledged:0,paid:0,returns:0};
-        if (name === 'add-deed') dealDraft.deeds.push({name:'',allocations:dealDraft.deeds[0].allocations
-          .map(({person,share})=>({...blank,person,share}))});
-        if (name === 'remove-deed') dealDraft.deeds.splice(i,1);
+        const form = document.getElementById('v2-deal');
+        if (!admin() || !form) return;
+        readDeal(form);
+        const index = Number(arg);
+        const rows = dealDraft.allocations;
+        let focus;
+        if (name === 'add-deed') {
+          dealDraft.deeds.push({name:''});
+          focus = 'deed-' + (dealDraft.deeds.length - 1);
+        }
+        if (name === 'remove-deed') {
+          dealDraft.deeds.splice(index,1);
+          focus = 'deed-' + Math.min(index,dealDraft.deeds.length-1);
+        }
         if (name === 'add-allocation') {
-          const rows = dealDraft.deeds[i].allocations;
           const person = Object.keys(memberNames).find(key=>!rows.some(row=>row.person === key));
           if (!person) return;
-          rows.push({...blank,person});
+          rows.push(newAllocation(person));
+          focus = (dealDraft.basis === 'percent' ? 'share-' : 'pledged-') + (rows.length - 1);
         }
-        if (name === 'remove-allocation') dealDraft.deeds[i].allocations.splice(j,1);
+        if (name === 'remove-allocation') {
+          rows.splice(index,1);
+          focus = 'person-' + Math.min(index,rows.length-1);
+        }
         paintDeal();
-        const form = document.getElementById('v2-deal');
-        if (name === 'add-deed') form.elements['deed-' + (dealDraft.deeds.length - 1)].focus();
-        if (name === 'add-allocation') form.elements['share-' + i + '-' + (dealDraft.deeds[i].allocations.length - 1)].focus();
+        document.getElementById('v2-deal').elements[focus]?.focus();
         break;
       }
       case 'gallery': galleryDialog(); break;
@@ -643,7 +725,7 @@ window.createEstateExperience = api => {
     switch (form.id) {
       case 'v2-chat-form': ask(values.message); form.reset(); break;
       case 'v2-payment': submitPayment(form,values); break;
-      case 'v2-deal': submitDeal(form,values); break;
+      case 'v2-deal': submitDeal(form); break;
       case 'v2-grants': submitGrant(form,values); break;
       case 'v2-expense': submitExpense(form,values); break;
       case 'v2-rules': submitRule(form,values); break;
@@ -654,5 +736,5 @@ window.createEstateExperience = api => {
     }
   }
   return {allowedRoute,staff,actor,launchers,memberHome,investmentPage,adminTools,birthdayInputs,birthdayPatch,checkBirthday,
-    sound,lookup,contracts,scope,actionsForContract,handleClick,handleSubmit,updateExpensePreview,updateDealShares};
+    sound,lookup,contracts,scope,actionsForContract,handleClick,handleSubmit,updateExpensePreview,updateDeal,changeDeal};
 };
