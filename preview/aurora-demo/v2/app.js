@@ -108,7 +108,7 @@
   let dialogReturn;
   const route = () => {
     const target = location.hash.slice(1);
-    if (target === 'hero') return 'hero';
+    if (!target || target === 'hero') return 'hero';
     if (!account) return 'login';
     if (target === 'reconciliation') return account === 'portfolio' ? target : 'overview';
     const chosen = Object.hasOwn(pages,target) ? target : pref.home;
@@ -754,7 +754,7 @@
         account = null;
         write('session', 'signed-out');
         pref = {...defaults};
-        history.replaceState(null,'',location.pathname + location.search);
+        history.replaceState(null,'','#login');
         render();
         root.querySelector('[data-account]')?.focus();
         window.scrollTo(0,0);
@@ -851,6 +851,5 @@
     open:showDialog,moduleHeader,render,
     active:() => account === 'portfolio' && page === 'reconciliation',
     reviewer:() => person().name});
-  if (account && !location.hash) history.replaceState(null,'','#' + pref.home);
   render();
 })();

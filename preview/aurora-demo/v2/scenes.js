@@ -46,15 +46,22 @@ window.EstateScenes = (() => {
     const edition = i => '<div class="cinema-edition" aria-hidden="true">' + String(i+1).padStart(2,'0') + ' / 05' +
       scenes.map((_,index)=>'<span'+(index<=i?' class="on"':'')+'></span>').join('') + '</div>';
     const house = scenes[0];
+    const wordmark = tone => '<span class="opening-word opening-' + tone + '">' +
+      '<b>SUNDAY</b><b>ESTATE</b></span>';
     const opening = anchor(0) + '<div class="opening-track"><section class="cinema-scene cinema-opening" aria-labelledby="scene-title-0">' +
+      '<div class="opening-camera"><div class="opening-plate">' +
       '<picture class="opening-visual"><source media="(max-width:639px)" srcset="assets/scenes/opening-dawn-mobile.webp">' +
       '<img class="opening-photo" src="assets/scenes/opening-dawn.webp" alt="ภาพประกอบบ้านไทยร่วมสมัยริมสระในแสงเช้า" width="1536" height="1024" fetchpriority="high"></picture>' +
-      '<div class="opening-light" aria-hidden="true"></div><div class="opening-mist" aria-hidden="true"></div>' + edition(0) +
+      '<div class="opening-sun" aria-hidden="true"></div>' +
       '<div class="opening-message"><h1 id="scene-title-0" tabindex="-1">' + house.title + '</h1><p>' + house.copy + '</p></div>' +
-      '<div class="opening-reveal" aria-hidden="true">' + brandImage + '<div class="opening-wordmark"><span class="opening-outline">Sunday Estate</span>' +
-      '<span class="opening-image-type">Sunday Estate</span><span class="opening-gold">Sunday Estate</span></div></div>' +
-      '<div class="cinema-actions opening-actions"><a class="cinema-cta" href="#scene-1" data-scene-scroll="scene-1">เลื่อนดูเรื่องราว ' +
-      icon('chevron',16) + '</a><a class="cinema-cta" href="#properties" data-scene-scroll="properties">ดูผลงานและทรัพย์</a></div></section></div>';
+      '<div class="opening-foreground" aria-hidden="true"></div></div></div>' +
+      '<div class="opening-veil" aria-hidden="true"></div><div class="opening-mist" aria-hidden="true"></div>' +
+      '<div class="opening-shade" aria-hidden="true"></div>' +
+      '<div class="opening-reveal" aria-hidden="true">' + brandImage + '<div class="opening-wordmark">' +
+      wordmark('gold') + wordmark('outline') + wordmark('image-type') + '</div></div>' +
+      '<div class="opening-footer"><p class="opening-cue" aria-hidden="true">' + icon('chevron',16) + ' เลื่อนเพื่อชมฉากเปิด</p>' +
+      '<div class="cinema-actions opening-actions"><a class="cinema-cta" href="#scene-1" data-scene-scroll="scene-1">ฉากถัดไป ' +
+      icon('chevron',16) + '</a><a class="cinema-cta" href="#properties" data-scene-scroll="properties">ดูผลงานและทรัพย์</a></div></div></section></div>';
     const chapters = scenes.slice(1).map((scene,index) => {
       const i = index + 1;
       return anchor(i) + '<section class="cinema-scene" style="--i:' + i + ';--left:' + (4-i) + ';--entry:--entry' + i +
@@ -69,7 +76,7 @@ window.EstateScenes = (() => {
       brandImage + '<span>Sunday Estate</span></a>' +
       '<nav aria-label="หน้าแรก"><a href="#gallery" data-scene-scroll="gallery">แกลเลอรี</a>' +
       '<a class="cinema-cta" href="#overview">' + (api.signedIn ? 'เปิดแดชบอร์ด ' : 'เข้าสู่ระบบ ') + icon('arrow',17) + '</a></nav></header>' +
-      '<main id="workspace" tabindex="-1"><div class="cinema-story">' + opening + chapters + '</div>' +
+      '<main id="workspace" tabindex="-1">' + opening + '<div class="cinema-story">' + chapters + '</div>' +
       '<section id="properties" class="cinema-properties" aria-labelledby="properties-heading"><h2 id="properties-heading" tabindex="-1">ผลงานและทรัพย์เปิดขาย</h2>' +
       '<p>ภาพและสถานะทั้งหมดเป็นตัวอย่างสำหรับทดลองใช้งาน</p>'+
       (groups.length ? '<div class="estate-filters" role="group" aria-label="กรองตามกลุ่มทรัพย์">' +
