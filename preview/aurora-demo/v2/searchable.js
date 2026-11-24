@@ -63,6 +63,9 @@ window.EstateSearchable = (() => {
       matches+=count;
     }
     picker.querySelector('.picker-empty').hidden=matches>0;
+    if(query && input.matches('[role=combobox]')) {
+      activate(input,picker.querySelector('[role=option]:not([hidden]):not([aria-disabled=true])'));
+    }
   }
 
   function sync(picker) {
@@ -118,6 +121,11 @@ window.EstateSearchable = (() => {
       event.preventDefault();event.stopPropagation();
       picker.open=false;picker.querySelector('summary').focus();return;
     }
+    if(event.key==='Backspace' && picker.open && event.target.matches('.picker-search') && !event.target.value) {
+      const lastChip=picker.querySelector('.picker-chip:last-child');
+      if(lastChip) {event.preventDefault();lastChip.click();}
+      return;
+    }
     if(!event.target.matches('[role=combobox]')) return;
     const input=event.target;
     const rows=[...picker.querySelectorAll('[role=option]:not([hidden]):not([aria-disabled=true])')];
@@ -125,6 +133,7 @@ window.EstateSearchable = (() => {
     const last=rows.length-1;
     const keys={ArrowDown:current>=last?0:current+1,ArrowUp:current<=0?last:current-1,
       PageDown:Math.min(current+8,last),PageUp:Math.max(current-8,0)};
+    if(event.ctrlKey || event.metaKey) Object.assign(keys,{Home:0,End:last});
     if(event.key==='Enter' && current>=0) {event.preventDefault();rows[current].click();return;}
     if(Object.hasOwn(keys,event.key)&&rows.length) {event.preventDefault();activate(input,rows[keys[event.key]],true);}
   });

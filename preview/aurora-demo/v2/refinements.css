@@ -80,5 +80,8 @@
 .boot-analytics i{height:240px}
 @keyframes estate-loading{from{background-position:170% 0}to{background-position:-70% 0}}
 @media(min-width:640px){.boot-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.boot-analytics{grid-template-columns:1.4fr 1fr}}
-@media(prefers-color-scheme:dark){.boot-shell{--boot-base:#263756;--boot-shine:#b4b9f33b}}
+@media(prefers-color-scheme:dark){
+  body:has(.boot-shell){background:#101c35}
+  .boot-shell{--boot-base:#263756;--boot-shine:#b4b9f33b}
+}
 @media(prefers-reduced-motion:reduce){.boot-skeleton::after{animation:none}}
