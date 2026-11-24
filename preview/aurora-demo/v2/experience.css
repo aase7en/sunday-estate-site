@@ -63,6 +63,11 @@ dialog[data-kind="v2-chat"]{width:min(calc(100% - 20px),460px);max-height:calc(1
 .context-history{display:grid;gap:7px;margin-top:9px}
 .context-history h3{font-size:14px;margin:0}
 .context-history>div{display:flex;align-items:center;flex-wrap:wrap;gap:8px;border-top:1px solid var(--border);padding-top:6px}
+@media(max-width:639px){
+  .context-card{padding-inline-end:48px}
+  .context-card>a{padding-inline:8px;font-size:11px}
+}
+@media(max-width:374px){.context-metric strong{font-size:18px}}
 .v2-workflows{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:9px}
 .v2-workflows h2,.v2-invest h2{font-size:18px;line-height:1.2}
 .v2-workflows p,.v2-invest p{font-size:12px;margin-top:3px}
