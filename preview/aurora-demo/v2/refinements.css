@@ -93,7 +93,6 @@
       animation-range:cover 1% cover 85%,contain var(--recede) contain 100%;transform-origin:50% 0
     }
     .cinema-scene{margin-bottom:clamp(16px,5svh,64px)}
-    .cinema-opening{animation:estate-recede linear both;animation-timeline:--deck;animation-range:contain var(--recede) contain 100%;transform-origin:50% 0}
     .estate-ribbon{animation:estate-ribbon-reveal linear both;animation-timeline:view();animation-range:entry 8% cover 32%}
   }
 }

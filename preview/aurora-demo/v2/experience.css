@@ -202,7 +202,7 @@ dialog[data-kind="v2-chat"]{width:min(calc(100% - 20px),460px);max-height:calc(1
   .cinema-brand{gap:5px;font-size:12px}
   .cinema-brand .brand-mark{width:30px;height:30px}
   .cinema-photo{object-position:62% 50%}
-  .cinema-scene:nth-of-type(5) .cinema-photo{object-position:54% 50%}
+  .cinema-scene[aria-labelledby="scene-title-4"] .cinema-photo{object-position:54% 50%}
   .cinema-scrim{background:linear-gradient(0deg,#071122f7 5%,#09142650 53%,#0c152919 97%)}
 }
 @media (prefers-reduced-motion: reduce){

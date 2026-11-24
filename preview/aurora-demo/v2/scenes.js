@@ -42,23 +42,34 @@ window.EstateScenes = (() => {
     const groups = [...new Set(listings.map(listing => listing.group))];
     const savedGallery = read('gallery-published');
     const gallery = Array.isArray(savedGallery) && savedGallery.length ? savedGallery : defaultGallery;
-    const chapters = scenes.map((scene,i) =>
-      '<div class="cinema-anchor" id="scene-' + i + '" style="--entry:--entry' + i + '" aria-hidden="true"></div><section class="cinema-scene' +
-      (i === 0 ? ' cinema-opening' : '') + '" style="--i:' + i + ';--left:' + (4-i) + ';--entry:--entry' + i + ';--recede:' + (i*20+15) + '%" aria-labelledby="scene-title-' + i + '">' +
-      '<img class="cinema-photo" src="' + scene.src + '" alt="' + escape(scene.alt) + '"' +
-      (scene.mobile ? ' srcset="' + scene.mobile + ' 828w, ' + scene.src + ' 1440w" sizes="100vw"' : '') +
-      (i ? ' loading="lazy" decoding="async"' : ' fetchpriority="high"') + '>' +
-      '<div class="cinema-scrim"></div><div class="cinema-edition" aria-hidden="true">'+String(i+1).padStart(2,'0')+' / 05'+
-      scenes.map((_,index)=>'<span'+(index<=i?' class="on"':'')+'></span>').join('')+'</div><div class="cinema-content"><p class="cinema-chapter">' + scene.label + '</p>' +
-      (i === 0 ? '<h1' : '<h2') + ' id="scene-title-' + i + '" tabindex="-1">' + scene.title + (i === 0 ? '</h1>' : '</h2>') +
-      '<p class="cinema-copy">' + scene.copy + '</p>' + (i ? '' :
-        '<div class="cinema-actions"><a class="cinema-cta" href="#scene-1" data-scene-scroll="scene-1">เลื่อนดูเรื่องราว ' +
-        icon('chevron',16) + '</a><a class="cinema-cta" href="#properties" data-scene-scroll="properties">ดูผลงานและทรัพย์</a></div>') + '</div></section>').join('');
+    const anchor = i => '<div class="cinema-anchor" id="scene-' + i + '" style="--entry:--entry' + i + '" aria-hidden="true"></div>';
+    const edition = i => '<div class="cinema-edition" aria-hidden="true">' + String(i+1).padStart(2,'0') + ' / 05' +
+      scenes.map((_,index)=>'<span'+(index<=i?' class="on"':'')+'></span>').join('') + '</div>';
+    const house = scenes[0];
+    const opening = anchor(0) + '<div class="opening-track"><section class="cinema-scene cinema-opening" aria-labelledby="scene-title-0">' +
+      '<picture class="opening-visual"><source media="(max-width:639px)" srcset="assets/scenes/opening-dawn-mobile.webp">' +
+      '<img class="opening-photo" src="assets/scenes/opening-dawn.webp" alt="ภาพประกอบบ้านไทยร่วมสมัยริมสระในแสงเช้า" width="1536" height="1024" fetchpriority="high"></picture>' +
+      '<div class="opening-light" aria-hidden="true"></div><div class="opening-mist" aria-hidden="true"></div>' + edition(0) +
+      '<div class="opening-message"><h1 id="scene-title-0" tabindex="-1">' + house.title + '</h1><p>' + house.copy + '</p></div>' +
+      '<div class="opening-reveal" aria-hidden="true">' + brandImage + '<div class="opening-wordmark"><span class="opening-outline">Sunday Estate</span>' +
+      '<span class="opening-image-type">Sunday Estate</span><span class="opening-gold">Sunday Estate</span></div></div>' +
+      '<div class="cinema-actions opening-actions"><a class="cinema-cta" href="#scene-1" data-scene-scroll="scene-1">เลื่อนดูเรื่องราว ' +
+      icon('chevron',16) + '</a><a class="cinema-cta" href="#properties" data-scene-scroll="properties">ดูผลงานและทรัพย์</a></div></section></div>';
+    const chapters = scenes.slice(1).map((scene,index) => {
+      const i = index + 1;
+      return anchor(i) + '<section class="cinema-scene" style="--i:' + i + ';--left:' + (4-i) + ';--entry:--entry' + i +
+        ';--recede:' + (i*20+15) + '%" aria-labelledby="scene-title-' + i + '">' +
+        '<img class="cinema-photo" src="' + scene.src + '" alt="' + escape(scene.alt) + '"' +
+        (scene.mobile ? ' srcset="' + scene.mobile + ' 828w, ' + scene.src + ' 1440w" sizes="100vw"' : '') +
+        ' loading="lazy" decoding="async"><div class="cinema-scrim"></div>' + edition(i) +
+        '<div class="cinema-content"><p class="cinema-chapter">' + scene.label + '</p><h2 id="scene-title-' + i + '" tabindex="-1">' +
+        scene.title + '</h2><p class="cinema-copy">' + scene.copy + '</p></div></section>';
+    }).join('');
     return '<div class="cinema-page"><header class="cinema-nav"><a class="cinema-brand" href="#scene-0" data-scene-scroll="scene-0">' +
       brandImage + '<span>Sunday Estate</span></a>' +
       '<nav aria-label="หน้าแรก"><a href="#gallery" data-scene-scroll="gallery">แกลเลอรี</a>' +
       '<a class="cinema-cta" href="#overview">' + (api.signedIn ? 'เปิดแดชบอร์ด ' : 'เข้าสู่ระบบ ') + icon('arrow',17) + '</a></nav></header>' +
-      '<main id="workspace" tabindex="-1"><div class="cinema-story">' + chapters + '</div>' +
+      '<main id="workspace" tabindex="-1"><div class="cinema-story">' + opening + chapters + '</div>' +
       '<section id="properties" class="cinema-properties" aria-labelledby="properties-heading"><h2 id="properties-heading" tabindex="-1">ผลงานและทรัพย์เปิดขาย</h2>' +
       '<p>ภาพและสถานะทั้งหมดเป็นตัวอย่างสำหรับทดลองใช้งาน</p>'+
       (groups.length ? '<div class="estate-filters" role="group" aria-label="กรองตามกลุ่มทรัพย์">' +
