@@ -180,8 +180,10 @@ window.createEstateExperience = api => {
     open(receiver ? 'เลือกรายการรับชำระ' : 'ชำระเงินตามสัญญา',
       '<div class="editor"><p class="muted">' + (receiver ? 'เลือกสัญญาสินเชื่อเพื่อทดลองบันทึกรับชำระ' :
         'เลือกสัญญาเพื่อดูยอดตามข้อมูลจำลอง เดโมยังไม่มีช่องทางจ่ายเงินจริง') +
-      '</p><div class="shortcut-contracts">' + (candidates.map(c=>btn((receiver ? 'payment:' : 'pay-preview:') + c.id,
-        c.id + ' · ' + escape(c.property) + ' · ' + d.labels[c.type])).join('') || '<p>ไม่มีสัญญาที่มียอดคงเหลือ</p>') + '</div></div>','payment-shortcut');
+      '</p>' + window.EstateSearchable.render({id:'payment-contract-picker',label:'สัญญาที่เลือกได้',
+        placeholder:'ค้นหาเลขสัญญาหรือพื้นที่',empty:'ไม่พบสัญญาที่ตรงกับคำค้น',options:candidates.map(c=>({
+          value:(receiver ? 'payment:' : 'pay-preview:')+c.id,label:c.id+' · '+c.property,group:d.labels[c.type]
+        }))}) + '</div>','payment-shortcut');
   }
 
   const paymentsFor = id => readList('demo-payments').filter(row=>row.contract === id);

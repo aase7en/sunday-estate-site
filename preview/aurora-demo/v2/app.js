@@ -91,7 +91,7 @@
   };
   let pref = account ? load(account) : {...defaults};
   let page = 'overview';
-  let statusFilter = 'all';
+  let statusFilter = [];
   let lookup = '';
   let cardFlip;
   let flipRevision = 0;
@@ -324,9 +324,9 @@
     return '<section class="kpis lending-kpis" aria-label="ตัวชี้วัด' + d.labels[type] + '">' + cards.map(kpi).join('') + '</section>' +
       '<div class="lending-grid"><article class="card panel records">' + cardHead('ทะเบียนสัญญา', 'ดูรายละเอียดจากรายการสัญญา', 'file', 'purple') +
       '<div class="record-tools"><label class="field-search">' + icon('search', 17) + '<input type="search" aria-label="ค้นหาในทะเบียนสัญญา" placeholder="เลขสัญญาหรือพื้นที่" value="' +
-      escape(lookup) + '"></label><label><span class="sr-only">สถานะสัญญา</span><select id="' + namespace + 'contract-status" aria-label="สถานะสัญญา"><option value="all">ทุกสถานะ</option>' +
-      Object.entries(d.statusName).map(([key, text]) => '<option value="' + key + '"' + (statusFilter === key ? ' selected' : '') + '>' + text + '</option>').join('') +
-      '</select></label></div><div id="' + namespace + 'record-results">' + recordRows(rows) + '</div></article>' +
+      escape(lookup) + '"></label>' + window.EstateSearchable.render({id:namespace+'contract-status',multiple:true,
+        options:Object.entries(d.statusName).map(([value,label])=>({value,label})),selected:statusFilter,
+        label:'กรองสถานะสัญญา',placeholder:'ค้นหาสถานะ'}) + '</div><div id="' + namespace + 'record-results">' + recordRows(rows) + '</div></article>' +
       '<div class="lending-aside"><article class="card panel risk-panel">' +
       cardHead(isLoan ? 'สัดส่วนหนี้ต่อหลักประกัน (LTV)' : 'ยอดใกล้ครบกำหนดไถ่ถอน', isLoan ? 'สัญญาปล่อยกู้ที่ยังเปิด' : 'สัญญาขายฝากที่ยังเปิด', isLoan ? 'percent' : 'clock', 'cyan') +
       '<div class="risk-stat">' + stat + '</div></article><article class="card panel queue">' +
@@ -334,7 +334,7 @@
   }
   function recordRows(rows) {
     const query = lookup.trim().toLowerCase();
-    const filtered = rows.filter(c => (statusFilter === 'all' || c.status === statusFilter) && (c.id + ' ' + c.property).toLowerCase().includes(query));
+    const filtered = rows.filter(c => (!statusFilter.length || statusFilter.includes(c.status)) && (c.id + ' ' + c.property).toLowerCase().includes(query));
     if (!filtered.length) return '<p class="empty" role="status">ไม่พบสัญญาที่ตรงกับตัวกรอง</p>';
     return '<div class="record-header" aria-hidden="true"><span>สัญญา / พื้นที่</span><span>กำหนด</span><span>เงินต้นคงค้าง</span><span>สถานะ</span></div><ul class="record-list" aria-label="ผลการค้นหา ' +
       filtered.length + ' สัญญา">' + filtered.map(c => '<li><button type="button" data-contract="' + c.id + '"><span><strong>' + c.id +
@@ -398,7 +398,7 @@
     document.documentElement.dataset.theme = currentTheme;
     page = route();
     let content;
-    if (page === 'hero') content = window.EstateScenes.landing({icon,escape,brandImage});
+    if (page === 'hero') content = window.EstateScenes.landing({icon,escape,brandImage,signedIn:!!account});
     else if (!account) content = login();
     else if (page === 'profile') content = shell(profile());
     else if (page === 'lending') content = shell(lending());
@@ -407,7 +407,7 @@
     else if (page === 'reconciliation') content = shell(reconciliation.page());
     else content = shell(xp.staff() ? dashboard() : xp.memberHome());
     root.innerHTML = content;
-    window.EstateScenes.mount({read});
+    window.EstateScenes.mount({read,open:showDialog,escape});
     const dot = root.querySelector('.notification-dot');
     if (dot && !pref.reminders) dot.remove();
     if (account && page === 'overview') renderCharts();
@@ -648,7 +648,7 @@
     account = key;
     pref = load(account);
     lookup = '';
-    statusFilter = 'all';
+    statusFilter = [];
     write('session', account);
     history.replaceState(null, '', '#' + pref.home);
     render('workspace');
@@ -696,7 +696,7 @@
     }
   });
   document.addEventListener('click', e => {
-    const btn = e.target.closest('button');
+    const btn = e.target.closest('button, .picker-single [role=option]:not([aria-disabled=true])');
     if (!btn) return;
     if (btn.dataset.v2) { xp.handleClick(btn); return; }
     const {action, period, type, table, contract: id, account: choice, reset} = btn.dataset;
@@ -766,7 +766,7 @@
     if (e.target.matches('#v2-deal input')) xp.updateDeal(e.target.form);
     if (e.target.closest('#v2-expense')) xp.updateExpensePreview(e.target.closest('form'));
     if (e.target.id === 'global-lookup') updateSearch(e.target.value);
-    if (e.target.matches('.record-tools input')) {
+    if (e.target.matches('.record-tools .field-search input')) {
       lookup = e.target.value;
       document.querySelector('#record-results').innerHTML = recordRows(xp.contracts(d.asOf,pref.type));
     }
@@ -774,8 +774,8 @@
   document.addEventListener('change', e => {
     if (e.target.matches('#v2-deal select')) xp.changeDeal(e.target.form,e.target);
     if (e.target.closest('#v2-expense')) xp.updateExpensePreview(e.target.closest('form'));
-    if (e.target.id === 'contract-status') {
-      statusFilter = e.target.value;
+    if (e.target.matches('.record-tools .picker-multiple input[type=checkbox]')) {
+      statusFilter = [...e.target.closest('.picker').querySelectorAll('input:checked')].map(input=>input.value);
       document.querySelector('#record-results').innerHTML = recordRows(xp.contracts(d.asOf,pref.type));
     }
     if (dialogType === 'dates') dialog.querySelector('#date-error').textContent = '';

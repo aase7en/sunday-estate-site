@@ -9,20 +9,32 @@
   <link rel="stylesheet" href="styles.css?v=2.16">
   <script defer src="data.js?v=2.10"></script>
   <script defer src="charts.js?v=2.10"></script>
-  <link rel="stylesheet" href="experience.css?v=2.17.1">
+  <link rel="stylesheet" href="experience.css?v=2.18">
   <link rel="stylesheet" href="workbench.css?v=2.15">
   <link rel="stylesheet" href="toast.css?v=2.17">
-  <script defer src="scenes.js?v=2.11"></script>
+  <link rel="stylesheet" href="refinements.css?v=2.18">
+  <script defer src="searchable.js?v=2.18"></script>
+  <script defer src="scenes.js?v=2.18"></script>
   <script defer src="investment.js?v=2.2"></script>
-  <script defer src="experience.js?v=2.17"></script>
+  <script defer src="experience.js?v=2.18"></script>
   <script defer src="dashboard-layout.js?v=2.15"></script>
   <script defer src="reconciliation.js?v=2.16"></script>
   <script defer src="toast.js?v=2.16"></script>
-  <script defer src="app.js?v=2.17"></script>
+  <script defer src="app.js?v=2.18"></script>
 </head>
 <body>
   <a class="skip" href="#workspace">ข้ามไปเนื้อหาหลัก</a>
-  <div id="app"></div>
+  <div id="app">
+    <main class="boot-shell" aria-busy="true" aria-label="กำลังโหลด Sunday Estate">
+      <p class="sr-only" role="status">กำลังโหลด Sunday Estate</p>
+      <div aria-hidden="true">
+        <div class="boot-header"><i class="boot-skeleton boot-avatar"></i><div><i class="boot-skeleton boot-name"></i><i class="boot-skeleton boot-description"></i></div></div>
+        <div class="boot-kpis"><i class="boot-skeleton"></i><i class="boot-skeleton"></i><i class="boot-skeleton"></i><i class="boot-skeleton"></i></div>
+        <div class="boot-analytics"><i class="boot-skeleton"></i><i class="boot-skeleton"></i></div>
+      </div>
+    </main>
+    <noscript><p>เปิด JavaScript เพื่อใช้งาน Sunday Estate</p></noscript>
+  </div>
   <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
   <div class="toast-stack"><div class="toast-live sr-only" role="log" aria-live="polite" aria-relevant="additions" aria-label="การแจ้งเตือน"></div><ul class="toast-list" aria-label="ข้อความแจ้งเตือน"></ul></div>
 </body>

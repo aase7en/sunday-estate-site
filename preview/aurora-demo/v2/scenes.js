@@ -6,6 +6,12 @@ window.EstateScenes = (() => {
     {src:'assets/scenes/future.webp', label:'วัยเกษียณ', title:'วางแผนทุนเพื่อวัยเกษียณ', alt:'พื้นที่พักอาศัยท่ามกลางบรรยากาศสงบ', copy:'เตรียมเงินลงทุนวันนี้ เพื่อให้วันข้างหน้ามีพื้นที่สำหรับสิ่งที่อยากทำ'},
     {src:'assets/scenes/family.webp', mobile:'assets/scenes/family-828.webp', label:'ครอบครัว', title:'อยู่ใกล้คนที่เรารัก', alt:'ครอบครัวรับประทานอาหารร่วมกันในบ้าน', copy:'มีพื้นที่ให้ครอบครัวได้ใช้เวลาด้วยกัน'},
   ];
+  const listings = [
+    {id:'SE-DEMO-01',title:'บ้านร่วมสมัยริมสระ',area:'ชานเมือง · ทรัพย์ตัวอย่าง',status:'ขายแล้ว',src:scenes[0].src,
+      description:'บ้านร่วมสมัยที่เปิดพื้นที่นั่งเล่นสู่สวนและสระ สาธิตการนำเสนอผลงานที่ปิดการขายแล้ว'},
+    {id:'SE-DEMO-02',title:'ที่ดินสำหรับทำสวน',area:'พื้นที่เกษตร · ทรัพย์ตัวอย่าง',status:'เปิดขาย',src:scenes[2].src,
+      description:'แปลงตัวอย่างสำหรับทำสวนและวางแผนใช้พื้นที่ สาธิตการแสดงรายละเอียดของทรัพย์ที่เปิดขาย'},
+  ];
   const defaultGallery = scenes.map(({src,alt,title}) => ({src,alt,caption:title}));
   const asset = value => typeof value === 'string' && (/^data:image\/(jpeg|webp|png);base64,[\w+/=]+$/.test(value) ||
     defaultGallery.some(image => image.src === value)) ? value : '';
@@ -15,21 +21,29 @@ window.EstateScenes = (() => {
   function landing(api) {
     const {icon, escape, brandImage} = api;
     const chapters = scenes.map((scene,i) =>
-      '<div class="cinema-anchor" id="scene-' + i + '" aria-hidden="true"></div><section class="cinema-scene' +
-      (i === 0 ? ' cinema-opening' : '') + '" aria-labelledby="scene-title-' + i + '">' +
+      '<div class="cinema-anchor" id="scene-' + i + '" style="--entry:--entry' + i + '" aria-hidden="true"></div><section class="cinema-scene' +
+      (i === 0 ? ' cinema-opening' : '') + '" style="--i:' + i + ';--left:' + (4-i) + ';--entry:--entry' + i + ';--recede:' + (i*20+15) + '%" aria-labelledby="scene-title-' + i + '">' +
       '<img class="cinema-photo" src="' + scene.src + '" alt="' + escape(scene.alt) + '"' +
       (scene.mobile ? ' srcset="' + scene.mobile + ' 828w, ' + scene.src + ' 1440w" sizes="100vw"' : '') +
       (i ? ' loading="lazy" decoding="async"' : ' fetchpriority="high"') + '>' +
-      '<div class="cinema-scrim"></div><div class="cinema-content"><p class="cinema-chapter">' + scene.label + '</p>' +
+      '<div class="cinema-scrim"></div><div class="cinema-edition" aria-hidden="true">'+String(i+1).padStart(2,'0')+' / 05'+
+      scenes.map((_,index)=>'<span'+(index<=i?' class="on"':'')+'></span>').join('')+'</div><div class="cinema-content"><p class="cinema-chapter">' + scene.label + '</p>' +
       (i === 0 ? '<h1' : '<h2') + ' id="scene-title-' + i + '" tabindex="-1">' + scene.title + (i === 0 ? '</h1>' : '</h2>') +
       '<p class="cinema-copy">' + scene.copy + '</p>' + (i ? '' :
         '<div class="cinema-actions"><a class="cinema-cta" href="#scene-1" data-scene-scroll="scene-1">เลื่อนดูเรื่องราว ' +
-        icon('chevron',16) + '</a></div>') + '</div></section>').join('');
+        icon('chevron',16) + '</a><a class="cinema-cta" href="#properties" data-scene-scroll="properties">ดูผลงานและทรัพย์</a></div>') + '</div></section>').join('');
     return '<div class="cinema-page"><header class="cinema-nav"><a class="cinema-brand" href="#scene-0" data-scene-scroll="scene-0">' +
       brandImage + '<span>Sunday Estate</span></a>' +
       '<nav aria-label="หน้าแรก"><a href="#gallery" data-scene-scroll="gallery">แกลเลอรี</a>' +
-      '<a class="cinema-cta" href="#overview">เปิดแดชบอร์ด ' + icon('arrow',17) + '</a></nav></header>' +
+      '<a class="cinema-cta" href="#overview">' + (api.signedIn ? 'เปิดแดชบอร์ด ' : 'เข้าสู่ระบบ ') + icon('arrow',17) + '</a></nav></header>' +
       '<main id="workspace" tabindex="-1"><div class="cinema-story">' + chapters + '</div>' +
+      '<section id="properties" class="cinema-properties" aria-labelledby="properties-heading"><h2 id="properties-heading" tabindex="-1">ผลงานและทรัพย์เปิดขาย</h2>' +
+      '<p>รายการและภาพตัวอย่างสำหรับทดลองหน้าเว็บ</p><div class="estate-listings">' + listings.map(listing=>
+        '<article class="estate-listing"><div class="estate-listing-photo"><img loading="lazy" src="'+listing.src+'" alt="'+escape(listing.title)+'">' +
+        '<span class="'+(listing.status==='ขายแล้ว'?'estate-ribbon':'estate-available')+'">'+listing.status+'</span></div>' +
+        '<div class="estate-listing-copy"><h3>'+escape(listing.title)+'</h3><p>'+escape(listing.area)+'</p>' +
+        '<button type="button" class="cinema-cta" data-listing="'+listing.id+'">ดูรายละเอียด'+icon('right',16)+'</button></div></article>').join('') +
+      '</div></section>' +
       '<section id="gallery" class="cinema-gallery" aria-labelledby="gallery-heading"><div class="gallery-heading"><div>' +
       '<h2 id="gallery-heading" tabindex="-1">แกลเลอรี</h2><p>ภาพประกอบแนวคิด</p></div>' +
       '<button class="control" type="button" data-gallery-control="toggle" aria-pressed="false">หยุดภาพ</button></div>' +
@@ -51,32 +65,11 @@ window.EstateScenes = (() => {
     const caption = stage.querySelector('figcaption');
     const count = page.querySelector('.gallery-controls span');
     const toggle = page.querySelector('[data-gallery-control="toggle"]');
-    const cards = [...page.querySelectorAll('.cinema-scene')];
-    const anchors = [...page.querySelectorAll('.cinema-anchor')];
-    const nav = page.querySelector('.cinema-nav');
-    const introActions = cards[0].querySelector('.cinema-actions');
-    const compact = matchMedia('(max-height:540px)');
     const skip = document.querySelector('.skip');
     const onSkip = event => {
       event.preventDefault();
       page.querySelector('main').focus();
     };
-    let frame = 0;
-    let active = -1;
-
-    function updateChapter() {
-      frame = 0;
-      const navBottom = nav.getBoundingClientRect().bottom;
-      const next = anchors.reduce((current, anchor, i) => anchor.getBoundingClientRect().top <= navBottom + 45 ? i : current,0);
-      if (next === active) return;
-      cards[active]?.classList.remove('in-view');
-      active = next;
-      cards[active].classList.add('in-view');
-      syncIntro();
-    }
-    const syncIntro = () => { introActions.inert = active > 0 && !motion.matches && !compact.matches; };
-    const queueChapter = () => { if (!frame) frame = requestAnimationFrame(updateChapter); };
-
     let index = 0;
     let current = -1;
     let request = 0;
@@ -127,10 +120,16 @@ window.EstateScenes = (() => {
       sync();
     }, {threshold:.15});
     const onMotion = () => {
-      syncIntro();
       sync();
     };
     const onClick = event => {
+      const listingButton = event.target.closest('[data-listing]');
+      if(listingButton){
+        const listing=listings.find(row=>row.id===listingButton.dataset.listing);
+        if(listing) api.open(listing.title,'<div class="editor"><img class="estate-details-image" src="'+listing.src+'" alt="'+api.escape(listing.title)+'">' +
+          '<p>'+api.escape(listing.area)+' · '+listing.status+'</p><p>'+api.escape(listing.description)+'</p></div>','public-listing');
+        return;
+      }
       const jump = event.target.closest('[data-scene-scroll]');
       if (jump) {
         event.preventDefault();
@@ -148,24 +147,16 @@ window.EstateScenes = (() => {
     };
 
     page.addEventListener('click',onClick);
-    window.addEventListener('scroll',queueChapter,{passive:true});
-    window.addEventListener('resize',queueChapter);
     document.addEventListener('visibilitychange',sync);
     motion.addEventListener('change',onMotion);
-    compact.addEventListener('change',syncIntro);
     skip.addEventListener('click',onSkip);
     observer.observe(gallery);
-    updateChapter();
     sync();
     stopCurrent = () => {
       ++request;
       clearInterval(interval);
-      cancelAnimationFrame(frame);
       observer.disconnect();
-      window.removeEventListener('scroll',queueChapter);
-      window.removeEventListener('resize',queueChapter);
       motion.removeEventListener('change',onMotion);
-      compact.removeEventListener('change',syncIntro);
       skip.removeEventListener('click',onSkip);
       document.removeEventListener('visibilitychange',sync);
     };
