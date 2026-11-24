@@ -398,7 +398,7 @@
     document.documentElement.dataset.theme = currentTheme;
     page = route();
     let content;
-    if (page === 'hero') content = window.EstateScenes.landing({icon,escape,brandImage,signedIn:!!account});
+    if (page === 'hero') content = window.EstateScenes.landing({icon,escape,brandImage,read,signedIn:!!account});
     else if (!account) content = login();
     else if (page === 'profile') content = shell(profile());
     else if (page === 'lending') content = shell(lending());
@@ -407,7 +407,7 @@
     else if (page === 'reconciliation') content = shell(reconciliation.page());
     else content = shell(xp.staff() ? dashboard() : xp.memberHome());
     root.innerHTML = content;
-    window.EstateScenes.mount({read,open:showDialog,escape});
+    window.EstateScenes.mount({read});
     const dot = root.querySelector('.notification-dot');
     if (dot && !pref.reminders) dot.remove();
     if (account && page === 'overview') renderCharts();

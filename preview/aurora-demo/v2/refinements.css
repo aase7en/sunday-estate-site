@@ -31,16 +31,58 @@
 .cinema-properties h2{font-size:clamp(28px,5vw,54px);letter-spacing:-.045em}
 .cinema-properties h3{font-size:clamp(18px,2.8vw,27px)}
 .cinema-properties>p{color:var(--muted);margin:7px 0 20px}
-.estate-listings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(10px,2vw,23px)}
-.estate-listing{min-width:0;overflow:hidden;border:1px solid #e7c58249;border-radius:18px;background:#142239}
-.estate-listing-photo{position:relative;isolation:isolate;overflow:hidden;aspect-ratio:16/9;background:#0e1b2f}
+ .estate-listings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:clamp(10px,2vw,23px)}
+.estate-filters{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 14px}
+.estate-filters .control[aria-pressed=true]{color:#ffe7ae;background:#392e27;border-color:#cba767}
+.estate-listing{min-width:0;overflow:hidden;border:1px solid #e7c58249;border-radius:18px;background:#142239;color:#f9f5ef}
+.estate-listing summary{display:block;list-style:none;cursor:pointer}
+.estate-listing summary::-webkit-details-marker{display:none}
+.estate-listing summary:focus-visible{outline-offset:-3px}
+.estate-listing-photo{position:relative;isolation:isolate;overflow:hidden;aspect-ratio:16/8;background:#0e1b2f}
 .estate-listing-photo img{width:100%;height:100%}
-.estate-ribbon{position:absolute;right:-39px;top:24px;width:156px;text-align:center;transform:rotate(37deg);background:linear-gradient(110deg,#d2a358,#ffe7ae);color:#22180c;box-shadow:0 3px 10px #0006;font-weight:700;font-size:13px;padding:6px 0}
-.estate-available{position:absolute;right:12px;top:12px;border-radius:20px;background:#0b2735ed;color:#cdf9dd;border:1px solid #7bccad77;padding:4px 9px;font-weight:600}
-.estate-listing-copy{display:grid;gap:5px;padding:clamp(12px,2.5vw,22px)}
-.estate-listing-copy p{color:var(--muted)}
-.estate-listing-copy button{justify-self:start;margin-top:6px}
-.estate-details-image{aspect-ratio:16/9;border-radius:12px}
+.estate-ribbon{position:absolute;right:clamp(-43px,-3.9vw,-35px);top:clamp(23px,3.05vw,37px);width:clamp(155px,17vw,204px);
+  text-align:center;transform:rotate(37deg);background:linear-gradient(110deg,var(--ribbon-start,#d2a358),var(--ribbon-end,#ffe7ae));
+  color:#22180c;box-shadow:0 3px 10px #0006;font-weight:700;font-size:clamp(11px,1.35vw,13px);padding:5px 0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-inline:26px}
+.estate-ribbon[data-tone=available]{--ribbon-start:#91d1b7;--ribbon-end:#d9f4da}
+.estate-ribbon[data-tone=promotion]{--ribbon-start:#e29f8a;--ribbon-end:#f8d3b7}
+.estate-ribbon[data-tone=booking]{--ribbon-start:#a7b6ed;--ribbon-end:#d5daff}
+.estate-ribbon[data-tone=custom]{--ribbon-start:#b998de;--ribbon-end:#ecd6fb}
+.estate-listing-copy{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:clamp(12px,2.5vw,22px)}
+.estate-listing-copy h3{margin:0 0 4px;font-size:clamp(16px,2.3vw,24px)}
+.estate-listing-copy p,.estate-listing-details{color:#c8d2e5;font-size:13px}
+.estate-listing-expand{color:#f9dfac;display:flex;align-items:center;gap:5px;white-space:nowrap;font-size:12px;font-weight:600}
+.estate-listing summary:hover .estate-listing-expand{color:#fff5de}
+.estate-listing details[open] .estate-open-label,.estate-listing details:not([open]) .estate-close-label{display:none}
+.estate-listing details[open] .estate-listing-expand svg{rotate:180deg}
+.estate-listing-details{border-top:1px solid #e7c58230;padding:clamp(12px,2.5vw,22px);white-space:pre-wrap;overflow-wrap:anywhere}
+.estate-review .estate-listings{grid-template-columns:1fr}
+.estate-editor-image{width:min(100%,360px);aspect-ratio:16/8;height:auto;border-radius:12px}
+
+.gallery-figure{margin:12px 0 0}
+.gallery-stage{position:relative;isolation:isolate;overflow:hidden;perspective:1150px;touch-action:pan-y pinch-zoom;
+  user-select:none;cursor:grab;width:100%;height:clamp(202px,48vw,484px);border-radius:clamp(14px,3vw,27px);
+  background:radial-gradient(ellipse at 50% 87%,#86674433,transparent 62%),linear-gradient(155deg,#122239,#0c1628 57%,#121f31);
+  border:1px solid #e8c68a31}
+.gallery-stage::before{content:"";position:absolute;inset:auto 3% 6%;height:29%;border-radius:50%;border:1px solid #e2bc6c38;
+  background:radial-gradient(ellipse,#9a794237,transparent 70%);box-shadow:inset 0 0 22px #c3974c12;pointer-events:none}
+.gallery-stage.is-dragging,.gallery-stage.is-dragging .gallery-card{cursor:grabbing}
+.gallery-card{position:absolute;inset:0;margin:auto;aspect-ratio:16/10;width:60%;height:auto;max-height:85%;overflow:hidden;
+  border:1px solid #d3b77e85;border-radius:clamp(9px,1.65vw,19px);background:#13243a;box-shadow:0 16px 32px #050b15bd;
+  cursor:pointer;backface-visibility:hidden}
+.gallery-card.is-current{border-color:#efce8d;cursor:grab}
+.gallery-card img{pointer-events:none;user-select:none}
+.gallery-figure figcaption{text-align:center;padding:9px 6px 0;color:#f4e4c6;font-size:clamp(15px,2vw,21px);font-weight:600}
+.gallery-controls{display:grid;justify-items:center;margin-top:8px}
+.gallery-navigation{display:flex;align-items:center;gap:10px}
+.gallery-navigation .control{width:44px;padding:0;border-radius:50%;color:#f0d4a0}
+.gallery-prev svg{rotate:180deg}
+.gallery-count{font-size:13px;color:#d1d9e7;font-variant-numeric:tabular-nums;min-width:46px;text-align:center}
+@media(max-width:639px){
+  .gallery-stage{perspective:820px}
+  .gallery-card{width:65%;aspect-ratio:4/3}
+  .estate-listing-photo{aspect-ratio:16/8.5}
+}
 @supports(animation-timeline:view()){
   @media(prefers-reduced-motion:no-preference) and (min-height:541px){
     .cinema-story{view-timeline:--deck block;timeline-scope:--entry0,--entry1,--entry2,--entry3,--entry4}

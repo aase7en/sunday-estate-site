@@ -6,20 +6,42 @@ window.EstateScenes = (() => {
     {src:'assets/scenes/future.webp', label:'วัยเกษียณ', title:'วางแผนทุนเพื่อวัยเกษียณ', alt:'พื้นที่พักอาศัยท่ามกลางบรรยากาศสงบ', copy:'เตรียมเงินลงทุนวันนี้ เพื่อให้วันข้างหน้ามีพื้นที่สำหรับสิ่งที่อยากทำ'},
     {src:'assets/scenes/family.webp', mobile:'assets/scenes/family-828.webp', label:'ครอบครัว', title:'อยู่ใกล้คนที่เรารัก', alt:'ครอบครัวรับประทานอาหารร่วมกันในบ้าน', copy:'มีพื้นที่ให้ครอบครัวได้ใช้เวลาด้วยกัน'},
   ];
-  const listings = [
-    {id:'SE-DEMO-01',title:'บ้านร่วมสมัยริมสระ',area:'ชานเมือง · ทรัพย์ตัวอย่าง',status:'ขายแล้ว',src:scenes[0].src,
-      description:'บ้านร่วมสมัยที่เปิดพื้นที่นั่งเล่นสู่สวนและสระ สาธิตการนำเสนอผลงานที่ปิดการขายแล้ว'},
-    {id:'SE-DEMO-02',title:'ที่ดินสำหรับทำสวน',area:'พื้นที่เกษตร · ทรัพย์ตัวอย่าง',status:'เปิดขาย',src:scenes[2].src,
-      description:'แปลงตัวอย่างสำหรับทำสวนและวางแผนใช้พื้นที่ สาธิตการแสดงรายละเอียดของทรัพย์ที่เปิดขาย'},
+  const statuses = {sold:'ขายแล้ว',available:'เปิดขาย',promotion:'โปรโมชั่น',booking:'เปิดจอง'};
+  const defaultListings = [
+    {id:'SE-DEMO-01',title:'บ้านร่วมสมัยริมสระ',area:'ชานเมือง',group:'บ้านและที่อยู่อาศัย',status:'sold',src:scenes[0].src,
+      description:'พื้นที่นั่งเล่นเปิดสู่สวนและสระ แสดงตัวอย่างการนำเสนอผลงานที่ปิดการขายแล้ว'},
+    {id:'SE-DEMO-02',title:'ที่ดินสำหรับทำสวน',area:'พื้นที่เกษตร',group:'ที่ดิน',status:'available',src:scenes[2].src,
+      description:'แปลงตัวอย่างสำหรับทำสวนและวางแผนใช้พื้นที่ ใช้สาธิตการนำเสนอทรัพย์ที่เปิดขาย'},
+    {id:'SE-DEMO-03',title:'พื้นที่สำหรับร้านกาแฟ',area:'ย่านชุมชน',group:'พื้นที่ธุรกิจ',status:'promotion',src:scenes[1].src,
+      description:'ตัวอย่างพื้นที่ธุรกิจขนาดเล็กพร้อมมุมนั่งเล่น ป้ายโปรโมชั่นใช้สาธิตการจัดวางบนภาพ'},
+    {id:'SE-DEMO-04',title:'บ้านพักในสวน',area:'ทำเลเงียบสงบ',group:'บ้านและที่อยู่อาศัย',status:'booking',src:scenes[4].src,
+      description:'ตัวอย่างโครงการพักอาศัยขนาดเล็กท่ามกลางพื้นที่สีเขียว แสดงรูปแบบการ์ดเปิดจอง'},
   ];
   const defaultGallery = scenes.map(({src,alt,title}) => ({src,alt,caption:title}));
   const asset = value => typeof value === 'string' && (/^data:image\/(jpeg|webp|png);base64,[\w+/=]+$/.test(value) ||
     defaultGallery.some(image => image.src === value)) ? value : '';
+  const ribbon = (listing,escape) => listing.status ? '<span class="estate-ribbon" data-tone="'+
+    (Object.hasOwn(statuses,listing.status) ? listing.status : 'custom')+'">'+
+    escape(listing.ribbon || statuses[listing.status] || '')+'</span>' : '';
+  const listingCards = (list,escape,icon) => '<div class="estate-listings">'+list.map(listing =>
+    '<article class="estate-listing" data-listing-group="'+escape(listing.group)+'"><details><summary>'+
+      '<div class="estate-listing-photo"><img loading="lazy" decoding="async" src="'+
+      (asset(listing.src) || defaultGallery[0].src)+'" alt="">'+ribbon(listing,escape)+'</div>'+
+      '<div class="estate-listing-copy"><div><h3>'+escape(listing.title)+'</h3><p>'+
+      escape(listing.group+' · '+listing.area)+'</p></div><span class="estate-listing-expand">'+
+      '<span class="estate-open-label">ดูรายละเอียด</span><span class="estate-close-label">ย่อรายละเอียด</span>'+
+      icon('chevron',16)+'</span></div></summary><div class="estate-listing-details"><p>'+
+      escape(listing.description)+'</p></div></details></article>').join('')+'</div>';
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   let stopCurrent = () => {};
 
   function landing(api) {
-    const {icon, escape, brandImage} = api;
+    const {icon, escape, brandImage, read} = api;
+    const savedList = read('listings-published');
+    const listings = Array.isArray(savedList) ? savedList : defaultListings;
+    const groups = [...new Set(listings.map(listing => listing.group))];
+    const savedGallery = read('gallery-published');
+    const gallery = Array.isArray(savedGallery) && savedGallery.length ? savedGallery : defaultGallery;
     const chapters = scenes.map((scene,i) =>
       '<div class="cinema-anchor" id="scene-' + i + '" style="--entry:--entry' + i + '" aria-hidden="true"></div><section class="cinema-scene' +
       (i === 0 ? ' cinema-opening' : '') + '" style="--i:' + i + ';--left:' + (4-i) + ';--entry:--entry' + i + ';--recede:' + (i*20+15) + '%" aria-labelledby="scene-title-' + i + '">' +
@@ -38,19 +60,23 @@ window.EstateScenes = (() => {
       '<a class="cinema-cta" href="#overview">' + (api.signedIn ? 'เปิดแดชบอร์ด ' : 'เข้าสู่ระบบ ') + icon('arrow',17) + '</a></nav></header>' +
       '<main id="workspace" tabindex="-1"><div class="cinema-story">' + chapters + '</div>' +
       '<section id="properties" class="cinema-properties" aria-labelledby="properties-heading"><h2 id="properties-heading" tabindex="-1">ผลงานและทรัพย์เปิดขาย</h2>' +
-      '<p>รายการและภาพตัวอย่างสำหรับทดลองหน้าเว็บ</p><div class="estate-listings">' + listings.map(listing=>
-        '<article class="estate-listing"><div class="estate-listing-photo"><img loading="lazy" src="'+listing.src+'" alt="'+escape(listing.title)+'">' +
-        '<span class="'+(listing.status==='ขายแล้ว'?'estate-ribbon':'estate-available')+'">'+listing.status+'</span></div>' +
-        '<div class="estate-listing-copy"><h3>'+escape(listing.title)+'</h3><p>'+escape(listing.area)+'</p>' +
-        '<button type="button" class="cinema-cta" data-listing="'+listing.id+'">ดูรายละเอียด'+icon('right',16)+'</button></div></article>').join('') +
-      '</div></section>' +
+      '<p>ภาพและสถานะทั้งหมดเป็นตัวอย่างสำหรับทดลองใช้งาน</p>'+
+      (groups.length ? '<div class="estate-filters" role="group" aria-label="กรองตามกลุ่มทรัพย์">' +
+        '<button class="control" type="button" data-estate-all aria-pressed="true">ทั้งหมด</button>' +
+        groups.map(group => '<button class="control" type="button" data-estate-group="'+escape(group)+
+          '" aria-pressed="false">'+escape(group)+'</button>').join('')+'</div>' :
+        '<p>ยังไม่มีรายการแสดง</p>') + listingCards(listings,escape,icon) + '</section>' +
       '<section id="gallery" class="cinema-gallery" aria-labelledby="gallery-heading"><div class="gallery-heading"><div>' +
-      '<h2 id="gallery-heading" tabindex="-1">แกลเลอรี</h2><p>ภาพประกอบแนวคิด</p></div>' +
-      '<button class="control" type="button" data-gallery-control="toggle" aria-pressed="false">หยุดภาพ</button></div>' +
-      '<figure class="gallery-stage"><img class="gallery-photo" alt=""><img class="gallery-photo" alt="" aria-hidden="true">' +
-      '<figcaption></figcaption></figure><div class="gallery-controls">' +
-      '<button type="button" class="control" data-gallery-control="prev">ภาพก่อนหน้า</button><span aria-live="polite"></span>' +
-      '<button type="button" class="control" data-gallery-control="next">ภาพถัดไป</button></div></section></main></div>';
+      '<h2 id="gallery-heading" tabindex="-1">แกลเลอรี</h2><p id="gallery-hint">ปัด ลาก หรือแตะภาพด้านข้างเพื่อเลือก</p></div>' +
+      '<button class="control" type="button" data-gallery-control="toggle" aria-pressed="false" hidden>หยุดภาพ</button></div>' +
+      '<figure class="gallery-figure"><div class="gallery-stage" role="group" tabindex="0" aria-label="วงล้อภาพ" aria-describedby="gallery-hint" data-current="0">' +
+      gallery.map((row,i) => '<div class="gallery-card'+(i===0?' is-current':'')+'" data-gallery-image="'+i+'">'+
+        '<img src="'+(asset(row.src) || defaultGallery[0].src)+'" alt="" draggable="false" loading="lazy" decoding="async">'+
+        '</div>').join('')+'</div><figcaption></figcaption></figure>'+
+      '<div class="gallery-controls"><div class="gallery-navigation"><button type="button" class="control gallery-prev" data-gallery-control="prev" aria-label="ภาพก่อนหน้า">'+icon('arrow',19)+'</button>'+
+      '<span class="gallery-count" aria-live="off" aria-atomic="true"></span>'+
+      '<button type="button" class="control" data-gallery-control="next" aria-label="ภาพถัดไป">'+icon('arrow',19)+'</button>'+
+      '</div></div></section></main></div>';
   }
 
   function mount(api) {
@@ -59,76 +85,20 @@ window.EstateScenes = (() => {
     if (!page) return;
     const stored = api.read('gallery-published');
     const list = Array.isArray(stored) && stored.length ? stored : defaultGallery;
-    const stage = page.querySelector('.gallery-stage');
-    const gallery = stage.closest('section');
-    const photos = [...stage.querySelectorAll('img')];
-    const caption = stage.querySelector('figcaption');
-    const count = page.querySelector('.gallery-controls span');
-    const toggle = page.querySelector('[data-gallery-control="toggle"]');
+    const gallery = page.querySelector('#gallery');
+    const stopGallery = window.mountEstateGallery(gallery,list,motion);
     const skip = document.querySelector('.skip');
     const onSkip = event => {
       event.preventDefault();
       page.querySelector('main').focus();
     };
-    let index = 0;
-    let current = -1;
-    let request = 0;
-    let userPaused = false;
-    let visible = false;
-    let interval;
-    const show = async manual => {
-      const revision = ++request;
-      const next = current === 0 ? 1 : 0;
-      const incoming = photos[next];
-      const outgoing = photos[current];
-      const row = list[index];
-      incoming.src = asset(row.src) || defaultGallery[0].src;
-      incoming.alt = row.alt;
-      try { await incoming.decode(); }
-      catch {
-        if (revision !== request) return;
-        incoming.src = defaultGallery[0].src;
-        incoming.alt = defaultGallery[0].alt;
-        try { await incoming.decode(); } catch { return; }
-      }
-      if (revision !== request) return;
-      outgoing?.classList.remove('is-current');
-      outgoing?.setAttribute('aria-hidden','true');
-      incoming.classList.add('is-current');
-      incoming.removeAttribute('aria-hidden');
-      current = next;
-      caption.textContent = row.caption;
-      count.setAttribute('aria-live', manual ? 'polite' : 'off');
-      count.textContent = (index + 1) + ' / ' + list.length;
-    };
-    const step = (delta, manual) => {
-      index = (index + delta + list.length) % list.length;
-      void show(manual);
-    };
-    const sync = () => {
-      clearInterval(interval);
-      toggle.hidden = motion.matches || list.length < 2;
-      toggle.textContent = userPaused ? 'เล่นภาพต่อ' : 'หยุดภาพ';
-      toggle.setAttribute('aria-pressed', String(userPaused));
-      if (visible && !userPaused && !document.hidden && !motion.matches && list.length > 1) {
-        interval = setInterval(() => step(1,false),8000);
-      }
-    };
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      if (visible && request === 0) void show(false);
-      sync();
-    }, {threshold:.15});
-    const onMotion = () => {
-      sync();
-    };
+    const filters = [...page.querySelectorAll('[data-estate-all],[data-estate-group]')];
+    const properties = [...page.querySelectorAll('[data-listing-group]')];
     const onClick = event => {
-      const listingButton = event.target.closest('[data-listing]');
-      if(listingButton){
-        const listing=listings.find(row=>row.id===listingButton.dataset.listing);
-        if(listing) api.open(listing.title,'<div class="editor"><img class="estate-details-image" src="'+listing.src+'" alt="'+api.escape(listing.title)+'">' +
-          '<p>'+api.escape(listing.area)+' · '+listing.status+'</p><p>'+api.escape(listing.description)+'</p></div>','public-listing');
-        return;
+      const filter = event.target.closest('[data-estate-all],[data-estate-group]');
+      if (filter) {
+        filters.forEach(button => button.setAttribute('aria-pressed',String(button===filter)));
+        properties.forEach(card => { card.hidden = !!filter.dataset.estateGroup && card.dataset.listingGroup !== filter.dataset.estateGroup; });
       }
       const jump = event.target.closest('[data-scene-scroll]');
       if (jump) {
@@ -138,29 +108,22 @@ window.EstateScenes = (() => {
         const heading = destination.matches('.cinema-anchor') ? destination.nextElementSibling.querySelector('h1,h2') : destination.querySelector('h2');
         heading?.focus({preventScroll:true});
       }
-      const control = event.target.closest('[data-gallery-control]');
-      if (!control) return;
-      const action = control.dataset.galleryControl;
-      if (action === 'toggle') userPaused = !userPaused;
-      else step(action === 'prev' ? -1 : 1,true);
-      sync();
     };
 
     page.addEventListener('click',onClick);
-    document.addEventListener('visibilitychange',sync);
-    motion.addEventListener('change',onMotion);
     skip.addEventListener('click',onSkip);
-    observer.observe(gallery);
-    sync();
+    const entry = new URLSearchParams(location.search).get('section');
+    let jumpFrame;
+    if (entry === 'gallery' || entry === 'properties') {
+      jumpFrame = requestAnimationFrame(() => page.querySelector('#'+entry).scrollIntoView({behavior:'instant'}));
+    }
     stopCurrent = () => {
-      ++request;
-      clearInterval(interval);
-      observer.disconnect();
-      motion.removeEventListener('change',onMotion);
+      cancelAnimationFrame(jumpFrame);
+      stopGallery();
       skip.removeEventListener('click',onSkip);
-      document.removeEventListener('visibilitychange',sync);
+      page.removeEventListener('click',onClick);
     };
   }
 
-  return {landing,mount,defaultGallery,asset};
+  return {landing,mount,defaultGallery,defaultListings,statuses,listingCards,asset};
 })();

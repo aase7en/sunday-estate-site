@@ -185,14 +185,10 @@ dialog[data-kind="v2-chat"]{width:min(calc(100% - 20px),460px);max-height:calc(1
 }
 .cinema-copy{max-width:37ch;color:#faf3e7;font-size:clamp(14px,2.25vw,21px);margin:9px 0 0;text-shadow:0 2px 9px #071324}
 .cinema-actions{margin-top:19px}
-.cinema-gallery{width:min(100%,1120px);margin:auto;padding:clamp(40px,7vw,88px) clamp(12px,4vw,45px) 56px;scroll-margin-top:var(--cinema-header)}
-.gallery-heading,.gallery-controls{display:flex;align-items:center;justify-content:space-between;gap:9px}
+.cinema-gallery{width:min(100%,1230px);margin:auto;padding:clamp(40px,7vw,88px) clamp(12px,4vw,45px) 56px;scroll-margin-top:var(--cinema-header)}
+.gallery-heading{display:flex;align-items:center;justify-content:space-between;gap:9px}
 .gallery-heading h2{font-size:clamp(26px,4vw,42px);letter-spacing:-.035em}
-.gallery-heading p,.gallery-controls span{font-size:12px;color:var(--muted)}
-.gallery-stage{position:relative;margin:14px 0 10px;border-radius:19px;overflow:hidden;border:1px solid #f9d59f50;background:#14243a;aspect-ratio:16/9}
-.gallery-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .68s ease}
-.gallery-photo.is-current{opacity:1}
-.gallery-stage figcaption{position:absolute;inset:auto 0 0;padding:22px 14px 13px;background:linear-gradient(transparent,#071122eb);font-size:13px}
+.gallery-heading p{font-size:12px;color:var(--muted)}
 @media (min-width:1024px){
   .v2-ai-launch{bottom:22px}
   .workspace{padding-bottom:88px}
@@ -208,12 +204,10 @@ dialog[data-kind="v2-chat"]{width:min(calc(100% - 20px),460px);max-height:calc(1
   .cinema-photo{object-position:62% 50%}
   .cinema-scene:nth-of-type(5) .cinema-photo{object-position:54% 50%}
   .cinema-scrim{background:linear-gradient(0deg,#071122f7 5%,#09142650 53%,#0c152919 97%)}
-  .gallery-stage{aspect-ratio:4/3}
 }
 @media (prefers-reduced-motion: reduce){
   .cinema-scene{position:relative;top:auto;min-height:min(600px,77svh)}
   .cinema-photo{transform:none;transition:none}
-  .gallery-photo{transition:none}
   .v2-sparkles{display:none}
 }
 

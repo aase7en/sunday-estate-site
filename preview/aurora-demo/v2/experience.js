@@ -726,24 +726,113 @@ window.createEstateExperience = api => {
       '</div>' + errorLine + formFooter('เพิ่มในฉบับร่าง') + '</form>' : '') +
       '<div class="form-footer">' + btn('gallery-preview','ดูตัวอย่าง') + btn('gallery-publish','เผยแพร่จำลอง',true) + '</div></div>','v2-gallery');
   }
-  async function uploadGallery(form,values) {
-    if (!admin() || galleryDraft.length >= 10) return;
-    const file = values.image;
-    if (!file?.size || file.size>8e6 || !/^image\/(jpeg|png|webp)$/.test(file.type)) { error(form,'เลือกภาพ JPEG, PNG หรือ WebP ขนาดไม่เกิน 8 MB'); return; }
-    const submit = form.querySelector('[type="submit"]');
-    submit.disabled = true;
+  async function imageFromFile(file) {
+    if (file.size>8e6 || !/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      throw new Error('เลือกภาพ JPEG, PNG หรือ WebP ขนาดไม่เกิน 8 MB');
+    }
+    let img;
+    try { img = await createImageBitmap(file); }
+    catch { throw new Error('เปิดรูปนี้ไม่ได้'); }
     try {
-      const img = await createImageBitmap(file);
-      const scale = Math.min(1,1000/Math.max(img.width,img.height));
       const canvas = document.createElement('canvas');
+      const scale = Math.min(1,1000/Math.max(img.width,img.height));
       canvas.width = Math.max(1,Math.round(img.width*scale));
       canvas.height = Math.max(1,Math.round(img.height*scale));
       canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-      img.close();
+      return canvas.toDataURL('image/webp',.75);
+    } finally { img.close(); }
+  }
+  async function uploadGallery(form,values) {
+    if (!admin() || galleryDraft.length >= 10 || !values.image?.size) return;
+    const submit = form.querySelector('[type="submit"]');
+    submit.disabled = true;
+    try {
+      const src = await imageFromFile(values.image);
       if (!admin() || !form.isConnected || !form.closest('dialog').open) return;
-      galleryDraft.push({src:canvas.toDataURL('image/webp',.75),alt:values.alt.trim(),caption:values.caption.trim()});
+      galleryDraft.push({src,alt:values.alt.trim(),caption:values.caption.trim()});
       galleryDialog(false);
-    } catch { error(form,'เปิดรูปนี้ไม่ได้'); }
+    } catch (e) { if (form.isConnected) error(form,e.message); }
+    finally { submit.disabled = false; }
+  }
+
+  let listingDraft;
+  const listingsKey = 'listings-published';
+  const tones = () => ({'':'ไม่แสดงป้าย',...window.EstateScenes.statuses,custom:'ป้ายกำหนดเอง'});
+  function manageListings() {
+    if (!admin()) return;
+    const {defaultListings,asset} = window.EstateScenes;
+    listingDraft ??= structuredClone(read(listingsKey) ?? defaultListings);
+    const rows = listingDraft.map((listing,i) => '<li><img src="'+asset(listing.src)+'" alt="">'+
+      '<div><strong>'+escape(listing.title)+'</strong><small>'+escape(listing.group+' · '+
+        (listing.ribbon || tones()[listing.status]))+'</small><div class="v2-inline">'+
+      btn('listing-edit:'+i,'แก้ไข')+(i ? btn('listing-shift:'+i+',-1','ขึ้น') : '')+
+      (i < listingDraft.length-1 ? btn('listing-shift:'+i+',1','ลง') : '')+'</div></div></li>').join('');
+    open('จัดการทรัพย์บนหน้าแรก','<div class="editor"><p>จัดภาพ ป้าย และกลุ่มทรัพย์ถัดจากเรื่องราวบริษัท การเผยแพร่จำลองมีผลในเบราว์เซอร์นี้</p>'+
+      (rows ? '<ol class="v2-gallery-list">'+rows+'</ol>' : '<p>ยังไม่มีรายการ</p>')+
+      '<div class="form-footer">'+(listingDraft.length < 12 ? btn('listing-new','เพิ่มรายการ') : '')+
+      (rows ? btn('listing-preview','ดูตัวอย่าง') : '')+btn('listing-publish','เผยแพร่จำลอง',true)+'</div></div>','v2-listings');
+  }
+  function editListing(index) {
+    if (!admin()) return;
+    const {defaultGallery,asset} = window.EstateScenes;
+    const row = listingDraft[index] ?? {title:'',area:'',group:'',status:'available',src:defaultGallery[0].src,description:''};
+    const groups = [...new Set(listingDraft.map(item=>item.group))];
+    open(index < 0 ? 'เพิ่มทรัพย์ตัวอย่าง' : 'แก้ไขทรัพย์ตัวอย่าง','<form id="v2-listing" class="editor" data-index="'+index+'">'+
+      '<img class="estate-editor-image" src="'+asset(row.src)+'" alt="ตัวอย่างภาพปก">'+
+      '<label>ชื่อทรัพย์<input name="title" value="'+escape(row.title)+'" maxlength="80" required></label>'+
+      '<div class="form-grid"><label>ทำเล<input name="area" value="'+escape(row.area)+'" maxlength="80" required></label>'+
+      '<label>กลุ่มทรัพย์<input name="group" list="listing-groups" value="'+escape(row.group)+'" placeholder="เลือกกลุ่มหรือพิมพ์ชื่อใหม่" maxlength="40" required></label></div>'+
+      '<datalist id="listing-groups">'+groups.map(group=>option(group,group)).join('')+'</datalist>'+
+      '<div class="form-grid"><label>รูปแบบป้ายริบบิ้น<select name="status">'+
+      Object.entries(tones()).map(([value,label])=>option(value,label,row.status)).join('')+'</select></label>'+
+      '<label>ข้อความบนป้าย<input name="ribbon" value="'+escape(row.ribbon ?? '')+'" placeholder="เว้นว่างเพื่อใช้ตามรูปแบบ" maxlength="20"></label></div>'+
+      '<label>ภาพปก<select name="cover">'+(index>=0 ? option('keep','ใช้ภาพเดิม','keep') : '')+
+      defaultGallery.map(img=>option(img.src,img.caption,index<0 ? row.src : 'keep')).join('')+'</select></label>'+
+      '<label>หรืออัปโหลดภาพใหม่<input type="file" name="image" accept="image/jpeg,image/png,image/webp"></label>'+
+      '<label>รายละเอียดที่คลี่อ่านได้<textarea name="description" rows="4" maxlength="1000" required>'+escape(row.description)+'</textarea></label>'+
+      errorLine+formFooter('เก็บในฉบับร่าง',btn('listings','กลับ')+
+        (index>=0 ? btn('listing-remove:'+index,'นำรายการออก') : ''))+'</form>','v2-listing');
+    const form = document.getElementById('v2-listing');
+    const {image,cover} = form.elements;
+    const preview = form.querySelector('.estate-editor-image');
+    form.addEventListener('input',() => error(form,''));
+    form.addEventListener('change',async event => {
+      if (event.target !== image && event.target !== cover) return;
+      const file = image.files[0];
+      if (!file) {
+        preview.src = cover.value === 'keep' ? asset(row.src) : asset(cover.value);
+        return;
+      }
+      try {
+        const src = await imageFromFile(file);
+        if (form.isConnected && file === image.files[0]) preview.src = src;
+      } catch (e) {
+        if (form.isConnected && file === image.files[0]) error(form,e.message);
+      }
+    });
+  }
+  async function saveListing(form,values) {
+    if (!admin()) return;
+    const index = Number(form.dataset.index);
+    const {asset} = window.EstateScenes;
+    const row = listingDraft[index];
+    const clean = {title:values.title.trim(),area:values.area.trim(),group:values.group.trim(),description:values.description.trim()};
+    const status = values.status;
+    const ribbon = status ? values.ribbon.trim() : '';
+    if (Object.values(clean).some(value=>!value)) { error(form,'กรอกชื่อ ทำเล กลุ่ม และรายละเอียดให้ครบ'); return; }
+    if (!Object.hasOwn(tones(),status) || (status === 'custom' && !ribbon)) { error(form,'กรอกข้อความสำหรับป้ายกำหนดเอง'); return; }
+    const submit = form.querySelector('[type="submit"]');
+    submit.disabled = true;
+    try {
+      const src = values.image?.size ? await imageFromFile(values.image) : asset(values.cover === 'keep' ? row?.src : values.cover);
+      if (!admin() || !form.isConnected || !form.closest('dialog').open) return;
+      if (!src) { error(form,'เลือกภาพปกสำหรับรายการ'); return; }
+      const next = {id:row?.id ?? crypto.randomUUID(),...clean,status,ribbon,src};
+      if (row) listingDraft[index] = next;
+      else listingDraft.push(next);
+      manageListings();
+      notice('เก็บรายการในฉบับร่างแล้ว');
+    } catch (e) { if (form.isConnected) error(form,e.message); }
     finally { submit.disabled = false; }
   }
   function modelSettings() {
@@ -758,7 +847,7 @@ window.createEstateExperience = api => {
   function adminTools() {
     return (staff() ? '<article class="card panel v2-workflows">' + copy('เครื่องมือสัญญา','ทดลองขั้นตอนโดยใช้ข้อมูลจำลอง') +
       '<div class="v2-inline">' + btn('payment','ทดลองรับชำระ') + btn('expenses','รายจ่ายสัญญา') +
-      (admin() ? btn('models','ตั้งค่า AI') + btn('gallery','จัดการแกลเลอรี') : '') + '</div></article>' : '');
+      (admin() ? btn('models','ตั้งค่า AI') + btn('gallery','จัดการแกลเลอรี') + btn('listings','จัดการทรัพย์บนหน้าแรก') : '') + '</div></article>' : '');
   }
   function memberHome() {
     if (scenarioMember() && (personalLoans().length || contexts().length > 1)) return contextHome();
@@ -869,6 +958,36 @@ window.createEstateExperience = api => {
       case 'gallery-publish':
         if (admin() && write('gallery-published',galleryDraft)) { close(); notice('เผยแพร่แกลเลอรีจำลองแล้ว'); }
         break;
+      case 'listings': manageListings(); break;
+      case 'listing-new': if (admin() && listingDraft.length < 12) editListing(-1); break;
+      case 'listing-edit': if (admin() && listingDraft[Number(arg)]) editListing(Number(arg)); break;
+      case 'listing-shift': {
+        if (!admin()) break;
+        const [i,delta] = arg.split(',').map(Number);
+        if (!listingDraft[i] || !listingDraft[i+delta]) break;
+        [listingDraft[i],listingDraft[i+delta]] = [listingDraft[i+delta],listingDraft[i]];
+        manageListings();
+        break;
+      }
+      case 'listing-remove':
+        if (admin() && listingDraft[Number(arg)]) {
+          listingDraft.splice(Number(arg),1);
+          manageListings();
+          notice('นำออกจากฉบับร่างแล้ว');
+        }
+        break;
+      case 'listing-preview':
+        if (admin()) open('ตัวอย่างทรัพย์บนหน้าแรก','<div class="estate-review">'+
+          window.EstateScenes.listingCards(listingDraft,escape,icon)+'</div><div class="form-footer">'+
+          btn('listings','กลับไปแก้ไข')+'</div>','v2-listing-preview');
+        break;
+      case 'listing-publish':
+        if (admin() && write(listingsKey,listingDraft)) {
+          listingDraft = undefined;
+          close();
+          notice('เผยแพร่ทรัพย์ตัวอย่างในเบราว์เซอร์นี้แล้ว');
+        }
+        break;
       case 'models': modelSettings(); break;
     }
   }
@@ -880,6 +999,7 @@ window.createEstateExperience = api => {
       case 'v2-grants': submitGrant(form,values); break;
       case 'v2-expense': submitExpense(form,values); break;
       case 'v2-rules': submitRule(form,values); break;
+      case 'v2-listing': void saveListing(form,values); break;
       case 'v2-gallery-upload': void uploadGallery(form,values); break;
       case 'v2-model':
         if (admin() && write('chat-config',{...values,limit:Number(values.limit)})) { close(); notice('บันทึกค่าจำลองแล้ว'); }
