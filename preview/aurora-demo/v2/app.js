@@ -10,9 +10,12 @@
     client: {name:'กมลชนก พราวใจ',initials:'กพ',role:'ผู้กู้ / ผู้ขายฝาก',email:'client@example.test',bio:'บัญชีตัวอย่างสำหรับดูสัญญาของตัวเอง'},
     partner: {name:'นพดล ภูวดล',initials:'นภ',role:'ผู้ร่วมทุน',email:'partner@example.test',bio:'บัญชีตัวอย่างสำหรับดูสัดส่วนของตัวเอง'},
     partner2: {name:'ดาริน รุ่งเรือง',initials:'ดร',role:'ผู้ร่วมทุน',email:'partner2@example.test',bio:'บัญชีตัวอย่างสำหรับตรวจสิทธิ์รายดีล'},
+    'context-a': {name:'นาย A',initials:'A',role:'ผู้ร่วมทุน · ผู้ให้กู้ส่วนตัว',email:'context-a@example.test',bio:'ร่วมทุนใน D1 และให้กู้ในนามบุคคล'},
+    'context-b': {name:'นาย B',initials:'B',role:'ผู้ร่วมทุน D1',email:'context-b@example.test',bio:'ร่วมทุนใน D1'},
   };
   const defaults = {theme: 'light', period: '24', custom: null, mode: 'combined', type: 'loan', home: 'overview', reminders: true, digest: false, sound: false, birthday: false, profile: {}};
-  const pages = {overview: ['ภาพรวม', 'overview'], lending: ['ปล่อยกู้ / ขายฝาก', 'layers'], investments: ['ลงทุนที่ดิน','trend'], profile: ['โปรไฟล์', 'user']};
+  const pages = {overview: ['ภาพรวม', 'overview'], lending: ['ปล่อยกู้ / ขายฝาก', 'layers'], 'personal-lending':['ปล่อยกู้ส่วนตัว','wallet'],
+    investments: ['ลงทุนที่ดิน','trend'], profile: ['โปรไฟล์', 'user']};
   const shapes = {
     ai: '<path d="M2 14l8-8 6 6M6 11v8h9v-4M18.5 2v7M15 5.5h7M19.5 12v5m-2.5-2.5h5"/><path d="M3 22h16"/>',
     check: '<path d="m5 12 4 4L19 6"/>',
@@ -132,19 +135,23 @@
   const brand = brandImage + '<span><strong>Sunday Estate</strong><small>Portfolio workspace</small></span>';
   const disk = (symbol, tone) => '<span class="disk ' + tone + '">' + icon(symbol, 20) + '</span>';
   const buttonIcon = (id, symbol, label, extra = '') => '<button class="icon-button" type="button" data-action="' + id + '" title="' + label + '" aria-label="' + label + '">' + icon(symbol) + extra + '</button>';
+  const navTitle = (key,title) => key === 'overview' && xp.scenarioMember() ? 'พื้นที่ของฉัน' :
+    key === 'overview' && xp.actor() === 'client' ? 'สัญญาของฉัน' : title;
   const navLinks = () => Object.entries(pages).filter(([key]) => xp.allowedRoute(key)).map(([key, [title, glyph]]) => '<a href="#' + key + '"' +
-    (page === key ? ' aria-current="page"' : '') + '>' + icon(glyph) + '<span>' + title + '</span></a>').join('');
+    (page === key ? ' aria-current="page"' : '') + '>' + icon(glyph) + '<span>' + navTitle(key,title) + '</span></a>').join('');
   function mobileNav() {
     const links = (keys) => keys.map(key => {
       const [title,glyph] = pages[key];
       return '<a href="#' + key + '"' + (page === key ? ' aria-current="page"' : '') + '>' + icon(glyph) +
-        '<span>' + (key === 'overview' && xp.actor() === 'client' ? 'สัญญาของฉัน' : title) + '</span></a>';
+        '<span>' + navTitle(key,title) + '</span></a>';
     }).join('');
     const rail = keys => '<div class="nav-rail">' + links(keys) + '</div>';
     const role = xp.actor();
     const staff = xp.staff();
-    const label = staff ? 'รับชำระ' : 'ชำระเงิน';
-    const shortcut = role === 'partner' ? '<a href="#investments" class="nav-shortcut"><i>' + icon('trend',25) + '</i><span>ดีลของฉัน</span></a>' :
+    const label = staff || role === 'lender' ? 'รับชำระ' : 'ชำระเงิน';
+    const shortcut = xp.scenarioMember() && role === 'partner' && page !== 'investments' && xp.contexts().length > 1 ?
+      '<button type="button" class="nav-shortcut" data-v2="context-picker"><i>' + icon('layers',25) + '</i><span>เลือกพื้นที่</span></button>' :
+      role === 'partner' ? '<a href="#investments" class="nav-shortcut"><i>' + icon('trend',25) + '</i><span>ดีลของฉัน</span></a>' :
       '<button type="button" class="nav-shortcut" data-v2="payment-shortcut"><i>' + icon('pay',26) + '</i><span>' + label + '</span></button>';
     return rail(staff ? ['overview','lending'] : ['overview']) + shortcut +
       rail(staff ? ['investments','profile'] : ['profile']);
@@ -172,7 +179,7 @@
       (xp.staff() ? buttonIcon('alerts', 'bell', 'รายการที่ต้องดำเนินการ', actions ? '<i class="notification-dot"></i>' : '') : '') +
       buttonIcon('theme', pref.theme === 'light' ? 'moon' : 'sun', pref.theme === 'light' ? 'เปลี่ยนเป็นธีมมืด' : 'เปลี่ยนเป็นธีมสว่าง') +
       '<a class="profile-link" href="#profile" aria-label="เปิดโปรไฟล์">' + avatar() + '</a></div></header>' +
-      '<main class="workspace" id="workspace" tabindex="-1">' + content + '</main>' +
+      '<main class="workspace" id="workspace" tabindex="-1">' + xp.contextStrip() + content + '</main>' +
       '<nav class="bottom-nav" aria-label="เมนูหลักบนมือถือ">' + mobileNav() + '</nav>' + xp.launchers() + '</div>';
   }
 
@@ -340,6 +347,8 @@
   function profile() {
     const p = person();
     const cover = safeImage(p.cover);
+    const homeOptions = Object.entries(pages).filter(([key])=>xp.allowedRoute(key)).map(([key,[label]])=>
+      '<option value="'+key+'">'+navTitle(key,label)+'</option>').join('');
     const input = (label, key, type = 'text', max = 60) => '<label>' + label + '<input name="' + key + '" type="' + type + '" maxlength="' + max +
       '" value="' + escape(p[key]) + '"' + (key === 'name' || key === 'email' ? ' required' : '') + '></label>';
     const toggle = (key, label, info) => '<label class="toggle-row"><span><strong>' + label + '</strong><small>' + info +
@@ -348,14 +357,14 @@
         '<section class="card panel toast-demo"><h2>ทดลองข้อความแจ้งเตือน</h2><div class="v2-inline">' +
         Object.entries(toastDemos).map(([type,[title]])=>'<button class="control" type="button" data-toast-demo="'+type+'">'+title+'</button>').join('') +
         '</div></section>' : '');
-    return demo + '<header class="profile-intro"><div><h1>โปรไฟล์และการตั้งค่า</h1><p>ปรับพื้นที่ทำงานให้เหมาะกับคุณ</p></div>' +
+    return '<header class="profile-intro"><div><h1>โปรไฟล์และการตั้งค่า</h1><p>ปรับพื้นที่ทำงานให้เหมาะกับคุณ</p></div>' +
       '<div class="v2-inline"><a class="control" href="#hero">ดูหน้าแรก</a><button type="button" class="control" data-action="accounts">' + icon('logout', 17) + ' จัดการบัญชีจำลอง</button></div></header>' +
       '<section class="card profile-hero" aria-labelledby="profile-name"><div class="profile-cover"' + (cover ? ' data-personal-cover' : '') + '>' +
       '<img src="' + (cover || 'assets/aurora-estate.webp') + '" alt="" decoding="async">' +
       '<button type="button" class="cover-button" data-action="cover">' + icon('image', 17) + '<span>เปลี่ยนภาพปก</span></button></div>' +
       '<div class="profile-identity"><div class="profile-avatar">' + avatar(true) + '<button type="button" data-action="avatar" title="เปลี่ยนรูปโปรไฟล์" aria-label="เปลี่ยนรูปโปรไฟล์">' +
       icon('image', 16) + '</button></div><div><h2 id="profile-name">' + escape(p.name) + '</h2><span>' + escape(p.role) + ' · บัญชีจำลอง</span><p>' +
-      escape(p.bio) + '</p></div></div></section>' +
+      escape(p.bio) + '</p></div></div></section>' + demo +
       '<div class="profile-grid"><article class="card panel">' +
       cardHead('ข้อมูลส่วนตัว', 'ชื่อ บทบาท และข้อมูลติดต่อ', 'user','purple') + '<form id="profile-form" class="editor"><div class="form-grid">' +
       input('ชื่อที่แสดง','name') + input('บทบาท','role') + input('อีเมลติดต่อ','email','email',120) + input('เบอร์โทร','phone','tel',32) +
@@ -366,7 +375,7 @@
       '</select></label><label>ช่วงเวลากราฟ<select name="period">' + choose('<option value="24">24 เดือน (ค่าเริ่มต้น)</option><option value="12">12 เดือน</option><option value="6">6 เดือน</option><option value="3">3 เดือน</option>' +
       (pref.custom ? '<option value="custom">ช่วงวันที่ที่บันทึกไว้</option>' : ''), pref.period) + '</select></label><label>รูปแบบกราฟ<select name="mode">' +
       choose('<option value="combined">ผสมแท่งและเส้น</option><option value="lines">เส้น</option>',pref.mode) + '</select></label><label>หน้าเริ่มต้น<select name="home">' +
-      choose('<option value="overview">ภาพรวม</option><option value="lending">ปล่อยกู้ / ขายฝาก</option><option value="profile">โปรไฟล์</option>',pref.home) +
+      choose(homeOptions,xp.allowedRoute(pref.home) ? pref.home : 'overview') +
       '</select></label></div>' + toggle('reminders','เตือนกำหนดสัญญา','แสดงจุดแจ้งเตือนในต้นแบบ') + toggle('digest','สรุปรายสัปดาห์','บันทึกตัวเลือกสำหรับเชื่อมระบบแจ้งเตือน') + xp.birthdayInputs() +
       '<div class="form-footer"><button class="primary" type="submit">บันทึกการตั้งค่า</button></div></form></article></div>';
   }
@@ -393,6 +402,7 @@
     else if (!account) content = login();
     else if (page === 'profile') content = shell(profile());
     else if (page === 'lending') content = shell(lending());
+    else if (page === 'personal-lending') content = shell(xp.personalLendingPage());
     else if (page === 'investments') content = shell(xp.investmentPage());
     else if (page === 'reconciliation') content = shell(reconciliation.page());
     else content = shell(xp.staff() ? dashboard() : xp.memberHome());
@@ -570,9 +580,11 @@
     const c = xp.lookup(id);
     if (!c) return;
     const fields = [['ประเภทสัญญา',d.labels[c.type]], ['พื้นที่',c.property], ['วันเปิดสัญญา',d.formatDate(c.opened)],
-      ['ครบกำหนด',d.formatDate(c.due)], ['เงินต้นตามสัญญา',d.baht(c.principal)], ['เงินต้นคงค้าง',d.baht(c.balance)]];
+      ['ครบกำหนด',d.formatDate(c.due)], ['เงินต้นตามสัญญา',d.baht(c.principal)],
+      ['เงินต้นคงค้าง',d.baht(xp.actor() === 'lender' ? xp.receivable(c) : c.balance)]];
     if (c.type === 'loan') fields.push(['ราคาประเมินหลักประกัน',d.baht(c.appraisal)]);
-    showDialog(c.id + ' · ข้อมูลสัญญาจำลอง', statusPill(c) + '<dl class="details">' + fields.map(([key,value]) =>
+    const status = xp.actor() === 'lender' && !xp.receivable(c) ? {...c,status:'closed'} : c;
+    showDialog(c.id + ' · ข้อมูลสัญญาจำลอง', statusPill(status) + '<dl class="details">' + fields.map(([key,value]) =>
       '<div><dt>' + key + '</dt><dd>' + value + '</dd></div>').join('') + '</dl>' + xp.actionsForContract(c), 'contract');
   }
   function globalSearch() {
@@ -632,6 +644,7 @@
     if (!Object.hasOwn(accounts, key) || key === account) { if (dialog.open) dialog.close(); return; }
     if (dialog.open) dialog.close();
     toast.clear();
+    xp.resetChat();
     account = key;
     pref = load(account);
     lookup = '';
@@ -737,6 +750,7 @@
       case 'sign-out':
         dialog.close();
         toast.clear();
+        xp.resetChat();
         account = null;
         write('session', 'signed-out');
         pref = {...defaults};
@@ -812,11 +826,19 @@
     const next = route();
     if (next === page) return;
     if (dialog.open) dialog.close();
+    if (xp.scenarioMember()) toast.clear();
     render('workspace');
     window.scrollTo(0,0);
   });
+  function navigateContext(target) {
+    if (dialog.open) dialog.close();
+    toast.clear();
+    if (target !== page) history.pushState(null,'','#'+target);
+    render('workspace');
+    window.scrollTo(0,0);
+  }
   const xp = window.createEstateExperience({icon,escape,read,write,notice,open:showDialog,person,settings,render,moduleHeader,
-    account:()=>account,prefs:()=>pref,page:()=>page});
+    account:()=>account,prefs:()=>pref,page:()=>page,navigateContext});
   const layoutEditor = dashboardLayout.create({root,dialog,icon,open:showDialog,
     active:() => page === 'overview' && xp.staff(),
     save:order => {

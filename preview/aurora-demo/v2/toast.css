@@ -21,7 +21,16 @@
 .toast-timer{height:2px;background:var(--toast-tone);transform-origin:left}
 .toast-demo .v2-inline{margin-top:9px}
 @media(max-width:639px){
-  .toast-stack{inset:auto 68px calc(74px + env(safe-area-inset-bottom)) 12px;width:auto}
+  .toast-stack{inset:calc(66px + env(safe-area-inset-top)) 10px auto auto;width:min(252px,calc(100% - 20px))}
+  .toast-list{gap:6px}
+  .toast-card{border-radius:10px}
+  .toast-body{grid-template-columns:24px minmax(0,1fr) 44px;gap:7px;padding:6px 0 6px 8px}
+  .toast-body strong{font-size:12px}
+  .toast-body p{font-size:11px;line-height:1.35;margin-top:2px}
+  .toast-icon{width:24px;height:24px;border-radius:7px}
+  .toast-icon svg{width:15px;height:15px}
+  .toast-dismiss{padding-top:2px}
 }
 dialog>.toast-stack{inset:max(12px,env(safe-area-inset-top)) 12px auto auto;width:min(360px,calc(100% - 24px))}
+@media(max-width:639px){dialog>.toast-stack{width:min(252px,calc(100% - 24px));inset-inline-end:10px}}
 @media(prefers-reduced-motion:reduce){.toast-timer{visibility:hidden}}
