@@ -4,7 +4,6 @@
   const dashboardLayout = window.EstateDashboardLayout;
   const root = document.querySelector('#app');
   const dialog = document.querySelector('#dialog');
-  const toast = document.querySelector('#toast');
   const accounts = {
     portfolio: {name: 'กิตติพงศ์ วัฒนากุล', initials: 'กว', role: 'Admin · ผู้จัดการพอร์ต', email: 'portfolio@example.test', bio: 'ดูแลภาพรวมพอร์ตสินเชื่อและการติดตามสัญญา'},
     operations: {name: 'พิมพ์ชนก สุวรรณ', initials: 'พส', role: 'Super · ทีมสัญญาบริษัท', email: 'operations@example.test', bio: 'ดูแลเอกสารและประสานงานตามกำหนดสัญญา'},
@@ -39,6 +38,8 @@
     downArrow: '<path d="M12 4v16m-6-6 6 6 6-6"/>',
     order: '<path d="M3 5h10M3 12h7M3 19h4m8-3 3 3 3-3m-3 3V5m-3 3 3-3 3 3"/>',
     alert: '<path d="M10.2 4.5a2 2 0 0 1 3.6 0l7.5 13.4a2 2 0 0 1-1.8 3H4.5a2 2 0 0 1-1.8-3l7.5-13.4ZM12 9v4m0 3.5h.01"/>',
+    infoCircle: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/>',
+    errorCircle: '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/>',
     arrow: '<path d="M4 12h15m-5-5 5 5-5 5"/>',
     chevron: '<path d="m6 9 6 6 6-6"/>',
     right: '<path d="m9 6 6 6-6 6"/>',
@@ -54,13 +55,16 @@
   const icon = (name, size = 20) => '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + shapes[name] + '</svg>';
   const escape = (value = '') => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const storageKey = 'sunday-estate.redesign.v2';
-  let toastTimer;
-  function notice(message) {
-    toast.textContent = message;
-    toast.classList.add('shown');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('shown'), 3400);
-  }
+  const toastRoot = document.querySelector('.toast-stack');
+  const toast = window.createEstateToast({root:toastRoot,dialog,icon});
+  const notice = (message,type = 'success') => toast.show({type,message});
+  const toastDemoEnabled = new URLSearchParams(location.search).get('toast-demo') === '1';
+  const toastDemos = {
+    success:['บันทึกสำเร็จ','บันทึกการตั้งค่าตัวอย่างแล้ว'],
+    warning:['ใกล้ครบกำหนด','ตัวอย่างการเตือนกำหนดสัญญา'],
+    error:['บันทึกไม่ได้','ตัวอย่างข้อผิดพลาด กรุณาตรวจข้อมูลแล้วลองใหม่'],
+    info:['ข้อมูลอัปเดตแล้ว','ตัวอย่างข้อความแจ้งสถานะ'],
+  };
   function read(key) {
     try { return JSON.parse(localStorage.getItem(storageKey + '.' + key)); }
     catch { return null; }
@@ -70,7 +74,7 @@
       localStorage.setItem(storageKey + '.' + key, JSON.stringify(value));
       return true;
     } catch {
-      notice('บันทึกในเบราว์เซอร์ไม่ได้ การตั้งค่าจะอยู่เฉพาะรอบนี้');
+      notice('บันทึกข้อมูลในเบราว์เซอร์ไม่ได้ กรุณาลองอีกครั้ง','error');
       return false;
     }
   }
@@ -340,7 +344,11 @@
       '" value="' + escape(p[key]) + '"' + (key === 'name' || key === 'email' ? ' required' : '') + '></label>';
     const toggle = (key, label, info) => '<label class="toggle-row"><span><strong>' + label + '</strong><small>' + info +
       '</small></span><input type="checkbox" name="' + key + '" role="switch"' + (pref[key] ? ' checked' : '') + '></label>';
-    return '<header class="profile-intro"><div><h1>โปรไฟล์และการตั้งค่า</h1><p>ปรับพื้นที่ทำงานให้เหมาะกับคุณ</p></div>' +
+    const demo = (toastDemoEnabled ?
+        '<section class="card panel toast-demo"><h2>ทดลองข้อความแจ้งเตือน</h2><div class="v2-inline">' +
+        Object.entries(toastDemos).map(([type,[title]])=>'<button class="control" type="button" data-toast-demo="'+type+'">'+title+'</button>').join('') +
+        '</div></section>' : '');
+    return demo + '<header class="profile-intro"><div><h1>โปรไฟล์และการตั้งค่า</h1><p>ปรับพื้นที่ทำงานให้เหมาะกับคุณ</p></div>' +
       '<div class="v2-inline"><a class="control" href="#hero">ดูหน้าแรก</a><button type="button" class="control" data-action="accounts">' + icon('logout', 17) + ' จัดการบัญชีจำลอง</button></div></header>' +
       '<section class="card profile-hero" aria-labelledby="profile-name"><div class="profile-cover"' + (cover ? ' data-personal-cover' : '') + '>' +
       '<img src="' + (cover || 'assets/aurora-estate.webp') + '" alt="" decoding="async">' +
@@ -527,6 +535,7 @@
     if (!dialog.open) dialogReturn = document.activeElement;
     dialogType = type;
     dialog.dataset.kind = type;
+    if (toastRoot.parentNode === dialog) document.body.append(toastRoot);
     dialog.innerHTML = '<div class="dialog-head"><h2 id="dialog-title">' + title + '</h2>' + buttonIcon('dismiss','x','ปิดหน้าต่าง') +
       '</div><div class="dialog-body">' + content + '</div>';
     if (!dialog.open) dialog.showModal();
@@ -534,6 +543,7 @@
   }
   dialog.addEventListener('close', () => {
     if (dialog.open) return;
+    toast.sync();
     if (dialogReturn?.isConnected) dialogReturn.focus({preventScroll:true});
     dialog.replaceChildren();
     dialogType = null;
@@ -621,9 +631,7 @@
   function activateAccount(key) {
     if (!Object.hasOwn(accounts, key) || key === account) { if (dialog.open) dialog.close(); return; }
     if (dialog.open) dialog.close();
-    clearTimeout(toastTimer);
-    toast.classList.remove('shown');
-    toast.textContent = '';
+    toast.clear();
     account = key;
     pref = load(account);
     lookup = '';
@@ -681,6 +689,11 @@
     const {action, period, type, table, contract: id, account: choice, reset} = btn.dataset;
     if (choice) { activateAccount(choice); return; }
     if (!account) return;
+    if (toastDemoEnabled && Object.hasOwn(toastDemos,btn.dataset.toastDemo)) {
+      const [title,message] = toastDemos[btn.dataset.toastDemo];
+      toast.show({type:btn.dataset.toastDemo,title,message});
+      return;
+    }
     if (btn.dataset.recon) { reconciliation.click(btn); return; }
     if (period) { changeRange({period},btn); return; }
     if (type) { flip(type); return; }
@@ -723,6 +736,7 @@
         break;
       case 'sign-out':
         dialog.close();
+        toast.clear();
         account = null;
         write('session', 'signed-out');
         pref = {...defaults};
@@ -769,7 +783,7 @@
     }
     if (form.id === 'profile-form') {
       const cleaned = Object.fromEntries(Object.entries(values).map(([key,value])=>[key,value.trim()]));
-      if (!cleaned.name) { notice('กรอกชื่อที่แสดง'); form.elements.name.focus(); return; }
+      if (!cleaned.name) { notice('กรอกชื่อที่แสดง','warning'); form.elements.name.focus(); return; }
       const saved = settings({profile:{...pref.profile,...cleaned}});
       render();
       root.querySelector('#profile-form [type="submit"]').focus();
@@ -777,7 +791,7 @@
     }
     if (form.id === 'prefs-form') {
       const experience = xp.birthdayPatch(values);
-      if (!experience) { notice('เลือกวันและเดือนเกิดที่ถูกต้อง'); form.elements.birthdayDay.focus(); return; }
+      if (!experience) { notice('เลือกวันและเดือนเกิดที่ถูกต้อง','warning'); form.elements.birthdayDay.focus(); return; }
       const saved = settings({...values,...experience,reminders:form.elements.reminders.checked,digest:form.elements.digest.checked});
       if (experience.sound) xp.sound();
       render();

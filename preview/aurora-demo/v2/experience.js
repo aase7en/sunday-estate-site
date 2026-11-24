@@ -119,7 +119,7 @@ window.createEstateExperience = api => {
     if (!c || c.type !== 'loan') return;
     sound();
     const remaining = c.balance - d.sum(readList('demo-payments').filter(receipt => receipt.contract === c.id),'amount');
-    if (remaining <= 0) { notice('สัญญานี้ปิดยอดในพื้นที่ทดลองแล้ว'); return; }
+    if (remaining <= 0) { notice('สัญญานี้ปิดยอดในพื้นที่ทดลองแล้ว','info'); return; }
     const request = crypto.randomUUID();
     open('ทดลองบันทึกรับชำระ',
       '<form id="v2-payment" class="editor" data-request="' + request + '" data-contract-id="' + c.id + '"><p>รายการจำลอง · ' + c.id +

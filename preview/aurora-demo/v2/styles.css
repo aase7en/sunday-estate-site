@@ -397,8 +397,6 @@ dialog::backdrop{background:#0908188c;backdrop-filter:blur(3px)}
 .search-results button{display:grid;grid-template-columns:minmax(67px,max-content) 1fr auto;align-items:center;gap:8px;text-align:left;min-height:44px;padding:4px 6px;border-bottom:1px solid var(--border)}
 .search-results button:hover{background:var(--wash)}
 .search-results span{color:var(--muted)}
-.toast{position:fixed;z-index:10;bottom:max(72px,calc(env(safe-area-inset-bottom) + 64px));inset-inline:12px;margin:auto;width:min(max-content,calc(100% - 24px));padding:8px 13px;border-radius:10px;background:var(--tip);color:var(--tip-text);box-shadow:var(--raised);opacity:0;pointer-events:none;transition:opacity .18s;font-size:12px}
-.toast.shown{opacity:1}
 
 @media(max-width:374px){
   .brand small{display:none}
@@ -487,7 +485,6 @@ dialog::backdrop{background:#0908188c;backdrop-filter:blur(3px)}
   .card-title p,.legend,.swatch,.chart-summary,.panel-note,.ring-legend button,.queue-text small{font-size:12px}
   .lending-grid{grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);align-items:start}
   .insight{padding:13px 15px}
-  .toast{bottom:20px}
 }
 @media(min-width:1150px){
   .workspace{padding-inline:24px}

@@ -123,7 +123,7 @@ window.createEstateReconciliation = ({root,dialog,icon,escape,read,write,notice,
         const recorded = matches();
         if (!compare(statement,invoice,recorded).ready) { review(statement,invoice); return; }
         const match = {statementId:statement.id,receiptId:invoice.id,reference:statement.reference,reviewer:reviewer(),at:new Date().toISOString()};
-        if (!write(storeKey,[...recorded.slice(1),match])) { notice('บันทึกคู่รายการไม่ได้ในเบราว์เซอร์นี้'); return; }
+        if (!write(storeKey,[...recorded.slice(1),match])) return;
         dialog.close();
         render('workspace');
         root.querySelector('[data-statement="' + statement.id + '"]')?.focus({preventScroll:true});
@@ -132,7 +132,7 @@ window.createEstateReconciliation = ({root,dialog,icon,escape,read,write,notice,
       if (navigator.locks) await navigator.locks.request('sunday-estate-demo-reconciliation',commit);
       else commit();
     } catch {
-      notice('ยังบันทึกคู่รายการไม่ได้ ลองยืนยันใหม่');
+      notice('ยังบันทึกคู่รายการไม่ได้ ลองยืนยันใหม่','error');
     } finally {
       pending = false;
       button.disabled = false;
