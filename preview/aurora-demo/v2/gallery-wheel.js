@@ -6,15 +6,20 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   const toggle = gallery.querySelector('[data-gallery-control="toggle"]');
   const navigation = gallery.querySelector('.gallery-navigation');
   const size = rows.length;
-  const autoplayDelay = 3200;
+  const cruiseSpeed = Math.min(.48, size/12);
   const listeners = new AbortController();
   const opts = {signal:listeners.signal};
   const wrap = value => ((value % size) + size) % size;
   const relative = value => wrap(value + size/2) - size/2;
   let position = 0;
-  let target = 0;
-  let animation;
-  let timer;
+  let target;
+  let animation = 0;
+  let autoplay = 0;
+  let lastFrame;
+  let runningTime = 0;
+  let width = stage.clientWidth;
+  let height = stage.clientHeight;
+  let current = -1;
   let drag;
   let liftedCard;
   let liftTimer;
@@ -25,22 +30,21 @@ window.mountEstateGallery = (gallery, rows, motion) => {
 
   function paint() {
     cards.forEach((card,index) => {
-      const offset = relative(index-position);
-      const distance = Math.abs(offset);
-      const angle = Math.min(distance,2.2) * .91;
-      const depth = (1-Math.cos(angle))/2;
-      const x = Math.sin(angle) * Math.sign(offset) * 92;
-      card.style.transform = 'translate3d('+x+'%, '+(depth*17)+'%, '+(-depth*125)+'px) rotateY('+(Math.sign(offset)*Math.min(distance*25,56))+'deg) scale('+(1-depth*.5)+')';
-      card.style.zIndex = String(100-Math.round(distance*30));
-      card.style.opacity = String(Math.max(0, Math.min(1-depth*.66, 2.35-distance)));
-      card.style.visibility = distance >= 2.35 ? 'hidden' : 'visible';
+      const angle = (index-position) * 2*Math.PI/size;
+      const side = Math.sin(angle);
+      const depth = (1+Math.cos(angle))/2;
+      const x = width*.446*side;
+      const y = size > 1 ? height*.46*(depth-.64) : 0;
+      card.style.transform = `translate3d(${x}px,${y}px,0) rotateY(${-side*39}deg) rotateZ(${side*7}deg) scale(${.48+depth*.52})`;
+      card.style.zIndex = String(Math.round(depth*1000));
+      card.style.opacity = String(.68+depth*.32);
     });
   }
 
-  function settled(manual) {
-    position = target = wrap(target);
-    paint();
-    const active = Math.round(position);
+  function showCurrent(manual = false) {
+    const active = wrap(Math.round(position));
+    if (active === current && !manual) return;
+    current = active;
     cards.forEach((card,i) => {
       card.classList.toggle('is-current',i === active);
       card.querySelector('img').alt = i === active ? rows[i].alt : '';
@@ -58,41 +62,67 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   }
 
   function stopAutoplay() {
-    clearTimeout(timer);
+    cancelAnimationFrame(autoplay);
+    autoplay = 0;
+    lastFrame = undefined;
+    runningTime = 0;
+  }
+
+  function advance(now) {
+    const elapsed = lastFrame === undefined ? 0 : Math.min(48, now-lastFrame)/1000;
+    lastFrame = now;
+    runningTime += elapsed;
+    const ramp = Math.min(1,runningTime/5);
+    const speed = .10+(cruiseSpeed-.10)*ramp*ramp*(3-2*ramp);
+    position = wrap(position+speed*elapsed);
+    paint();
+    showCurrent();
+    autoplay = requestAnimationFrame(advance);
   }
 
   function sync() {
-    stopAutoplay();
     toggle.hidden = motion.matches || size < 2;
     toggle.textContent = paused ? 'เล่นภาพต่อ' : 'หยุดภาพ';
     toggle.setAttribute('aria-pressed',String(paused));
-    if (visible && !paused && !hovering && !document.hidden && !motion.matches && !drag &&
-      !gallery.querySelector('.gallery-stage:focus-visible,button:focus-visible') && size > 1) {
-      timer = setTimeout(() => rotate(target+1,false),autoplayDelay);
-    }
+    const canPlay = visible && !paused && !hovering && !document.hidden && !motion.matches && !drag && target === undefined &&
+      !gallery.querySelector('.gallery-stage:focus-visible,button:focus-visible') && size > 1;
+    if (canPlay && !autoplay) autoplay = requestAnimationFrame(advance);
+    if (!canPlay && autoplay) stopAutoplay();
   }
 
   function rotate(next,manual) {
+    stopAutoplay();
     cancelAnimationFrame(animation);
     target = next;
     const start = position;
     const delta = target-start;
-    if (motion.matches || Math.abs(delta) < .004) {
-      settled(manual);
+    function settle() {
+      position = wrap(next);
+      target = undefined;
+      paint();
+      showCurrent(manual);
       sync();
+    }
+    if (motion.matches || Math.abs(delta) < .004) {
+      settle();
       return;
     }
+
     const started = performance.now();
-    const duration = Math.min(730,410+120*Math.abs(delta));
+    const duration = Math.min(730,350+105*Math.abs(delta));
     function frame(now) {
       const progress = Math.min(1,Math.max(0,(now-started)/duration));
       position = start+delta*(1-(1-progress)**4);
-      paint();
-      if (progress < 1) animation = requestAnimationFrame(frame);
-      else { settled(manual); sync(); }
+      if (progress < 1) {
+        paint();
+        animation = requestAnimationFrame(frame);
+      } else settle();
     }
-    stopAutoplay();
     animation = requestAnimationFrame(frame);
+  }
+
+  function step(direction) {
+    rotate((target ?? Math.round(position))+direction,true);
   }
 
   function clearLift() {
@@ -122,6 +152,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
       if (Math.abs(dx) < 7 || Math.abs(dy) > Math.abs(dx)) return;
       clearLift();
       cancelAnimationFrame(animation);
+      target = undefined;
       drag.origin = position;
       drag.moved = true;
       stage.setPointerCapture(event.pointerId);
@@ -171,12 +202,12 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   stage.addEventListener('keydown',event => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     event.preventDefault();
-    rotate(target+(event.key === 'ArrowLeft' ? -1 : 1),true);
+    step(event.key === 'ArrowLeft' ? -1 : 1);
   },opts);
   gallery.addEventListener('click',event => {
     const action = event.target.closest('[data-gallery-control]')?.dataset.galleryControl;
     if (action === 'toggle') { paused = !paused; sync(); }
-    if (action === 'prev' || action === 'next') rotate(target+(action === 'prev' ? -1 : 1),true);
+    if (action === 'prev' || action === 'next') step(action === 'prev' ? -1 : 1);
   },opts);
   gallery.addEventListener('focusin',sync,opts);
   gallery.addEventListener('focusout',() => queueMicrotask(() => {
@@ -185,7 +216,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   document.addEventListener('visibilitychange',sync,opts);
   motion.addEventListener('change',() => {
     clearLift();
-    rotate(target,false);
+    rotate(target ?? Math.round(position),false);
   },opts);
 
   const observer = new IntersectionObserver(([entry]) => {
@@ -193,12 +224,20 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     sync();
   },{threshold:.2});
   observer.observe(stage);
+  const resize = new ResizeObserver(() => {
+    width = stage.clientWidth;
+    height = stage.clientHeight;
+    paint();
+  });
+  resize.observe(stage);
   navigation.hidden = size < 2;
-  settled(false);
+  paint();
+  showCurrent();
   sync();
   return () => {
     listeners.abort();
     observer.disconnect();
+    resize.disconnect();
     clearLift();
     cancelAnimationFrame(animation);
     stopAutoplay();

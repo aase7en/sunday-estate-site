@@ -17,7 +17,13 @@ window.EstateScenes = (() => {
     {id:'SE-DEMO-04',title:'บ้านพักในสวน',area:'ทำเลเงียบสงบ',group:'บ้านและที่อยู่อาศัย',status:'booking',src:scenes[4].src,
       description:'ตัวอย่างโครงการพักอาศัยขนาดเล็กท่ามกลางพื้นที่สีเขียว แสดงรูปแบบการ์ดเปิดจอง'},
   ];
-  const defaultGallery = scenes.map(({src,alt,title}) => ({src,alt,caption:title}));
+  const defaultGallery = [
+    ...scenes.map(({src,alt,title}) => ({src,alt,caption:title})),
+    {src:'assets/scenes/opening-dawn.webp', alt:'บ้านไทยร่วมสมัยริมสระและแนวเขาในแสงเช้า', caption:'รุ่งเช้าเหนือแนวเขา'},
+    {src:'assets/mastheads/overview-mobile.webp', alt:'บ้านไม้และหินธรรมชาติริมสระสะท้อนแสง', caption:'บ้านพักริมสระ'},
+    {src:'assets/mastheads/investments-mobile.webp', alt:'แปลงเกษตรที่มีแนวต้นไม้และถนนแบ่งพื้นที่', caption:'มุมสูงเหนือแปลงเกษตร'},
+    {src:'assets/mastheads/lending-mobile.webp', alt:'ร้านกาแฟไม้และกระจกท่ามกลางสวน', caption:'ร้านกาแฟในสวน'},
+  ];
   const asset = value => typeof value === 'string' && (/^data:image\/(jpeg|webp|png);base64,[\w+/=]+$/.test(value) ||
     value === 'assets/scenes/future.webp' || defaultGallery.some(image => image.src === value)) ? value : '';
   const ribbon = (listing,escape) => listing.status ? '<span class="estate-ribbon" data-tone="'+
@@ -100,7 +106,7 @@ window.EstateScenes = (() => {
           '" aria-pressed="false">'+escape(group)+'</button>').join('')+'</div>' :
         '<p>ยังไม่มีรายการแสดง</p>') + listingCards(listings,escape,icon) + '</section>' +
       '<section id="gallery" class="cinema-gallery" aria-labelledby="gallery-heading"><div class="gallery-heading"><div>' +
-      '<h2 id="gallery-heading" tabindex="-1">แกลเลอรี</h2><p id="gallery-hint">ปัด ลาก หรือแตะภาพด้านข้างเพื่อเลือก</p></div>' +
+      '<h2 id="gallery-heading" tabindex="-1">แกลเลอรี</h2><p id="gallery-hint">ปัด ลาก หรือแตะภาพเพื่อเลื่อนมาด้านหน้า</p></div>' +
       '<button class="control" type="button" data-gallery-control="toggle" aria-pressed="false" hidden>หยุดภาพ</button></div>' +
       '<figure class="gallery-figure"><div class="gallery-stage" role="group" tabindex="0" aria-label="วงล้อภาพ" aria-describedby="gallery-hint" data-current="0">' +
       gallery.map((row,i) => '<div class="gallery-card'+(i===0?' is-current':'')+'" data-gallery-image="'+i+'">'+
