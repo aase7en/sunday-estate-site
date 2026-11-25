@@ -57,17 +57,21 @@
 .gallery-stage{
   position:relative;isolation:isolate;overflow:hidden;overflow:clip;perspective:1150px;
   touch-action:pan-y pinch-zoom;user-select:none;cursor:grab;
-  width:100%;height:clamp(350px,min(44vw,62svh),610px);outline-offset:-3px
+  width:100%;height:clamp(365px,min(46vw,65svh),650px);outline-offset:-3px
+}
+.gallery-stage.has-orbit::before{
+  content:"";position:absolute;inset:12% 4% 32%;border-radius:50%;
+  border:1px solid #9cb1d62d;pointer-events:none
 }
 .gallery-stage.is-dragging,.gallery-stage.is-dragging .gallery-card{cursor:grabbing}
 .gallery-card{
-  position:absolute;inset:0;margin:auto;width:min(43%,660px);height:min(53%,29vw);
+  position:absolute;inset:0;margin:auto;width:min(43%,660px);height:42%;
   cursor:pointer;backface-visibility:hidden
 }
 .gallery-card.is-current{cursor:grab}
 .gallery-card img{
   display:block;width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none;
-  border-radius:clamp(7px,1.1vw,16px);
+  border-radius:clamp(7px,1.1vw,16px);filter:blur(var(--gallery-blur,0px));
   box-shadow:0 13px 19px #03081073,0 29px 47px #02050ba8;
   transition:transform .26s cubic-bezier(.2,.7,.26,1),box-shadow .26s ease
 }
@@ -90,8 +94,8 @@
 .gallery-prev svg{rotate:180deg}
 .gallery-count{font-size:13px;color:#d1d9e7;font-variant-numeric:tabular-nums;min-width:46px;text-align:center}
 @media(max-width:639px){
-  .gallery-stage{perspective:820px;height:clamp(310px,96vw,520px)}
-  .gallery-card{width:57%;height:min(48%,42vw)}
+  .gallery-stage{perspective:820px;height:clamp(330px,105vw,550px)}
+  .gallery-card{width:52%;height:40%}
   .estate-listing-photo{aspect-ratio:16/8.5}
   .estate-listings{grid-template-columns:1fr}
 }

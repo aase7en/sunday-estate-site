@@ -712,21 +712,25 @@ window.createEstateExperience = api => {
     if (write('expense-rules',[...list,{...values,rate:Number(values.rate)}])) { rulesDialog(); notice('บันทึกรุ่นกฎแล้ว'); }
   }
 
+  const galleryLimit = 20;
+  const galleryImageMaxLength = 110_000;
   let galleryDraft;
   function galleryDialog(fresh = true) {
     if (!admin()) return;
     if (fresh) galleryDraft = structuredClone(read('gallery-published') ?? window.EstateScenes.defaultGallery);
-    open('จัดการแกลเลอรี','<div class="editor"><p>รูปและลำดับที่เผยแพร่จะปรากฏในแกลเลอรีบนเบราว์เซอร์นี้</p><ol class="v2-gallery-list">' +
+    const upload = galleryDraft.length < galleryLimit ?
+      '<form id="v2-gallery-upload" class="editor"><label>ภาพใหม่<input name="image" type="file" accept="image/jpeg,image/png,image/webp" required></label>' +
+      '<div class="form-grid"><label>คำบรรยาย<input name="caption" maxlength="80" required></label><label>ข้อความทดแทน<input name="alt" maxlength="130" required></label>' +
+      '</div>' + errorLine + formFooter('เพิ่มในฉบับร่าง') + '</form>' : '';
+    open('จัดการแกลเลอรี','<div class="editor"><p>' + galleryDraft.length + ' / ' + galleryLimit +
+      ' ภาพ · รูปที่เผยแพร่จะแสดงบนเบราว์เซอร์นี้</p>' + upload + '<ol class="v2-gallery-list">' +
       galleryDraft.map((row,i)=>'<li><img src="' + window.EstateScenes.asset(row.src) + '" alt="' + escape(row.alt) +
         '"><div><strong>' + escape(row.caption) + '</strong><small>' + escape(row.alt) + '</small><div class="v2-inline">' +
         (i>0 ? btn('gallery-shift:'+i+',-1','ขึ้น') : '') + (i<galleryDraft.length-1 ? btn('gallery-shift:'+i+',1','ลง') : '') +
         (galleryDraft.length>1 ? btn('gallery-delete:'+i,'นำออก') : '') + '</div></div></li>').join('') + '</ol>' +
-      (galleryDraft.length < 10 ? '<form id="v2-gallery-upload" class="editor"><label>ภาพใหม่<input name="image" type="file" accept="image/jpeg,image/png,image/webp" required></label>' +
-      '<div class="form-grid"><label>คำบรรยาย<input name="caption" maxlength="80" required></label><label>ข้อความทดแทน<input name="alt" maxlength="130" required></label>' +
-      '</div>' + errorLine + formFooter('เพิ่มในฉบับร่าง') + '</form>' : '') +
       '<div class="form-footer">' + btn('gallery-preview','ดูตัวอย่าง') + btn('gallery-publish','เผยแพร่จำลอง',true) + '</div></div>','v2-gallery');
   }
-  async function imageFromFile(file) {
+  async function imageFromFile(file, maxLength = Infinity) {
     if (file.size>8e6 || !/^image\/(jpeg|png|webp)$/.test(file.type)) {
       throw new Error('เลือกภาพ JPEG, PNG หรือ WebP ขนาดไม่เกิน 8 MB');
     }
@@ -735,19 +739,25 @@ window.createEstateExperience = api => {
     catch { throw new Error('เปิดรูปนี้ไม่ได้'); }
     try {
       const canvas = document.createElement('canvas');
-      const scale = Math.min(1,1000/Math.max(img.width,img.height));
-      canvas.width = Math.max(1,Math.round(img.width*scale));
-      canvas.height = Math.max(1,Math.round(img.height*scale));
-      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-      return canvas.toDataURL('image/webp',.75);
+      let scale = Math.min(1,1000/Math.max(img.width,img.height));
+      let src;
+      do {
+        canvas.width = Math.max(1,Math.round(img.width*scale));
+        canvas.height = Math.max(1,Math.round(img.height*scale));
+        canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+        src = canvas.toDataURL('image/webp',.75);
+        scale *= .8;
+      } while (src.length > maxLength && Math.max(canvas.width,canvas.height) > 360);
+      if (src.length > maxLength) throw new Error('ย่อรูปไม่พอกับพื้นที่จัดเก็บ กรุณาใช้รูปขนาดเล็กลง');
+      return src;
     } finally { img.close(); }
   }
   async function uploadGallery(form,values) {
-    if (!admin() || galleryDraft.length >= 10 || !values.image?.size) return;
+    if (!admin() || galleryDraft.length >= galleryLimit || !values.image?.size) return;
     const submit = form.querySelector('[type="submit"]');
     submit.disabled = true;
     try {
-      const src = await imageFromFile(values.image);
+      const src = await imageFromFile(values.image,galleryImageMaxLength);
       if (!admin() || !form.isConnected || !form.closest('dialog').open) return;
       galleryDraft.push({src,alt:values.alt.trim(),caption:values.caption.trim()});
       galleryDialog(false);

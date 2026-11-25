@@ -1,12 +1,16 @@
 window.mountEstateGallery = (gallery, rows, motion) => {
   const stage = gallery.querySelector('.gallery-stage');
   const cards = [...stage.querySelectorAll('[data-gallery-image]')];
+  const images = cards.map(card => card.querySelector('img'));
   const caption = gallery.querySelector('figcaption');
   const count = gallery.querySelector('.gallery-count');
   const toggle = gallery.querySelector('[data-gallery-control="toggle"]');
   const navigation = gallery.querySelector('.gallery-navigation');
   const size = rows.length;
-  const cruiseSpeed = Math.min(.48, size/12);
+  const cruiseSpeed = Math.min(.68, size/9);
+  const visibleArc = Math.min(size/2,3.3);
+  const ease = value => value*value*(3-2*value);
+  const hoverCapable = matchMedia('(any-hover: hover)');
   const listeners = new AbortController();
   const opts = {signal:listeners.signal};
   const wrap = value => ((value % size) + size) % size;
@@ -30,15 +34,35 @@ window.mountEstateGallery = (gallery, rows, motion) => {
 
   function paint() {
     cards.forEach((card,index) => {
-      const angle = (index-position) * 2*Math.PI/size;
-      const side = Math.sin(angle);
+      const offset = relative(index-position);
+      const distance = Math.abs(offset);
+      // Extra photos queue behind the rear arc, so any collection uses the same display spacing.
+      const rearFade = size/2 > visibleArc ? ease(Math.max(0,Math.min(1,(visibleArc-distance)/.52))) : 1;
+      const hidden = rearFade === 0;
+      if (card.hidden !== hidden) card.hidden = hidden;
+      if (hidden) return;
+
+      const travel = distance/visibleArc;
+      const angle = Math.PI*travel + .10*Math.sin(2*Math.PI*travel) - .115*Math.sin(4*Math.PI*travel);
       const depth = (1+Math.cos(angle))/2;
-      const x = width*.446*side;
-      const y = size > 1 ? height*.46*(depth-.64) : 0;
-      card.style.transform = `translate3d(${x}px,${y}px,0) rotateY(${-side*39}deg) rotateZ(${side*7}deg) scale(${.48+depth*.52})`;
-      card.style.zIndex = String(Math.round(depth*1000));
-      card.style.opacity = String(.68+depth*.32);
+      const side = Math.sin(angle)*Math.sign(offset);
+      const focus = ease(Math.max(0,1-distance/.8));
+      const scale = .23 + .055*depth + .925*focus;
+      const x = width*.46*side;
+      const y = size > 1 ? height*.56*(depth-.68) : 0;
+      card.style.transform = `translate3d(${x}px,${y}px,0) rotateY(${-side*16}deg) scale(${scale})`;
+      card.style.opacity = String(rearFade*(.61+.20*depth+.19*focus));
+      card.style.setProperty('--gallery-blur',`${(1-focus)*2.4}px`);
     });
+  }
+
+  function preloadNearby() {
+    if (!visible) return;
+    const preloadRadius = Math.ceil(visibleArc)+1;
+    for (let offset=-preloadRadius;offset<=preloadRadius;offset++) {
+      const image = images[wrap(current+offset)];
+      if (image.loading === 'lazy') image.loading = 'eager';
+    }
   }
 
   function showCurrent(manual = false) {
@@ -47,8 +71,9 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     current = active;
     cards.forEach((card,i) => {
       card.classList.toggle('is-current',i === active);
-      card.querySelector('img').alt = i === active ? rows[i].alt : '';
+      images[i].alt = i === active ? rows[i].alt : '';
     });
+    preloadNearby();
     stage.dataset.current = String(active);
     caption.textContent = rows[active].caption;
     count.setAttribute('aria-live',manual ? 'polite' : 'off');
@@ -72,8 +97,8 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     const elapsed = lastFrame === undefined ? 0 : Math.min(48, now-lastFrame)/1000;
     lastFrame = now;
     runningTime += elapsed;
-    const ramp = Math.min(1,runningTime/5);
-    const speed = .10+(cruiseSpeed-.10)*ramp*ramp*(3-2*ramp);
+    const ramp = ease(Math.min(1,runningTime/3.7));
+    const speed = .18+(cruiseSpeed-.18)*ramp;
     position = wrap(position+speed*elapsed);
     paint();
     showCurrent();
@@ -109,7 +134,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     }
 
     const started = performance.now();
-    const duration = Math.min(730,350+105*Math.abs(delta));
+    const duration = Math.min(670,310+95*Math.abs(delta));
     function frame(now) {
       const progress = Math.min(1,Math.max(0,(now-started)/duration));
       position = start+delta*(1-(1-progress)**4);
@@ -186,7 +211,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     if (event.target === stage) release(event);
   },opts);
   stage.addEventListener('pointerenter',event => {
-    if (event.pointerType === 'mouse') { hovering = true; sync(); }
+    if (event.pointerType === 'mouse' && hoverCapable.matches) { hovering = true; sync(); }
   },opts);
   stage.addEventListener('pointerleave',event => {
     if (!drag?.moved) release(event);
@@ -206,7 +231,11 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   },opts);
   gallery.addEventListener('click',event => {
     const action = event.target.closest('[data-gallery-control]')?.dataset.galleryControl;
-    if (action === 'toggle') { paused = !paused; sync(); }
+    if (action === 'toggle') {
+      paused = !paused;
+      sync();
+      if (paused && !drag && target === undefined) rotate(Math.round(position),false);
+    }
     if (action === 'prev' || action === 'next') step(action === 'prev' ? -1 : 1);
   },opts);
   gallery.addEventListener('focusin',sync,opts);
@@ -221,6 +250,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
 
   const observer = new IntersectionObserver(([entry]) => {
     visible = entry.intersectionRatio >= .2;
+    preloadNearby();
     sync();
   },{threshold:.2});
   observer.observe(stage);
@@ -230,6 +260,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     paint();
   });
   resize.observe(stage);
+  stage.classList.toggle('has-orbit',size > 1);
   navigation.hidden = size < 2;
   paint();
   showCurrent();
