@@ -46,8 +46,27 @@ window.EstateScenes = (() => {
     const edition = i => '<div class="cinema-edition" aria-hidden="true">' + String(i+1).padStart(2,'0') + ' / 05' +
       scenes.map((_,index)=>'<span'+(index<=i?' class="on"':'')+'></span>').join('') + '</div>';
     const house = scenes[0];
-    const wordmark = tone => '<span class="opening-word opening-' + tone + '">' +
-      '<b>SUNDAY</b><b>ESTATE</b></span>';
+    const wordmark = '<svg class="opening-wordmark" width="100%" height="100%" aria-hidden="true" focusable="false">' +
+      '<defs><g id="opening-letterforms" text-anchor="middle">' +
+      '<text x="50%" y="62%" dy=".73em">SUNDAY</text><text class="opening-estate" x="50%" y="62%" dy="2.76em">ESTATE</text></g>' +
+      '<linearGradient id="opening-gold-paint" x1="0" y1="0" x2=".13" y2="1">' +
+      '<stop stop-color="#fff5dd"/><stop offset=".54" stop-color="#ffe6b1"/><stop offset="1" stop-color="#d0a461"/></linearGradient>' +
+      '<radialGradient id="opening-fog-glow" cx=".53" cy=".27" r=".47">' +
+      '<stop stop-color="#fff9e3" stop-opacity=".70"/><stop offset=".28" stop-color="#ffd499" stop-opacity=".39"/>' +
+      '<stop offset=".57" stop-color="#ffbe75" stop-opacity=".18"/><stop offset="1" stop-color="#ffbe75" stop-opacity="0"/></radialGradient>' +
+      '<linearGradient id="opening-edge-shade" x2="0" y2="1">' +
+      '<stop stop-color="#131829" stop-opacity=".08"/><stop offset=".22" stop-color="#131829" stop-opacity="0"/>' +
+      '<stop offset=".65" stop-color="#0a1529" stop-opacity="0"/><stop offset=".94" stop-color="#0a1529" stop-opacity=".62"/>' +
+      '<stop offset="1" stop-color="#101d32"/></linearGradient>' +
+      '<mask id="opening-fog-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">' +
+      '<rect width="100%" height="100%" fill="white"/><g class="opening-rise"><use class="opening-aperture" href="#opening-letterforms" fill="black"/></g></mask></defs>' +
+      '<g class="opening-fog-group" mask="url(#opening-fog-mask)">' +
+      '<g class="opening-veil"><image href="assets/scenes/opening-sky.webp" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"/>' +
+      '<rect class="opening-afterglow" width="100%" height="100%" fill="url(#opening-fog-glow)"/></g>' +
+      '<image class="opening-mist" href="assets/scenes/opening-mist.webp" preserveAspectRatio="none"/></g>' +
+      '<rect width="100%" height="100%" fill="url(#opening-edge-shade)"/>' +
+      '<g class="opening-rise"><use class="opening-gold" href="#opening-letterforms" fill="url(#opening-gold-paint)"/>' +
+      '<use class="opening-outline" href="#opening-letterforms"/></g></svg>';
     const opening = anchor(0) + '<div class="opening-track"><section class="cinema-scene cinema-opening" aria-labelledby="scene-title-0">' +
       '<div class="opening-camera"><div class="opening-plate">' +
       '<picture class="opening-visual"><source media="(max-width:639px)" srcset="assets/scenes/opening-dawn-mobile.webp">' +
@@ -55,10 +74,8 @@ window.EstateScenes = (() => {
       '<div class="opening-sun" aria-hidden="true"></div>' +
       '<div class="opening-message"><h1 id="scene-title-0" tabindex="-1">' + house.title + '</h1><p>' + house.copy + '</p></div>' +
       '<div class="opening-foreground" aria-hidden="true"></div></div></div>' +
-      '<div class="opening-veil" aria-hidden="true"></div><div class="opening-mist" aria-hidden="true"></div>' +
-      '<div class="opening-shade" aria-hidden="true"></div>' +
-      '<div class="opening-reveal" aria-hidden="true">' + brandImage + '<div class="opening-wordmark">' +
-      wordmark('gold') + wordmark('outline') + wordmark('image-type') + '</div></div>' +
+      wordmark +
+      '<div class="opening-reveal opening-rise" aria-hidden="true">' + brandImage + '</div>' +
       '<div class="opening-footer"><p class="opening-cue" aria-hidden="true">' + icon('chevron',16) + ' เลื่อนเพื่อชมฉากเปิด</p>' +
       '<div class="cinema-actions opening-actions"><a class="cinema-cta" href="#scene-1" data-scene-scroll="scene-1">ฉากถัดไป ' +
       icon('chevron',16) + '</a><a class="cinema-cta" href="#properties" data-scene-scroll="properties">ดูผลงานและทรัพย์</a></div></div></section></div>';
