@@ -26,8 +26,7 @@
   display: block;
   position: relative;
   top: auto;
-  height: 100vh;
-  height: 100dvh;
+  height: var(--cinema-height);
   min-height: 340px;
   margin: 0;
   border: 0;
@@ -191,14 +190,37 @@
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) and (min-height: 541px) {
     .opening-track {
-      --opening-run: clamp(720px, 133svh, 1320px);
+      --opening-run: clamp(1320px, 210svh, 2160px);
       --opening-lift: -9svh;
       --opening-zoom: 1.24;
-      min-height: calc(100dvh + var(--opening-run));
+      min-height: calc(2 * var(--cinema-height) + var(--opening-run));
       view-timeline: --estate-opening block;
+      /* The last viewport is reserved for the next scene to cover the opening. */
+      view-timeline-inset: 0 calc(-1 * var(--cinema-height));
+    }
+    .chapter-track {
+      --chapter-hold: clamp(190px, 43svh, 420px);
+      position: relative;
+      isolation: isolate;
+      margin-top: calc(-1 * var(--cinema-height));
+      min-height: calc(2 * var(--cinema-height) + var(--chapter-hold));
+      view-timeline: --estate-chapter block;
       view-timeline-inset: 0;
     }
-    .cinema-opening.cinema-scene { position: sticky; top: 0; }
+    .chapter-track:last-child { min-height: calc(var(--cinema-height) + var(--chapter-hold)); }
+    .cinema-opening.cinema-scene,
+    .chapter-track .cinema-scene { position: sticky; top: 0; }
+    .chapter-track .cinema-photo {
+      animation: chapter-camera linear both;
+      animation-timeline: --estate-chapter;
+      animation-range: entry 0% contain 42svh;
+    }
+    .chapter-track .cinema-content {
+      animation: chapter-title linear both;
+      animation-timeline: --estate-chapter;
+      animation-range: entry 58% contain 17svh;
+    }
+    .chapter-track .cinema-content:focus-within { animation: none; }
     :where(.opening-camera, .opening-sun, .opening-message, .opening-mist, .opening-veil,
       .opening-rise, .opening-reveal .brand-mark, .opening-gold, .opening-outline, .opening-aperture, .opening-cue, .opening-afterglow) {
       animation-duration: auto;
@@ -231,11 +253,21 @@
   }
   @media (prefers-reduced-motion: no-preference) and (min-height: 541px) and (max-width: 639px) {
     .opening-track {
-      --opening-run: clamp(540px, 91svh, 820px);
+      --opening-run: clamp(1050px, 170svh, 1550px);
       --opening-lift: -6.3svh;
       --opening-zoom: 1.17;
     }
   }
+}
+
+@keyframes chapter-camera {
+  from { transform: scale(1); }
+  to { transform: translateY(-2.1%) scale(1.11); }
+}
+
+@keyframes chapter-title {
+  from { opacity: .09; transform: translateY(clamp(50px, 12svh, 132px)); }
+  to { opacity: 1; transform: none; }
 }
 
 @keyframes opening-camera {

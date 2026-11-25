@@ -21,12 +21,6 @@
 .picker-chips:empty{display:none}
 .picker-chip{min-height:36px;padding:3px 9px;border-radius:20px;background:var(--purple-bg);color:var(--accent);font-size:11px}
 
-.cinema-story{--step:13px}
-.cinema-scene{top:calc(var(--cinema-top) + var(--i)*var(--step))}
-.cinema-photo{transform:none;transition:none}
-.cinema-edition{position:absolute;top:16px;right:17px;display:flex;align-items:center;gap:7px;color:#fce1a4;background:#091629cc;border:1px solid #e9cb894a;border-radius:20px;padding:5px 9px;font-size:11px;font-variant-numeric:tabular-nums}
-.cinema-edition span{display:inline-block;width:13px;height:2px;background:#e3ba70;opacity:.28}
-.cinema-edition span.on{opacity:1}
 .cinema-properties{width:min(100%,1230px);margin:auto;padding:clamp(45px,8vw,105px) clamp(14px,4vw,36px) 0;scroll-margin-top:var(--cinema-header)}
 .cinema-properties h2{font-size:clamp(28px,5vw,54px);letter-spacing:-.045em}
 .cinema-properties h3{font-size:clamp(18px,2.8vw,27px)}
@@ -59,54 +53,55 @@
 .estate-review .estate-listings{grid-template-columns:1fr}
 .estate-editor-image{width:min(100%,360px);aspect-ratio:16/8;height:auto;border-radius:12px}
 
-.gallery-figure{margin:12px 0 0}
-.gallery-stage{position:relative;isolation:isolate;overflow:hidden;perspective:1150px;touch-action:pan-y pinch-zoom;
-  user-select:none;cursor:grab;width:100%;height:clamp(202px,48vw,484px);border-radius:clamp(14px,3vw,27px);
-  background:radial-gradient(ellipse at 50% 87%,#86674433,transparent 62%),linear-gradient(155deg,#122239,#0c1628 57%,#121f31);
-  border:1px solid #e8c68a31}
-.gallery-stage::before{content:"";position:absolute;inset:auto 3% 6%;height:29%;border-radius:50%;border:1px solid #e2bc6c38;
-  background:radial-gradient(ellipse,#9a794237,transparent 70%);box-shadow:inset 0 0 22px #c3974c12;pointer-events:none}
+.gallery-figure{margin:6px 0 0}
+.gallery-stage{
+  position:relative;isolation:isolate;overflow:hidden;overflow:clip;perspective:1150px;
+  touch-action:pan-y pinch-zoom;user-select:none;cursor:grab;
+  width:100%;height:clamp(240px,min(43vw,62svh),690px);outline-offset:-3px
+}
 .gallery-stage.is-dragging,.gallery-stage.is-dragging .gallery-card{cursor:grabbing}
-.gallery-card{position:absolute;inset:0;margin:auto;aspect-ratio:16/10;width:60%;height:auto;max-height:85%;overflow:hidden;
-  border:1px solid #d3b77e85;border-radius:clamp(9px,1.65vw,19px);background:#13243a;box-shadow:0 16px 32px #050b15bd;
-  cursor:pointer;backface-visibility:hidden}
-.gallery-card.is-current{border-color:#efce8d;cursor:grab}
-.gallery-card img{pointer-events:none;user-select:none}
-.gallery-figure figcaption{text-align:center;padding:9px 6px 0;color:#f4e4c6;font-size:clamp(15px,2vw,21px);font-weight:600}
+.gallery-card{
+  position:absolute;inset:0;margin:auto;width:55%;height:min(84%,34vw);
+  cursor:pointer;backface-visibility:hidden
+}
+.gallery-card.is-current{cursor:grab}
+.gallery-card img{
+  display:block;width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none;
+  border-radius:clamp(7px,1.1vw,16px);
+  box-shadow:0 13px 19px #03081073,0 29px 47px #02050ba8;
+  transition:transform .26s cubic-bezier(.2,.7,.26,1),box-shadow .26s ease
+}
+.gallery-stage:not(.is-dragging) .gallery-card.is-lifted img{
+  transform:translateY(-7px) scale(1.045);box-shadow:0 17px 28px #02070b99,0 32px 57px #02050baa
+}
+@media(hover:hover) and (pointer:fine){
+  .gallery-stage:not(.is-dragging) .gallery-card:hover img{
+    transform:translateY(-9px) scale(1.045);box-shadow:0 17px 28px #02070b99,0 32px 57px #02050baa
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .gallery-card img{transition:none}
+  .gallery-stage:not(.is-dragging) .gallery-card:is(:hover,.is-lifted) img{transform:none}
+}
+.gallery-figure figcaption{text-align:center;padding:5px 14px 0;color:#f4e4c6;font-size:clamp(15px,2vw,21px);font-weight:600}
 .gallery-controls{display:grid;justify-items:center;margin-top:8px}
 .gallery-navigation{display:flex;align-items:center;gap:10px}
 .gallery-navigation .control{width:44px;padding:0;border-radius:50%;color:#f0d4a0}
 .gallery-prev svg{rotate:180deg}
 .gallery-count{font-size:13px;color:#d1d9e7;font-variant-numeric:tabular-nums;min-width:46px;text-align:center}
 @media(max-width:639px){
-  .gallery-stage{perspective:820px}
-  .gallery-card{width:65%;aspect-ratio:4/3}
+  .gallery-stage{perspective:820px;height:clamp(250px,77vw,435px)}
+  .gallery-card{width:66%;height:60vw}
   .estate-listing-photo{aspect-ratio:16/8.5}
+  .estate-listings{grid-template-columns:1fr}
 }
 @supports(animation-timeline:view()){
   @media(prefers-reduced-motion:no-preference) and (min-height:541px){
-    .cinema-story{view-timeline:--deck block;timeline-scope:--entry0,--entry1,--entry2,--entry3,--entry4}
-    .cinema-anchor{height:1px;margin-bottom:-1px;view-timeline-name:var(--entry)}
-    .cinema-scene:not(.cinema-opening){
-      animation:estate-arrive linear both,estate-recede linear both;
-      animation-timeline:var(--entry),--deck;
-      animation-range:cover 1% cover 85%,contain var(--recede) contain 100%;transform-origin:50% 0
-    }
-    .cinema-scene{margin-bottom:clamp(16px,5svh,64px)}
     .estate-ribbon{animation:estate-ribbon-reveal linear both;animation-timeline:view();animation-range:entry 8% cover 32%}
   }
 }
-@keyframes estate-arrive{from{transform:perspective(1400px) rotateX(var(--tilt,-10deg)) translateY(4svh) scale(.965)}to{transform:none}}
-@keyframes estate-recede{to{scale:calc(1 - var(--left)*.017);filter:brightness(calc(1 - var(--left)*.055))}}
 @keyframes estate-ribbon-reveal{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0)}}
-@media(max-width:639px){
-  .cinema-story{--step:6px;--tilt:-5deg}
-  .cinema-scene{min-height:max(390px,calc(100svh - var(--cinema-top) - 34px))}
-  .cinema-edition span{display:none}
-  .estate-listings{grid-template-columns:1fr}
-}
 .cinema-actions{display:flex;gap:8px;flex-wrap:wrap}
-@media(prefers-reduced-motion:reduce),(max-height:540px){.cinema-scene{top:auto}}
 .boot-shell{max-width:1300px;margin:auto;padding:clamp(20px,5vw,64px) clamp(12px,4vw,50px)}
 .boot-header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
 .boot-header>div{width:min(60%,280px);display:grid;gap:8px}

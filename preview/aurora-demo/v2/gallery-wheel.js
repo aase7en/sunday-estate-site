@@ -6,6 +6,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   const toggle = gallery.querySelector('[data-gallery-control="toggle"]');
   const navigation = gallery.querySelector('.gallery-navigation');
   const size = rows.length;
+  const autoplayDelay = 3200;
   const listeners = new AbortController();
   const opts = {signal:listeners.signal};
   const wrap = value => ((value % size) + size) % size;
@@ -15,6 +16,9 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   let animation;
   let timer;
   let drag;
+  let liftedCard;
+  let liftTimer;
+  let hovering = false;
   let suppressClick = false;
   let paused = false;
   let visible = false;
@@ -25,7 +29,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
       const distance = Math.abs(offset);
       const angle = Math.min(distance,2.2) * .91;
       const depth = (1-Math.cos(angle))/2;
-      const x = Math.sin(angle) * Math.sign(offset) * 74;
+      const x = Math.sin(angle) * Math.sign(offset) * 92;
       card.style.transform = 'translate3d('+x+'%, '+(depth*17)+'%, '+(-depth*125)+'px) rotateY('+(Math.sign(offset)*Math.min(distance*25,56))+'deg) scale('+(1-depth*.5)+')';
       card.style.zIndex = String(100-Math.round(distance*30));
       card.style.opacity = String(Math.max(0, Math.min(1-depth*.66, 2.35-distance)));
@@ -62,9 +66,9 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     toggle.hidden = motion.matches || size < 2;
     toggle.textContent = paused ? 'เล่นภาพต่อ' : 'หยุดภาพ';
     toggle.setAttribute('aria-pressed',String(paused));
-    if (visible && !paused && !document.hidden && !motion.matches && !drag &&
+    if (visible && !paused && !hovering && !document.hidden && !motion.matches && !drag &&
       !gallery.querySelector('.gallery-stage:focus-visible,button:focus-visible') && size > 1) {
-      timer = setTimeout(() => rotate(target+1,false),6500);
+      timer = setTimeout(() => rotate(target+1,false),autoplayDelay);
     }
   }
 
@@ -91,8 +95,20 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     animation = requestAnimationFrame(frame);
   }
 
+  function clearLift() {
+    clearTimeout(liftTimer);
+    liftedCard?.classList.remove('is-lifted');
+    liftedCard = undefined;
+  }
+
   stage.addEventListener('pointerdown',event => {
-    if (size < 2 || !event.isPrimary || event.button !== 0) return;
+    if (!event.isPrimary || event.button !== 0) return;
+    if (event.pointerType !== 'mouse' && !motion.matches) {
+      clearLift();
+      liftedCard = event.target.closest('[data-gallery-image]');
+      liftedCard?.classList.add('is-lifted');
+    }
+    if (size < 2) return;
     suppressClick = false;
     drag = {id:event.pointerId,startX:event.clientX,startY:event.clientY,x:event.clientX,time:event.timeStamp,
       velocity:0,step:Math.min(230,stage.clientWidth*.37),moved:false};
@@ -104,6 +120,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     const dy = event.clientY-drag.startY;
     if (!drag.moved) {
       if (Math.abs(dx) < 7 || Math.abs(dy) > Math.abs(dx)) return;
+      clearLift();
       cancelAnimationFrame(animation);
       drag.origin = position;
       drag.moved = true;
@@ -118,6 +135,9 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     paint();
   },opts);
   function release(event) {
+    if (!event.isPrimary) return;
+    if (event.type === 'pointerup' && liftedCard) liftTimer = setTimeout(clearLift,330);
+    if (event.type === 'pointercancel') clearLift();
     if (drag?.id !== event.pointerId) return;
     const gesture = drag;
     drag = undefined;
@@ -134,8 +154,12 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   stage.addEventListener('lostpointercapture',event => {
     if (event.target === stage) release(event);
   },opts);
+  stage.addEventListener('pointerenter',event => {
+    if (event.pointerType === 'mouse') { hovering = true; sync(); }
+  },opts);
   stage.addEventListener('pointerleave',event => {
     if (!drag?.moved) release(event);
+    if (event.pointerType === 'mouse') { hovering = false; sync(); }
   },opts);
   stage.addEventListener('click',event => {
     const card = event.target.closest('[data-gallery-image]');
@@ -159,7 +183,10 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     if (!listeners.signal.aborted) sync();
   }),opts);
   document.addEventListener('visibilitychange',sync,opts);
-  motion.addEventListener('change',() => rotate(target,false),opts);
+  motion.addEventListener('change',() => {
+    clearLift();
+    rotate(target,false);
+  },opts);
 
   const observer = new IntersectionObserver(([entry]) => {
     visible = entry.intersectionRatio >= .2;
@@ -172,6 +199,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   return () => {
     listeners.abort();
     observer.disconnect();
+    clearLift();
     cancelAnimationFrame(animation);
     stopAutoplay();
   };
