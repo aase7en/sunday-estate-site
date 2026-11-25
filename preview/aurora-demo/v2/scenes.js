@@ -61,7 +61,8 @@ window.EstateScenes = (() => {
       '<g class="opening-fog-group" mask="url(#opening-fog-mask)">' +
       '<g class="opening-veil"><image href="assets/scenes/opening-sky.webp" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"/>' +
       '<rect class="opening-afterglow" width="100%" height="100%" fill="url(#opening-fog-glow)"/></g>' +
-      '<image class="opening-mist" href="assets/scenes/opening-mist.webp" preserveAspectRatio="none"/></g>' +
+      '<image class="opening-mist opening-mist-wide" x="-24%" y="17%" width="148%" height="101%" href="assets/scenes/opening-mist.webp" preserveAspectRatio="none"/>' +
+      '<image class="opening-mist opening-mist-narrow" x="-75%" y="17%" width="250%" height="101%" href="assets/scenes/opening-mist.webp" preserveAspectRatio="none"/></g>' +
       '<rect width="100%" height="100%" fill="url(#opening-edge-shade)"/>' +
       '<g class="opening-rise"><use class="opening-gold" href="#opening-letterforms" fill="url(#opening-gold-paint)"/>' +
       '<use class="opening-outline" href="#opening-letterforms"/></g></svg>';

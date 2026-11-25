@@ -99,14 +99,12 @@
 }
 
 .opening-veil, .opening-afterglow, .opening-mist { opacity: 0; }
+/* SVG coordinates keep the moving bitmap outside the viewport in WebKit. */
 .opening-mist {
-  x: -24%;
-  y: 17%;
-  width: 148%;
-  height: 101%;
   transform-box: fill-box;
   filter: blur(10px);
 }
+.opening-mist-narrow { display: none; }
 .opening-reveal {
   position: absolute;
   top: calc(62% + var(--opening-type-offset));
@@ -173,7 +171,8 @@
     --roof-cut: polygon(0 48.3%, 9.7% 47.4%, 4% 45.7%, 29% 42.8%, 28.8% 42.1%,
       51% 41.4%, 80% 42%, 79.8% 43%, 100% 45.5%, 100% 100%, 0 100%);
   }
-  .opening-mist { x: -75%; width: 250%; }
+  .opening-mist-wide { display: none; }
+  .opening-mist-narrow { display: inline; }
   .opening-actions .cinema-cta { padding-inline: 10px; font-size: 12px; }
 }
 
