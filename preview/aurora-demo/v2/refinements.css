@@ -59,13 +59,9 @@
   touch-action:pan-y pinch-zoom;user-select:none;cursor:grab;
   width:100%;height:clamp(365px,min(46vw,65svh),650px);outline-offset:-3px
 }
-.gallery-stage.has-orbit::before{
-  content:"";position:absolute;inset:12% 4% 32%;border-radius:50%;
-  border:1px solid #9cb1d62d;pointer-events:none
-}
 .gallery-stage.is-dragging,.gallery-stage.is-dragging .gallery-card{cursor:grabbing}
 .gallery-card{
-  position:absolute;inset:0;margin:auto;width:min(43%,660px);height:42%;
+  position:absolute;inset:0;margin:auto;width:min(29%,285px);height:min(59%,355px);
   cursor:pointer;backface-visibility:hidden
 }
 .gallery-card.is-current{cursor:grab}
@@ -95,7 +91,7 @@
 .gallery-count{font-size:13px;color:#d1d9e7;font-variant-numeric:tabular-nums;min-width:46px;text-align:center}
 @media(max-width:639px){
   .gallery-stage{perspective:820px;height:clamp(330px,105vw,550px)}
-  .gallery-card{width:52%;height:40%}
+  .gallery-card{width:42%;height:min(57%,52vw)}
   .estate-listing-photo{aspect-ratio:16/8.5}
   .estate-listings{grid-template-columns:1fr}
 }

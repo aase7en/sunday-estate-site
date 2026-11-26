@@ -8,7 +8,8 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   const navigation = gallery.querySelector('.gallery-navigation');
   const size = rows.length;
   const cruiseSpeed = Math.min(.68, size/9);
-  const visibleArc = Math.min(size/2,3.3);
+  const visibleArc = Math.min(size/2,3.9);
+  const hasRearQueue = size/2 > visibleArc;
   const ease = value => value*value*(3-2*value);
   const hoverCapable = matchMedia('(any-hover: hover)');
   const listeners = new AbortController();
@@ -36,23 +37,27 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     cards.forEach((card,index) => {
       const offset = relative(index-position);
       const distance = Math.abs(offset);
-      // Extra photos queue behind the rear arc, so any collection uses the same display spacing.
-      const rearFade = size/2 > visibleArc ? ease(Math.max(0,Math.min(1,(visibleArc-distance)/.52))) : 1;
+      // Long collections share the same arc. Extra photos fade in at the rear.
+      const rearFade = hasRearQueue ? ease(Math.max(0,Math.min(1,(visibleArc-distance)/.52))) : 1;
       const hidden = rearFade === 0;
       if (card.hidden !== hidden) card.hidden = hidden;
       if (hidden) return;
 
-      const travel = distance/visibleArc;
-      const angle = Math.PI*travel + .10*Math.sin(2*Math.PI*travel) - .115*Math.sin(4*Math.PI*travel);
+      const travel = Math.PI*distance/visibleArc;
+      const angle = hasRearQueue ? .78*travel+.58*Math.sin(travel) : travel+.29*Math.sin(travel);
       const depth = (1+Math.cos(angle))/2;
       const side = Math.sin(angle)*Math.sign(offset);
-      const focus = ease(Math.max(0,1-distance/.8));
-      const scale = .23 + .055*depth + .925*focus;
-      const x = width*.46*side;
-      const y = size > 1 ? height*.56*(depth-.68) : 0;
-      card.style.transform = `translate3d(${x}px,${y}px,0) rotateY(${-side*16}deg) scale(${scale})`;
-      card.style.opacity = String(rearFade*(.61+.20*depth+.19*focus));
-      card.style.setProperty('--gallery-blur',`${(1-focus)*2.4}px`);
+      const focus = ease(Math.max(0,1-distance/.9));
+      const scale = .49+.28*depth+.40*focus;
+      const x = Math.min(width*.49,415)*side;
+      const y = size > 1 ? height*.40*(depth-.79) : 0;
+      const z = -Math.min(width*.46,390)*(1-depth);
+      const yaw = -side*(38+32*(1-depth));
+      card.style.transform = `translate3d(${x}px,${y}px,${z}px) rotateY(${yaw}deg) scale(${scale})`;
+      // Layer bands keep each flank in order, including while the rear photos fade in.
+      card.style.zIndex = String(20-2*Math.floor(distance)+Number(offset < 0));
+      card.style.opacity = String(rearFade*(.76+.20*depth+.04*focus));
+      card.style.setProperty('--gallery-blur',`${(1-focus)*(1.25+.40*(1-depth))}px`);
     });
   }
 
@@ -260,7 +265,6 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     paint();
   });
   resize.observe(stage);
-  stage.classList.toggle('has-orbit',size > 1);
   navigation.hidden = size < 2;
   paint();
   showCurrent();
