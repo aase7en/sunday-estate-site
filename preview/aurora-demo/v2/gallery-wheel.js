@@ -33,7 +33,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   let paused = false;
   let visible = false;
 
-  function paint() {
+  function paint(manual = false) {
     cards.forEach((card,index) => {
       const offset = relative(index-position);
       const distance = Math.abs(offset);
@@ -48,6 +48,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
       const depth = (1+Math.cos(angle))/2;
       const side = Math.sin(angle)*Math.sign(offset);
       const focus = ease(Math.max(0,1-distance/.9));
+      const blurProgress = ease(Math.max(0,Math.min(1,(distance-.4)/.6)));
       const scale = .49+.28*depth+.40*focus;
       const x = Math.min(width*.49,415)*side;
       const y = size > 1 ? height*.40*(depth-.79) : 0;
@@ -57,8 +58,9 @@ window.mountEstateGallery = (gallery, rows, motion) => {
       // Layer bands keep each flank in order, including while the rear photos fade in.
       card.style.zIndex = String(20-2*Math.floor(distance)+Number(offset < 0));
       card.style.opacity = String(rearFade*(.76+.20*depth+.04*focus));
-      card.style.setProperty('--gallery-blur',`${(1-focus)*(1.25+.40*(1-depth))}px`);
+      card.style.setProperty('--gallery-blur',`${blurProgress*(1.25+.40*(1-depth))}px`);
     });
+    showCurrent(manual);
   }
 
   function preloadNearby() {
@@ -106,7 +108,6 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     const speed = .18+(cruiseSpeed-.18)*ramp;
     position = wrap(position+speed*elapsed);
     paint();
-    showCurrent();
     autoplay = requestAnimationFrame(advance);
   }
 
@@ -129,8 +130,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     function settle() {
       position = wrap(next);
       target = undefined;
-      paint();
-      showCurrent(manual);
+      paint(manual);
       sync();
     }
     if (motion.matches || Math.abs(delta) < .004) {
@@ -267,7 +267,6 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   resize.observe(stage);
   navigation.hidden = size < 2;
   paint();
-  showCurrent();
   sync();
   return () => {
     listeners.abort();
