@@ -10,17 +10,17 @@
 #scene-0 { scroll-margin-top: 0; }
 
 .opening-track {
-  --opening-image: url("assets/scenes/opening-dawn.webp");
+  --opening-image: var(--opening-photo-wide,url("assets/scenes/opening-dawn.webp"));
   --plate-ratio: 3 / 2;
   --plate-factor: 1.5;
   --roof-top: 42%;
   --opening-logo-size: clamp(40px, 7.2svh, 80px);
   --opening-logo-gap: clamp(7px, 1.45svh, 15px);
   --opening-type-offset: 0px;
-  --roof-cut: polygon(0 61%, 6.4% 61%, 19% 57%, 19% 56.7%, 23% 56%, 22.7% 49.4%,
+  --roof-cut: var(--opening-cut-wide,polygon(0 61%, 6.4% 61%, 19% 57%, 19% 56.7%, 23% 56%, 22.7% 49.4%,
     31% 47.8%, 28.8% 45.6%, 42.2% 42.9%, 42% 42.1%, 55.5% 41.4%, 69.5% 42.1%,
     69.4% 43.1%, 81.7% 45.6%, 76.7% 53.7%, 83.3% 54.8%, 82.5% 56%,
-    98% 60.2%, 100% 60.2%, 100% 100%, 0 100%);
+    98% 60.2%, 100% 60.2%, 100% 100%, 0 100%));
 }
 .cinema-opening.cinema-scene {
   display: block;
@@ -164,12 +164,12 @@
 
 @media (max-width: 639px) {
   .opening-track {
-    --opening-image: url("assets/scenes/opening-dawn-mobile.webp");
+    --opening-image: var(--opening-photo-mobile,url("assets/scenes/opening-dawn-mobile.webp"));
     --plate-ratio: 4 / 5;
     --plate-factor: .8;
     --roof-top: 41.9%;
-    --roof-cut: polygon(0 48.3%, 9.7% 47.4%, 4% 45.7%, 29% 42.8%, 28.8% 42.1%,
-      51% 41.4%, 80% 42%, 79.8% 43%, 100% 45.5%, 100% 100%, 0 100%);
+    --roof-cut: var(--opening-cut-mobile,polygon(0 48.3%, 9.7% 47.4%, 4% 45.7%, 29% 42.8%, 28.8% 42.1%,
+      51% 41.4%, 80% 42%, 79.8% 43%, 100% 45.5%, 100% 100%, 0 100%));
   }
   .opening-mist-wide { display: none; }
   .opening-mist-narrow { display: inline; }

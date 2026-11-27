@@ -2,6 +2,7 @@
   const d = window.EstateData;
   const charts = window.EstateCharts;
   const dashboardLayout = window.EstateDashboardLayout;
+  const media = window.EstateMedia;
   const root = document.querySelector('#app');
   const dialog = document.querySelector('#dialog');
   const accounts = {
@@ -15,7 +16,7 @@
   };
   const defaults = {theme: 'light', period: '24', custom: null, mode: 'combined', type: 'loan', home: 'overview', reminders: true, digest: false, sound: false, birthday: false, profile: {}};
   const pages = {overview: ['ภาพรวม', 'overview'], lending: ['ปล่อยกู้ / ขายฝาก', 'layers'], 'personal-lending':['ปล่อยกู้ส่วนตัว','wallet'],
-    investments: ['ลงทุนที่ดิน','trend'], profile: ['โปรไฟล์', 'user']};
+    investments: ['ลงทุนที่ดิน','trend'], profile: ['โปรไฟล์', 'user'], media: ['จัดการรูปภาพ','image']};
   const shapes = {
     ai: '<path d="M2 14l8-8 6 6M6 11v8h9v-4M18.5 2v7M15 5.5h7M19.5 12v5m-2.5-2.5h5"/><path d="M3 22h16"/>',
     check: '<path d="m5 12 4 4L19 6"/>',
@@ -131,8 +132,9 @@
     const initials = p.name === accounts[account].name ? accounts[account].initials : p.name.trim().split(/\s+/).slice(0,2).map(s => [...s][0]).join('');
     return '<span class="avatar' + (large ? ' large' : '') + '" aria-hidden="true">' + (photo ? '<img src="' + photo + '" alt="">' : escape(initials)) + '</span>';
   }
-  const brandImage = '<img class="brand-mark" src="assets/brand/sunday-logo-mark.png" width="391" height="391" alt="">';
-  const brand = brandImage + '<span><strong>Sunday Estate</strong><small>Portfolio workspace</small></span>';
+  const brandImage = () => '<img class="brand-mark" src="'+media.source('brand')+'" width="391" height="391" alt="">';
+  const brand = () => brandImage() + '<span><strong>Sunday Estate</strong><small>Portfolio workspace</small></span>';
+  const mediaLink = () => account === 'portfolio' ? '<a class="control" href="#media">'+icon('image',17)+' จัดการรูปภาพ</a>' : '';
   const disk = (symbol, tone) => '<span class="disk ' + tone + '">' + icon(symbol, 20) + '</span>';
   const buttonIcon = (id, symbol, label, extra = '') => '<button class="icon-button" type="button" data-action="' + id + '" title="' + label + '" aria-label="' + label + '">' + icon(symbol) + extra + '</button>';
   const navTitle = (key,title) => key === 'overview' && xp.scenarioMember() ? 'พื้นที่ของฉัน' :
@@ -157,10 +159,10 @@
       rail(staff ? ['investments','profile'] : ['profile']);
   }
   function moduleHeader(module, {title, description, details = ''}) {
-    const asset = 'assets/mastheads/' + module;
+    const asset = 'header-' + module;
     return '<header class="module-intro" data-module="' + module + '"><picture class="module-art" aria-hidden="true">' +
-      '<source media="(max-width: 639px)" srcset="' + asset + '-mobile.webp" width="864" height="446">' +
-      '<img src="' + asset + '.webp" width="1920" height="640" alt="" decoding="async"></picture>' +
+      '<source media="(max-width: 639px)" srcset="' + media.source(asset+'-mobile') + '" width="864" height="446">' +
+      '<img src="' + media.source(asset) + '" width="1920" height="640" alt="" decoding="async"></picture>' +
       '<div class="module-heading"><h1>' + title + '</h1>' + (description ? '<p>' + description + '</p>' : '') + details + '</div></header>';
   }
 
@@ -169,12 +171,12 @@
   function shell(content) {
     const p = person();
     const actions = xp.staff() && xp.contracts().some(c => c.status === 'overdue' || c.status === 'soon');
-    return '<aside class="sidebar"><div class="sidebar-inner"><a class="brand" href="#overview" aria-label="Sunday Estate · ภาพรวม">' + brand +
-      '</a><nav class="side-nav" aria-label="เมนูหลัก">' + navLinks() + '<a href="#hero">' + icon('home') + 'ดูหน้าแรก</a></nav><div class="side-scene" aria-hidden="true"></div>' +
+    return '<aside class="sidebar"><div class="sidebar-inner"><a class="brand" href="#overview" aria-label="Sunday Estate · ภาพรวม">' + brand() +
+      '</a><nav class="side-nav" aria-label="เมนูหลัก">' + navLinks() + '<a href="#hero">' + icon('home') + 'ดูหน้าแรก</a></nav><div class="side-scene" aria-hidden="true" style="--sidebar-photo:url('+media.source('sidebar')+')"></div>' +
       '<button data-action="accounts" type="button" class="side-account">' + avatar() + '<span><strong>' + escape(p.name) +
       '</strong><small>' + escape(p.role) + '</small></span>' + icon('chevron', 15) + '</button></div></aside>' +
       '<div class="app-body"><header class="topbar"><a class="brand mobile-brand" href="#overview" aria-label="Sunday Estate · ภาพรวม">' +
-      brand + '</a><button class="search-trigger" type="button" data-action="search" aria-label="ค้นหาสัญญา">' + icon('search', 17) +
+      brand() + '</a><button class="search-trigger" type="button" data-action="search" aria-label="ค้นหาสัญญา">' + icon('search', 17) +
       '<span>ค้นหาเลขสัญญาหรือพื้นที่</span></button><div class="top-actions"><span class="demo-tag"><i></i>ข้อมูลจำลอง</span>' +
       (xp.staff() ? buttonIcon('alerts', 'bell', 'รายการที่ต้องดำเนินการ', actions ? '<i class="notification-dot"></i>' : '') : '') +
       buttonIcon('theme', pref.theme === 'light' ? 'moon' : 'sun', pref.theme === 'light' ? 'เปลี่ยนเป็นธีมมืด' : 'เปลี่ยนเป็นธีมสว่าง') +
@@ -229,7 +231,7 @@
     tiles.queue = '<article class="card panel queue" id="queue" data-widget="queue" tabindex="-1">' +
       cardHead('สัญญาที่ต้องติดตาม', actions.length + ' สัญญา ณ ' + d.formatDate(d.asOf), 'calendar', 'amber',
       '<a class="subtle text-data" href="#lending">ดูสัญญา ' + icon('arrow', 15) + '</a>') + queueMarkup(actions) + '</article>';
-    return moduleHeader('overview',{title:'ภาพรวมธุรกิจ',description:'พอร์ตสินเชื่อ ขายฝาก และกระแสเงินสด',details:asOfBadge()}) +
+    return moduleHeader('overview',{title:'ภาพรวมธุรกิจ',description:'พอร์ตสินเชื่อ ขายฝาก และกระแสเงินสด',details:asOfBadge()+(account==='portfolio'?'<div class="module-actions">'+mediaLink()+'</div>':'')}) +
       '<section class="kpis" aria-label="ตัวชี้วัดภาพรวม ณ วันที่สรุป">' + cards.map(kpi).join('') + '</section>' + status +
       '<section class="analytics" aria-labelledby="analytics-title"><div class="analytics-head"><div><div class="analytics-label"><h2 id="analytics-title">วิเคราะห์พอร์ต</h2>' +
       '<button class="subtle" id="layout-button" data-action="layout" type="button">' + icon('order',16) + 'จัดหน้า</button></div><p class="range-help">ช่วงเวลาสำหรับกราฟกระแสเงินสด สถานะสัญญา และแนวโน้ม</p><p class="range-mobile">' +
@@ -347,7 +349,7 @@
   function profile() {
     const p = person();
     const cover = safeImage(p.cover);
-    const homeOptions = Object.entries(pages).filter(([key])=>xp.allowedRoute(key)).map(([key,[label]])=>
+    const homeOptions = Object.entries(pages).filter(([key])=>key!=='media'&&xp.allowedRoute(key)).map(([key,[label]])=>
       '<option value="'+key+'">'+navTitle(key,label)+'</option>').join('');
     const input = (label, key, type = 'text', max = 60) => '<label>' + label + '<input name="' + key + '" type="' + type + '" maxlength="' + max +
       '" value="' + escape(p[key]) + '"' + (key === 'name' || key === 'email' ? ' required' : '') + '></label>';
@@ -358,9 +360,9 @@
         Object.entries(toastDemos).map(([type,[title]])=>'<button class="control" type="button" data-toast-demo="'+type+'">'+title+'</button>').join('') +
         '</div></section>' : '');
     return '<header class="profile-intro"><div><h1>โปรไฟล์และการตั้งค่า</h1><p>ปรับพื้นที่ทำงานให้เหมาะกับคุณ</p></div>' +
-      '<div class="v2-inline"><a class="control" href="#hero">ดูหน้าแรก</a><button type="button" class="control" data-action="accounts">' + icon('logout', 17) + ' จัดการบัญชีจำลอง</button></div></header>' +
+      '<div class="v2-inline"><a class="control" href="#hero">ดูหน้าแรก</a>'+mediaLink()+'<button type="button" class="control" data-action="accounts">' + icon('logout', 17) + ' จัดการบัญชีจำลอง</button></div></header>' +
       '<section class="card profile-hero" aria-labelledby="profile-name"><div class="profile-cover"' + (cover ? ' data-personal-cover' : '') + '>' +
-      '<img src="' + (cover || 'assets/aurora-estate.webp') + '" alt="" decoding="async">' +
+      '<img src="' + (cover || media.source('profile-cover')) + '" alt="" decoding="async">' +
       '<button type="button" class="cover-button" data-action="cover">' + icon('image', 17) + '<span>เปลี่ยนภาพปก</span></button></div>' +
       '<div class="profile-identity"><div class="profile-avatar">' + avatar(true) + '<button type="button" data-action="avatar" title="เปลี่ยนรูปโปรไฟล์" aria-label="เปลี่ยนรูปโปรไฟล์">' +
       icon('image', 16) + '</button></div><div><h2 id="profile-name">' + escape(p.name) + '</h2><span>' + escape(p.role) + ' · บัญชีจำลอง</span><p>' +
@@ -381,7 +383,7 @@
   }
 
   function login() {
-    return '<main class="login-screen"><div class="card login-card"><div class="brand">' + brand + '</div><span class="demo-tag"><i></i>ข้อมูลจำลอง</span>' +
+    return '<main class="login-screen"><div class="card login-card"><div class="brand">' + brand() + '</div><span class="demo-tag"><i></i>ข้อมูลจำลอง</span>' +
       '<h1>เข้าสู่พื้นที่วิเคราะห์</h1><p>เลือกบัญชีจำลองเพื่อเรียกคืนการตั้งค่าที่บันทึกในเบราว์เซอร์นี้</p>' +
       accountChoices() + '<a href="#hero" class="control">ดูหน้าแรก</a></div></main>';
   }
@@ -396,11 +398,15 @@
     chartResize.disconnect();
     const currentTheme = account ? pref.theme : 'light';
     document.documentElement.dataset.theme = currentTheme;
+    const favicon = document.querySelector('link[rel="icon"]');
+    const iconSource = media.source('favicon');
+    if (favicon.getAttribute('href') !== iconSource) favicon.href = iconSource;
     page = route();
     let content;
-    if (page === 'hero') content = window.EstateScenes.landing({icon,escape,brandImage,read,signedIn:!!account});
+    if (page === 'hero') content = window.EstateScenes.landing({icon,escape,brandImage:brandImage(),read,signedIn:!!account});
     else if (!account) content = login();
     else if (page === 'profile') content = shell(profile());
+    else if (page === 'media') content = shell(mediaEditor.page());
     else if (page === 'lending') content = shell(lending());
     else if (page === 'personal-lending') content = shell(xp.personalLendingPage());
     else if (page === 'investments') content = shell(xp.investmentPage());
@@ -602,7 +608,8 @@
   function mediaDialog(target) {
     const title = target === 'cover' ? 'ภาพปก' : 'รูปโปรไฟล์';
     showDialog('เปลี่ยน' + title, '<form class="editor" id="media-form" data-target="' + target +
-      '"><label>เลือกรูปจากอุปกรณ์<input type="file" name="image" accept="image/png,image/jpeg,image/webp" required></label><p class="muted">JPEG, PNG หรือ WebP · สูงสุด 12 MB</p><p class="risk-text" role="alert" id="media-error"></p>' +
+      '"><label>เลือกรูปจากอุปกรณ์<input type="file" name="image" accept="'+media.accept+'" aria-describedby="profile-image-guide" required></label>'+
+      '<p class="muted" id="profile-image-guide">'+media.guide(target)+'</p><p class="risk-text" role="alert" id="media-error"></p>' +
       '<div class="form-footer"><button class="control" type="button" data-reset="' + target +
       '">ใช้ภาพเริ่มต้น</button><button type="submit" class="primary">บันทึกรูป</button></div></form>', 'media');
   }
@@ -610,31 +617,23 @@
     const {target} = form.dataset;
     const file = form.elements.image.files[0];
     const error = form.querySelector('#media-error');
-    if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 12000000) {
-      error.textContent = 'เลือกรูป JPEG, PNG หรือ WebP ขนาดไม่เกิน 12 MB';
-      return;
-    }
     const owner = account;
     const button = form.querySelector('[type="submit"]');
+    if (button.disabled) return;
     button.disabled = true;
+    error.textContent = '';
     try {
-      const img = await createImageBitmap(file);
-      const canvas = document.createElement('canvas');
-      const widthLimit = target === 'avatar' ? 320 : 1440;
-      const heightLimit = target === 'avatar' ? 320 : 720;
-      const scale = Math.min(1, widthLimit / img.width, heightLimit / img.height);
-      canvas.width = Math.max(1, Math.round(img.width * scale));
-      canvas.height = Math.max(1, Math.round(img.height * scale));
-      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-      img.close();
+      const src = await media.toDataUrl((await media.prepare(file,target)).blob);
       if (owner !== account || !form.isConnected || !dialog.open) return;
-      const saved = settings({profile:{...pref.profile, [target]:canvas.toDataURL('image/webp',.82)}});
+      const profile = {...pref.profile,[target]:src};
+      if (!write(account,{...pref,profile})) return;
+      pref.profile = profile;
       dialog.close();
       render();
       root.querySelector('[data-action="' + target + '"]')?.focus();
-      if (saved) notice('บันทึกรูปแล้ว');
-    } catch {
-      error.textContent = 'เปิดไฟล์รูปนี้ไม่ได้';
+      notice('บันทึกรูปแล้ว');
+    } catch (problem) {
+      if (form.isConnected) error.textContent = problem.message;
     } finally {
       button.disabled = false;
     }
@@ -702,6 +701,7 @@
     const {action, period, type, table, contract: id, account: choice, reset} = btn.dataset;
     if (choice) { activateAccount(choice); return; }
     if (!account) return;
+    if (btn.dataset.mediaEdit) { mediaEditor.edit(btn.dataset.mediaEdit); return; }
     if (toastDemoEnabled && Object.hasOwn(toastDemos,btn.dataset.toastDemo)) {
       const [title,message] = toastDemos[btn.dataset.toastDemo];
       toast.show({type:btn.dataset.toastDemo,title,message});
@@ -839,6 +839,7 @@
   }
   const xp = window.createEstateExperience({icon,escape,read,write,notice,open:showDialog,person,settings,render,moduleHeader,
     account:()=>account,prefs:()=>pref,page:()=>page,navigateContext});
+  const mediaEditor = media.editor({isAdmin:()=>account==='portfolio',isPage:()=>page==='media',showDialog,dialog,escape,icon,notice,render});
   const layoutEditor = dashboardLayout.create({root,dialog,icon,open:showDialog,
     active:() => page === 'overview' && xp.staff(),
     save:order => {
@@ -851,5 +852,5 @@
     open:showDialog,moduleHeader,render,
     active:() => account === 'portfolio' && page === 'reconciliation',
     reviewer:() => person().name});
-  render();
+  void media.ready.then(()=>render());
 })();

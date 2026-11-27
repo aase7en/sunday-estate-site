@@ -1,5 +1,6 @@
 window.createEstateExperience = api => {
   const d = window.EstateData;
+  const media = window.EstateMedia;
   const {icon, escape, read, write, notice, open, moduleHeader} = api;
   const money = new Intl.NumberFormat('th-TH',{style:'currency',currency:'THB',maximumFractionDigits:2});
   const baht = n => money.format(n);
@@ -22,7 +23,7 @@ window.createEstateExperience = api => {
   const contracts = (date=d.asOf,type) => staff() ? d.portfolio(date,type,scope()) :
     partyContracts(api.page() === 'personal-lending' ? 'lender' : 'borrower',date,type);
   const lookup = id => contracts().find(c => c.id === id);
-  const allowedRoute = route => route === 'personal-lending' ? personalLoans().length > 0 :
+  const allowedRoute = route => route === 'media' ? admin() : route === 'personal-lending' ? personalLoans().length > 0 :
     staff() || ['hero','profile','overview'].includes(route) ||
     (route === 'investments' && api.account() !== 'client');
   const canReceive = c => c?.type === 'loan' && (staff() || actor() === 'lender');
@@ -402,7 +403,7 @@ window.createEstateExperience = api => {
       icon('chevron',15) + '</button></section>';
   }
   function contextHome() {
-    return moduleHeader('overview',{title:'พื้นที่ของฉัน',description:'เลือกพื้นที่เพื่อดูข้อมูลและทำรายการตามบทบาทของคุณ'}) +
+    return moduleHeader('personal-home',{title:'พื้นที่ของฉัน',description:'เลือกพื้นที่เพื่อดูข้อมูลและทำรายการตามบทบาทของคุณ'}) +
       '<div class="context-grid">' + contexts().map(context=>'<article class="card panel context-card">' +
         '<span class="context-icon">' + icon(context.icon,21) + '</span><div class="context-card-copy"><h2>' +
         context.title + '</h2><p>' + escape(context.detail) + '</p></div><div class="context-metric"><small>' + context.metricLabel + '</small><strong>' +
@@ -410,7 +411,7 @@ window.createEstateExperience = api => {
         '</a></article>').join('') + '</div>';
   }
   function personalLendingPage() {
-    return moduleHeader('lending',{title:'ปล่อยกู้ส่วนตัว',description:'สัญญาที่คุณเป็นผู้ให้กู้ · ข้อมูลจำลอง'}) +
+    return moduleHeader('personal-lending',{title:'ปล่อยกู้ส่วนตัว',description:'สัญญาที่คุณเป็นผู้ให้กู้ · ข้อมูลจำลอง'}) +
       '<div class="v2-invest-grid">' + contracts().map(c=>'<article class="card panel v2-invest">' +
       copy(c.id+' · '+escape(c.property),'กำหนดตามสัญญา '+d.formatDate(c.due)) +
       '<div class="v2-invest-total"><span>เงินต้นคงเหลือในเดโม</span><strong>' + baht(receivable(c)) + '</strong></div>' +
@@ -713,56 +714,57 @@ window.createEstateExperience = api => {
   }
 
   const galleryLimit = 20;
-  const galleryImageMaxLength = 110_000;
   let galleryDraft;
   function galleryDialog(fresh = true) {
     if (!admin()) return;
-    if (fresh) galleryDraft = structuredClone(read('gallery-published') ?? window.EstateScenes.defaultGallery);
-    const upload = galleryDraft.length < galleryLimit ?
-      '<form id="v2-gallery-upload" class="editor"><label>ภาพใหม่<input name="image" type="file" accept="image/jpeg,image/png,image/webp" required></label>' +
-      '<div class="form-grid"><label>คำบรรยาย<input name="caption" maxlength="80" required></label><label>ข้อความทดแทน<input name="alt" maxlength="130" required></label>' +
-      '</div>' + errorLine + formFooter('เพิ่มในฉบับร่าง') + '</form>' : '';
+    if (fresh) {
+      const published = read('gallery-published');
+      galleryDraft = structuredClone(Array.isArray(published) && published.length ? published : window.EstateScenes.defaultGallery);
+    }
     open('จัดการแกลเลอรี','<div class="editor"><p>' + galleryDraft.length + ' / ' + galleryLimit +
-      ' ภาพ · รูปที่เผยแพร่จะแสดงบนเบราว์เซอร์นี้</p>' + upload + '<ol class="v2-gallery-list">' +
+      ' ภาพ · รูปที่เผยแพร่จะแสดงบนเบราว์เซอร์นี้</p>' + (galleryDraft.length < galleryLimit ?
+      '<div>'+btn('gallery-new','เพิ่มภาพ')+'</div>' : '')+'<ol class="v2-gallery-list">' +
       galleryDraft.map((row,i)=>'<li><img src="' + window.EstateScenes.asset(row.src) + '" alt="' + escape(row.alt) +
-        '"><div><strong>' + escape(row.caption) + '</strong><small>' + escape(row.alt) + '</small><div class="v2-inline">' +
+        '"><div><strong>' + escape(row.caption) + '</strong><small>' + escape(row.alt) + '</small><div class="v2-inline">' + btn('gallery-edit:'+i,'แก้ไขภาพ')+
         (i>0 ? btn('gallery-shift:'+i+',-1','ขึ้น') : '') + (i<galleryDraft.length-1 ? btn('gallery-shift:'+i+',1','ลง') : '') +
         (galleryDraft.length>1 ? btn('gallery-delete:'+i,'นำออก') : '') + '</div></div></li>').join('') + '</ol>' +
       '<div class="form-footer">' + btn('gallery-preview','ดูตัวอย่าง') + btn('gallery-publish','เผยแพร่จำลอง',true) + '</div></div>','v2-gallery');
   }
-  async function imageFromFile(file, maxLength = Infinity) {
-    if (file.size>8e6 || !/^image\/(jpeg|png|webp)$/.test(file.type)) {
-      throw new Error('เลือกภาพ JPEG, PNG หรือ WebP ขนาดไม่เกิน 8 MB');
-    }
-    let img;
-    try { img = await createImageBitmap(file); }
-    catch { throw new Error('เปิดรูปนี้ไม่ได้'); }
-    try {
-      const canvas = document.createElement('canvas');
-      let scale = Math.min(1,1000/Math.max(img.width,img.height));
-      let src;
-      do {
-        canvas.width = Math.max(1,Math.round(img.width*scale));
-        canvas.height = Math.max(1,Math.round(img.height*scale));
-        canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-        src = canvas.toDataURL('image/webp',.75);
-        scale *= .8;
-      } while (src.length > maxLength && Math.max(canvas.width,canvas.height) > 360);
-      if (src.length > maxLength) throw new Error('ย่อรูปไม่พอกับพื้นที่จัดเก็บ กรุณาใช้รูปขนาดเล็กลง');
-      return src;
-    } finally { img.close(); }
+  function editGallery(index) {
+    if (!admin()) return;
+    const row = galleryDraft[index];
+    if (!row && galleryDraft.length >= galleryLimit) return;
+    open(row?'แก้ไขภาพแกลเลอรี':'เพิ่มภาพแกลเลอรี','<form id="v2-gallery-upload" data-index="'+index+'" class="editor">'+
+      (row?'<img class="estate-editor-image" src="'+window.EstateScenes.asset(row.src)+'" alt="">':'')+
+      '<label>เลือกรูปจากอุปกรณ์<input name="image" type="file" accept="'+media.accept+'" aria-describedby="gallery-image-guide"'+
+      (row?'':' required')+'></label><p class="muted" id="gallery-image-guide">'+media.guide('gallery')+'</p>'+
+      '<label>คำบรรยาย<input name="caption" maxlength="80" value="'+escape(row?.caption ?? '')+'" required></label>'+
+      '<label>ข้อความทดแทน<input name="alt" maxlength="130" value="'+escape(row?.alt ?? '')+'" required></label>'+
+      errorLine+formFooter('เก็บในฉบับร่าง',btn('gallery-back','กลับ'))+'</form>','v2-gallery-edit');
   }
   async function uploadGallery(form,values) {
-    if (!admin() || galleryDraft.length >= galleryLimit || !values.image?.size) return;
+    if (!admin()) return;
+    const index = Number(form.dataset.index);
+    const row = galleryDraft[index];
+    if (!row && (galleryDraft.length >= galleryLimit || !values.image?.size)) return;
+    const caption = values.caption.trim();
+    const alt = values.alt.trim();
+    if (!caption || !alt) { error(form,'กรอกคำบรรยายและข้อความทดแทนให้ครบ'); return; }
     const submit = form.querySelector('[type="submit"]');
+    if (submit.disabled) return;
     submit.disabled = true;
     try {
-      const src = await imageFromFile(values.image,galleryImageMaxLength);
+      const src = values.image?.size ? await imageFromFile(values.image,'gallery') : row.src;
       if (!admin() || !form.isConnected || !form.closest('dialog').open) return;
-      galleryDraft.push({src,alt:values.alt.trim(),caption:values.caption.trim()});
+      if (row) galleryDraft[index] = {src,alt,caption};
+      else galleryDraft.push({src,alt,caption});
       galleryDialog(false);
     } catch (e) { if (form.isConnected) error(form,e.message); }
     finally { submit.disabled = false; }
+  }
+
+  async function imageFromFile(file,spec) {
+    return media.toDataUrl((await media.prepare(file,spec)).blob);
   }
 
   let listingDraft;
@@ -798,7 +800,8 @@ window.createEstateExperience = api => {
       '<label>ข้อความบนป้าย<input name="ribbon" value="'+escape(row.ribbon ?? '')+'" placeholder="เว้นว่างเพื่อใช้ตามรูปแบบ" maxlength="20"></label></div>'+
       '<label>ภาพปก<select name="cover">'+(index>=0 ? option('keep','ใช้ภาพเดิม','keep') : '')+
       defaultGallery.map(img=>option(img.src,img.caption,index<0 ? row.src : 'keep')).join('')+'</select></label>'+
-      '<label>หรืออัปโหลดภาพใหม่<input type="file" name="image" accept="image/jpeg,image/png,image/webp"></label>'+
+      '<label>หรืออัปโหลดภาพใหม่<input type="file" name="image" accept="'+media.accept+'" aria-describedby="listing-image-guide"></label>'+
+      '<p class="muted" id="listing-image-guide">'+media.guide('listing')+'</p>'+
       '<label>รายละเอียดที่คลี่อ่านได้<textarea name="description" rows="4" maxlength="1000" required>'+escape(row.description)+'</textarea></label>'+
       errorLine+formFooter('เก็บในฉบับร่าง',btn('listings','กลับ')+
         (index>=0 ? btn('listing-remove:'+index,'นำรายการออก') : ''))+'</form>','v2-listing');
@@ -814,7 +817,7 @@ window.createEstateExperience = api => {
         return;
       }
       try {
-        const src = await imageFromFile(file);
+        const src = await imageFromFile(file,'listing');
         if (form.isConnected && file === image.files[0]) preview.src = src;
       } catch (e) {
         if (form.isConnected && file === image.files[0]) error(form,e.message);
@@ -834,7 +837,7 @@ window.createEstateExperience = api => {
     const submit = form.querySelector('[type="submit"]');
     submit.disabled = true;
     try {
-      const src = values.image?.size ? await imageFromFile(values.image) : asset(values.cover === 'keep' ? row?.src : values.cover);
+      const src = values.image?.size ? await imageFromFile(values.image,'listing') : asset(values.cover === 'keep' ? row?.src : values.cover);
       if (!admin() || !form.isConnected || !form.closest('dialog').open) return;
       if (!src) { error(form,'เลือกภาพปกสำหรับรายการ'); return; }
       const next = {id:row?.id ?? crypto.randomUUID(),...clean,status,ribbon,src};
@@ -949,9 +952,12 @@ window.createEstateExperience = api => {
         break;
       }
       case 'gallery': galleryDialog(); break;
+      case 'gallery-new': if (admin() && galleryDraft) editGallery(-1); break;
+      case 'gallery-edit': if (admin() && galleryDraft?.[Number(arg)]) editGallery(Number(arg)); break;
       case 'gallery-shift': {
         if (!admin()) return;
         const [i,delta] = arg.split(',').map(Number);
+        if (!galleryDraft?.[i] || !galleryDraft[i+delta]) break;
         [galleryDraft[i],galleryDraft[i+delta]] = [galleryDraft[i+delta],galleryDraft[i]];
         galleryDialog(false);
         break;

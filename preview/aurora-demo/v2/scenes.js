@@ -1,10 +1,11 @@
 window.EstateScenes = (() => {
+  const media = window.EstateMedia;
   const scenes = [
     {src:'assets/aurora-estate.webp', label:'บ้าน', title:'บ้านที่อยากกลับมา', alt:'บ้านร่วมสมัยริมสระในแสงเช้า', copy:'ให้ทุกวันเริ่มและจบในพื้นที่ที่รู้สึกเป็นของคุณ'},
-    {src:'assets/scenes/business.webp', mobile:'assets/scenes/business-828.webp', label:'ธุรกิจ', title:'พื้นที่ให้ธุรกิจในฝัน', alt:'ผู้ประกอบการในร้านกาแฟขนาดเล็ก', copy:'เริ่มต้นจากพื้นที่ที่เหมาะกับสิ่งที่คุณอยากทำ'},
-    {src:'assets/scenes/land.webp', label:'ที่ดิน', title:'ที่ดินที่เลี้ยงชีวิต', alt:'ทิวทัศน์ที่ดินและพื้นที่สีเขียว', copy:'ที่ดินสำหรับเพาะปลูก ลงมือทำ และสร้างรายได้'},
-    {src:'assets/scenes/retirement.webp', mobile:'assets/scenes/retirement-828.webp', label:'วัยเกษียณ', title:'วางแผนทุนเพื่อวัยเกษียณ', alt:'คู่สูงวัยดูแลต้นสมุนไพรบนระเบียงบ้าน', copy:'เตรียมเงินลงทุนวันนี้ เพื่อให้วันข้างหน้ามีพื้นที่สำหรับสิ่งที่อยากทำ'},
-    {src:'assets/scenes/family.webp', mobile:'assets/scenes/family-828.webp', label:'ครอบครัว', title:'อยู่ใกล้คนที่เรารัก', alt:'ครอบครัวรับประทานอาหารร่วมกันในบ้าน', copy:'มีพื้นที่ให้ครอบครัวได้ใช้เวลาด้วยกัน'},
+    {key:'business', src:'assets/scenes/business.webp', mobile:'assets/scenes/business-828.webp', label:'ธุรกิจ', title:'พื้นที่ให้ธุรกิจในฝัน', alt:'ผู้ประกอบการในร้านกาแฟขนาดเล็ก', copy:'เริ่มต้นจากพื้นที่ที่เหมาะกับสิ่งที่คุณอยากทำ'},
+    {key:'land', src:'assets/scenes/land.webp', label:'ที่ดิน', title:'ที่ดินที่เลี้ยงชีวิต', alt:'ทิวทัศน์ที่ดินและพื้นที่สีเขียว', copy:'ที่ดินสำหรับเพาะปลูก ลงมือทำ และสร้างรายได้'},
+    {key:'retirement', src:'assets/scenes/retirement.webp', mobile:'assets/scenes/retirement-828.webp', label:'วัยเกษียณ', title:'วางแผนทุนเพื่อวัยเกษียณ', alt:'คู่สูงวัยดูแลต้นสมุนไพรบนระเบียงบ้าน', copy:'เตรียมเงินลงทุนวันนี้ เพื่อให้วันข้างหน้ามีพื้นที่สำหรับสิ่งที่อยากทำ'},
+    {key:'family', src:'assets/scenes/family.webp', mobile:'assets/scenes/family-828.webp', label:'ครอบครัว', title:'อยู่ใกล้คนที่เรารัก', alt:'ครอบครัวรับประทานอาหารร่วมกันในบ้าน', copy:'มีพื้นที่ให้ครอบครัวได้ใช้เวลาด้วยกัน'},
   ];
   const statuses = {sold:'ขายแล้ว',available:'เปิดขาย',promotion:'โปรโมชั่น',booking:'เปิดจอง'};
   const defaultListings = [
@@ -50,6 +51,8 @@ window.EstateScenes = (() => {
     const gallery = Array.isArray(savedGallery) && savedGallery.length ? savedGallery : defaultGallery;
     const anchor = i => '<div class="cinema-anchor" id="scene-' + i + '" aria-hidden="true"></div>';
     const house = scenes[0];
+    const openingStyle = [['intro','wide'],['intro-mobile','mobile']].filter(([key])=>media.has(key))
+      .map(([key,variant])=>'--opening-photo-'+variant+':url('+media.source(key)+');--opening-cut-'+variant+':inset(42% 0 0)').join(';');
     const wordmark = '<svg class="opening-wordmark" width="100%" height="100%" aria-hidden="true" focusable="false">' +
       '<defs><g id="opening-letterforms" text-anchor="middle">' +
       '<text x="50%" y="62%" dy=".73em">SUNDAY</text><text class="opening-estate" x="50%" y="62%" dy="2.76em">ESTATE</text></g>' +
@@ -65,17 +68,17 @@ window.EstateScenes = (() => {
       '<mask id="opening-fog-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">' +
       '<rect width="100%" height="100%" fill="white"/><g class="opening-rise"><use class="opening-aperture" href="#opening-letterforms" fill="black"/></g></mask></defs>' +
       '<g class="opening-fog-group" mask="url(#opening-fog-mask)">' +
-      '<g class="opening-veil"><image href="assets/scenes/opening-sky.webp" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"/>' +
+      '<g class="opening-veil"><image href="'+media.source('intro-sky')+'" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"/>' +
       '<rect class="opening-afterglow" width="100%" height="100%" fill="url(#opening-fog-glow)"/></g>' +
-      '<image class="opening-mist opening-mist-wide" x="-24%" y="17%" width="148%" height="101%" href="assets/scenes/opening-mist.webp" preserveAspectRatio="none"/>' +
-      '<image class="opening-mist opening-mist-narrow" x="-75%" y="17%" width="250%" height="101%" href="assets/scenes/opening-mist.webp" preserveAspectRatio="none"/></g>' +
+      '<image class="opening-mist opening-mist-wide" x="-24%" y="17%" width="148%" height="101%" href="'+media.source('intro-mist')+'" preserveAspectRatio="none"/>' +
+      '<image class="opening-mist opening-mist-narrow" x="-75%" y="17%" width="250%" height="101%" href="'+media.source('intro-mist')+'" preserveAspectRatio="none"/></g>' +
       '<rect width="100%" height="100%" fill="url(#opening-edge-shade)"/>' +
       '<g class="opening-rise"><use class="opening-gold" href="#opening-letterforms" fill="url(#opening-gold-paint)"/>' +
       '<use class="opening-outline" href="#opening-letterforms"/></g></svg>';
-    const opening = anchor(0) + '<div class="opening-track"><section class="cinema-scene cinema-opening" aria-labelledby="scene-title-0">' +
+    const opening = anchor(0) + '<div class="opening-track"'+(openingStyle?' style="'+openingStyle+'"':'')+'><section class="cinema-scene cinema-opening" aria-labelledby="scene-title-0">' +
       '<div class="opening-camera"><div class="opening-plate">' +
-      '<picture class="opening-visual"><source media="(max-width:639px)" srcset="assets/scenes/opening-dawn-mobile.webp">' +
-      '<img class="opening-photo" src="assets/scenes/opening-dawn.webp" alt="ภาพประกอบบ้านไทยร่วมสมัยริมสระในแสงเช้า" width="1536" height="1024" fetchpriority="high"></picture>' +
+      '<picture class="opening-visual"><source media="(max-width:639px)" srcset="'+media.source('intro-mobile')+'">' +
+      '<img class="opening-photo" src="'+media.source('intro')+'" alt="'+(openingStyle?'ภาพประกอบฉากเปิด':'ภาพประกอบบ้านไทยร่วมสมัยริมสระในแสงเช้า')+'" width="1536" height="1024" fetchpriority="high"></picture>' +
       '<div class="opening-sun" aria-hidden="true"></div>' +
       '<div class="opening-message"><h1 id="scene-title-0" tabindex="-1">' + house.title + '</h1><p>' + house.copy + '</p></div>' +
       '<div class="opening-foreground" aria-hidden="true"></div></div></div>' +
@@ -86,10 +89,14 @@ window.EstateScenes = (() => {
       icon('chevron',16) + '</a><a class="cinema-cta" href="#properties" data-scene-scroll="properties">ดูผลงานและทรัพย์</a></div></div></section></div>';
     const chapters = scenes.slice(1).map((scene,index) => {
       const i = index + 1;
+      const key = 'chapter-'+scene.key;
+      const mobileKey = key+'-mobile';
+      const mobileSrc = !media.has(mobileKey) && scene.mobile ? scene.mobile+' 828w, '+scene.src+' 1440w' : media.source(mobileKey);
+      const alt = media.has(key)||media.has(mobileKey) ? 'ภาพประกอบฉาก'+scene.label : scene.alt;
       return '<div class="chapter-track">' + anchor(i) + '<section class="cinema-scene" aria-labelledby="scene-title-' + i + '">' +
-        '<img class="cinema-photo" src="' + scene.src + '" alt="' + escape(scene.alt) + '"' +
-        (scene.mobile ? ' srcset="' + scene.mobile + ' 828w, ' + scene.src + ' 1440w" sizes="100vw"' : '') +
-        ' loading="lazy" decoding="async"><div class="cinema-scrim" aria-hidden="true"></div>' +
+        '<picture><source media="(max-width:639px)" srcset="'+mobileSrc+'" sizes="100vw">'+
+        '<img class="cinema-photo" src="'+media.source(key)+'" alt="'+escape(alt)+'"'+
+        (media.has(mobileKey)?' data-custom-mobile':'')+' loading="lazy" decoding="async"></picture><div class="cinema-scrim" aria-hidden="true"></div>' +
         '<div class="cinema-content"><p class="cinema-chapter">' + scene.label + '</p><h2 id="scene-title-' + i + '" tabindex="-1">' +
         scene.title + '</h2><p class="cinema-copy">' + scene.copy + '</p></div></section></div>';
     }).join('');
