@@ -31,7 +31,7 @@ window.EstateMedia = (() => {
     ['retirement','ฉาก 4 · วัยเกษียณ','retirement-828'],
     ['family','ฉาก 5 · ครอบครัว','family-828'],
   ].flatMap(([key,label,mobile])=>paired('chapter-'+key,label,'assets/scenes/'+key+'.webp',
-    'assets/scenes/'+mobile+'.webp','story','storyMobile','เผื่อพื้นที่ด้านล่างไว้สำหรับข้อความ'));
+    'assets/scenes/'+mobile+'.webp','story','storyMobile','ข้อความอยู่กลางภาพ เลือกรูปที่อ่านตัวหนังสือได้ง่ายบริเวณนั้น'));
   const headerSlots = [
     ['overview','ภาพรวม'], ['lending','ปล่อยกู้ / ขายฝาก'], ['investments','ลงทุนที่ดิน'],
     ['contracts','สัญญาของฉัน'], ['reconciliation','กระทบยอด'],
