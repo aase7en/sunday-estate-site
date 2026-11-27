@@ -186,6 +186,57 @@
   .opening-wordmark { font-size: clamp(37px, 10svh, 54px); }
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .chapter-track {
+    --chapter-hold: clamp(190px, 43svh, 420px);
+    position: relative;
+    isolation: isolate;
+    min-height: calc(2 * var(--cinema-height) + var(--chapter-hold));
+  }
+  .chapter-track + .chapter-track { margin-top: calc(-1 * var(--cinema-height)); }
+  .chapter-track:last-child { min-height: calc(var(--cinema-height) + var(--chapter-hold)); }
+  .chapter-track .cinema-scene { position: sticky; top: 0; }
+  .chapter-track > .cinema-anchor { scroll-margin-top: calc(-.27 * var(--cinema-height)); }
+
+  /* Progress 1 is when the incoming scene first fills the viewport. */
+  .chapter-track .cinema-content > * {
+    --chapter-start: .81;
+    --chapter-end: 1.16;
+    --chapter-rise: clamp(22px, 5svh, 48px);
+  }
+  .chapter-track .cinema-content > h2 {
+    --chapter-start: .85;
+    --chapter-end: 1.22;
+    --chapter-rise: clamp(28px, 6.4svh, 64px);
+  }
+  .chapter-track .cinema-content > .cinema-copy {
+    --chapter-start: .9;
+    --chapter-end: 1.26;
+  }
+
+  @supports (animation-timeline: view()) {
+    .chapter-track { view-timeline: --estate-chapter block; view-timeline-inset: 0; }
+    .chapter-track .cinema-photo {
+      animation: chapter-camera linear both;
+      animation-timeline: --estate-chapter;
+      animation-range: entry 0% contain 42svh;
+    }
+    .chapter-track .cinema-content > * {
+      animation: chapter-title auto cubic-bezier(.35, 0, .28, 1) both;
+      animation-timeline: --estate-chapter;
+      animation-range: entry calc(var(--chapter-start) * 100%) contain calc((var(--chapter-end) - 1) * var(--cinema-height));
+    }
+  }
+  @supports not (animation-timeline: view()) {
+    .chapter-track[data-chapter-motion] .cinema-content > :where(*) {
+      animation: chapter-title cubic-bezier(.35, 0, .28, 1) both paused;
+      animation-duration: calc((var(--chapter-end) - var(--chapter-start)) * 1s);
+      animation-delay: calc((var(--chapter-start) - var(--chapter-progress)) * 1s);
+    }
+  }
+  .chapter-track .cinema-content > :focus-visible { animation: none; }
+}
+
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) and (min-height: 541px) {
     .opening-track {
@@ -197,29 +248,8 @@
       /* The last viewport is reserved for the next scene to cover the opening. */
       view-timeline-inset: 0 calc(-1 * var(--cinema-height));
     }
-    .chapter-track {
-      --chapter-hold: clamp(190px, 43svh, 420px);
-      position: relative;
-      isolation: isolate;
-      margin-top: calc(-1 * var(--cinema-height));
-      min-height: calc(2 * var(--cinema-height) + var(--chapter-hold));
-      view-timeline: --estate-chapter block;
-      view-timeline-inset: 0;
-    }
-    .chapter-track:last-child { min-height: calc(var(--cinema-height) + var(--chapter-hold)); }
-    .cinema-opening.cinema-scene,
-    .chapter-track .cinema-scene { position: sticky; top: 0; }
-    .chapter-track .cinema-photo {
-      animation: chapter-camera linear both;
-      animation-timeline: --estate-chapter;
-      animation-range: entry 0% contain 42svh;
-    }
-    .chapter-track .cinema-content {
-      animation: chapter-title linear both;
-      animation-timeline: --estate-chapter;
-      animation-range: entry 58% contain 17svh;
-    }
-    .chapter-track .cinema-content:focus-within { animation: none; }
+    .opening-track + .chapter-track { margin-top: calc(-1 * var(--cinema-height)); }
+    .cinema-opening.cinema-scene { position: sticky; top: 0; }
     :where(.opening-camera, .opening-sun, .opening-message, .opening-mist, .opening-veil,
       .opening-rise, .opening-reveal .brand-mark, .opening-gold, .opening-outline, .opening-aperture, .opening-cue, .opening-afterglow) {
       animation-duration: auto;
@@ -265,8 +295,8 @@
 }
 
 @keyframes chapter-title {
-  from { opacity: .09; transform: translateY(clamp(50px, 12svh, 132px)); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translateY(var(--chapter-rise)); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes opening-camera {

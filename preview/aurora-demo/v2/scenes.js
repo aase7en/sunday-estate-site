@@ -118,6 +118,44 @@ window.EstateScenes = (() => {
       '</div></div></section></main></div>';
   }
 
+  function mountChapterMotion(page) {
+    if (CSS.supports('animation-timeline: view()')) return () => {};
+    const chapters = [...page.querySelectorAll('.chapter-track')];
+    let frame = 0;
+
+    function update() {
+      frame = 0;
+      if (motion.matches) return;
+      const height = document.documentElement.clientHeight;
+      if (!height) return;
+      const progress = chapters.map(chapter =>
+        String(Math.max(0, Math.min(2, 1 - chapter.getBoundingClientRect().top / height))));
+      chapters.forEach((chapter, index) => {
+        if (chapter.style.getPropertyValue('--chapter-progress') !== progress[index]) {
+          chapter.style.setProperty('--chapter-progress', progress[index]);
+          chapter.setAttribute('data-chapter-motion', '');
+        }
+      });
+    }
+
+    function schedule() {
+      if (!frame && !motion.matches) frame = requestAnimationFrame(update);
+    }
+
+    window.addEventListener('scroll', schedule, {passive:true});
+    window.addEventListener('resize', schedule);
+    window.addEventListener('pageshow', schedule);
+    motion.addEventListener('change', schedule);
+    update();
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('pageshow', schedule);
+      motion.removeEventListener('change', schedule);
+    };
+  }
+
   function mount(api) {
     stopCurrent();
     const page = document.querySelector('.cinema-page');
@@ -126,6 +164,7 @@ window.EstateScenes = (() => {
     const list = Array.isArray(stored) && stored.length ? stored : defaultGallery;
     const gallery = page.querySelector('#gallery');
     const stopGallery = window.mountEstateGallery(gallery,list,motion);
+    const stopChapterMotion = mountChapterMotion(page);
     const skip = document.querySelector('.skip');
     const onSkip = event => {
       event.preventDefault();
@@ -159,6 +198,7 @@ window.EstateScenes = (() => {
     stopCurrent = () => {
       cancelAnimationFrame(jumpFrame);
       stopGallery();
+      stopChapterMotion();
       skip.removeEventListener('click',onSkip);
       page.removeEventListener('click',onClick);
     };
