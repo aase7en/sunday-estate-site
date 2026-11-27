@@ -22,6 +22,7 @@ window.mountOpeningDust = (scene, motion) => {
   let puffs;
   let fragments;
   let fragmentTravel = 0;
+  const splitAt = [.22,.44,.66];
 
   function smokePuff(colors) {
     const sprite = document.createElement('canvas');
@@ -69,7 +70,7 @@ window.mountOpeningDust = (scene, motion) => {
               if (pixels[pixelAt(sx,sy)+3] > 9) { filled = true; break; }
             }
           }
-          if (filled) tiles.push({index,surface,x,y,w,h,scale,pad,dx:0,dy:0,seed:(x*13+y*7)%131});
+          if (filled) tiles.push({index,surface,x,y,w,h,scale,pad,dx:0,dy:0,pressure:0,seed:(x*13+y*7)%131});
           x += w;
         }
         y += h;
@@ -114,11 +115,43 @@ window.mountOpeningDust = (scene, motion) => {
     canvas.hidden = true;
     scene.classList.remove('is-dispersing');
     samples?.forEach(sample=>{sample.dx=sample.dy=0;});
-    fragments?.forEach(tile=>{tile.dx=tile.dy=0;});
+    fragments?.forEach(tile=>{tile.dx=tile.dy=tile.pressure=0;});
   }
 
   function distanceFrom(box,x,y) {
     return Math.hypot(Math.max(box.left-x,0,x-box.right),Math.max(box.top-y,0,y-box.bottom));
+  }
+
+  function drawFragment(surface,x,y,w,h,ratio,pressure,depth = 0) {
+    const width = w/ratio;
+    const height = h/ratio;
+    const threshold = splitAt[depth];
+    if (depth === splitAt.length || pressure <= threshold || Math.min(w,h) < 4) {
+      ctx.drawImage(surface,x,y,w,h,-width/2,-height/2,width,height);
+      return;
+    }
+
+    // The four pieces first share the parent's shape, then separate as pressure rises.
+    const amount = Math.min(1,(pressure-threshold)/.19);
+    const separation = amount*amount*(3-2*amount);
+    const separate = separation*(3.8-depth*.95);
+    const halfWidth = Math.floor(w/2);
+    const halfHeight = Math.floor(h/2);
+    for (let row=0;row<2;row++) {
+      const offsetY = row*halfHeight;
+      const shardHeight = row ? h-halfHeight : halfHeight;
+      for (let col=0;col<2;col++) {
+        const offsetX = col*halfWidth;
+        const shardWidth = col ? w-halfWidth : halfWidth;
+        const drift = Math.sin((x+offsetX)*.67+(y+offsetY)*.39);
+        ctx.save();
+        ctx.translate((offsetX+shardWidth/2)/ratio-width/2+(col*2-1)*separate*(1+drift*.3),
+          (offsetY+shardHeight/2)/ratio-height/2+(row*2-1)*separate*(1-drift*.3));
+        ctx.rotate(drift*separation*.44);
+        drawFragment(surface,x+offsetX,y+offsetY,shardWidth,shardHeight,ratio,pressure,depth+1);
+        ctx.restore();
+      }
+    }
   }
 
   function render(now) {
@@ -211,6 +244,7 @@ window.mountOpeningDust = (scene, motion) => {
       const dy = baseY-y;
       const distance = Math.hypot(dx,dy);
       const force = Math.max(0,1-distance/radius)*strength;
+      tile.pressure += (force-tile.pressure)*damping;
       const heading = Math.atan2(dy,dx)+Math.sin(tile.seed)*.21;
       const lift = force**1.08*(radius*.72+tile.seed*.61);
       tile.dx += (Math.cos(heading)*lift+windX*force-tile.dx)*damping;
@@ -218,13 +252,14 @@ window.mountOpeningDust = (scene, motion) => {
       const travel = Math.hypot(tile.dx,tile.dy);
       fragmentTravel = Math.max(fragmentTravel,travel);
       const dissolve = Math.max(0,Math.min(1,(travel-12)/(radius*.8)));
-      const scale = 1-dissolve*.69;
+      const scale = 1-dissolve*(.69-tile.pressure*.26);
       const turn = Math.sin(tile.seed*2)*dissolve*.84;
       ctx.globalAlpha = (1-dissolve*.7)*(tile.index===0?goldOpacity:1);
       ctx.save();
       ctx.translate(baseX+tile.dx,baseY+tile.dy);
       if (turn) ctx.rotate(turn);
-      ctx.drawImage(tile.surface,tile.x,tile.y,tile.w,tile.h,-w*scale/2,-h*scale/2,w*scale,h*scale);
+      if (scale !== 1) ctx.scale(scale,scale);
+      drawFragment(tile.surface,tile.x,tile.y,tile.w,tile.h,tile.scale,tile.pressure);
       ctx.restore();
     }
     frame = requestAnimationFrame(render);
