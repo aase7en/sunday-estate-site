@@ -1,5 +1,14 @@
 window.EstateScenes = (() => {
   const media = window.EstateMedia;
+  // Public-facing fields from the existing Sunday Estate landing company profile.
+  const company = {
+    name:'บริษัท ซันเดย์ เอสเตท จำกัด',
+    nameEn:'SUNDAY ESTATE CO., LTD.',
+    registration:'0105568042151',
+    address:'เลขที่ 21 ซอยสังคมสงเคราะห์ 30 แขวงลาดพร้าว เขตลาดพร้าว กรุงเทพมหานคร 10230',
+    phone:'099-265-4265',
+    email:'aase7en@sunday-estate.com',
+  };
   const scenes = [
     {src:'assets/aurora-estate.webp', label:'บ้าน', title:'บ้านที่อยากกลับมา', alt:'บ้านร่วมสมัยริมสระในแสงเช้า', copy:'ให้ทุกวันเริ่มและจบในพื้นที่ที่รู้สึกเป็นของคุณ'},
     {key:'business', src:'assets/scenes/business.webp', mobile:'assets/scenes/business-828.webp', label:'ธุรกิจ', title:'พื้นที่ให้ธุรกิจในฝัน', alt:'ผู้ประกอบการในร้านกาแฟขนาดเล็ก', copy:'เริ่มต้นจากพื้นที่ที่เหมาะกับสิ่งที่คุณอยากทำ'},
@@ -8,6 +17,7 @@ window.EstateScenes = (() => {
     {key:'family', src:'assets/scenes/family.webp', mobile:'assets/scenes/family-828.webp', label:'ครอบครัว', title:'อยู่ใกล้คนที่เรารัก', alt:'ครอบครัวรับประทานอาหารร่วมกันในบ้าน', copy:'มีพื้นที่ให้ครอบครัวได้ใช้เวลาด้วยกัน'},
   ];
   const statuses = {sold:'ขายแล้ว',available:'เปิดขาย',promotion:'โปรโมชั่น',booking:'เปิดจอง'};
+  const bookable = status => status === 'available' || status === 'booking';
   const defaultListings = [
     {id:'SE-DEMO-01',title:'บ้านร่วมสมัยริมสระ',area:'ชานเมือง',group:'บ้านและที่อยู่อาศัย',status:'sold',src:scenes[0].src,
       description:'พื้นที่นั่งเล่นเปิดสู่สวนและสระ แสดงตัวอย่างการนำเสนอผลงานที่ปิดการขายแล้ว'},
@@ -30,17 +40,57 @@ window.EstateScenes = (() => {
   const ribbon = (listing,escape) => listing.status ? '<span class="estate-ribbon" data-tone="'+
     (Object.hasOwn(statuses,listing.status) ? listing.status : 'custom')+'">'+
     escape(listing.ribbon || statuses[listing.status] || '')+'</span>' : '';
-  const listingCards = (list,escape,icon) => '<div class="estate-listings">'+list.map(listing =>
-    '<article class="estate-listing" data-listing-group="'+escape(listing.group)+'"><details><summary>'+
+  const bookingEmail = listing => 'mailto:'+company.email+'?subject='+
+    encodeURIComponent('[เดโม] สอบถามทรัพย์ '+listing.title)+'&body='+encodeURIComponent(
+      'สวัสดีค่ะ/ครับ\n\nสนใจสอบถามรายละเอียดหรือนัดชมทรัพย์ตัวอย่าง '+listing.title+' ('+listing.id+')\n\n');
+  const listingCards = (list,escape,icon,withInquiry = false) => '<div class="estate-listings">'+list.map(listing =>
+    '<article class="estate-listing" data-listing-group="'+escape(listing.group)+'" data-listing-status="'+escape(listing.status)+'"><details><summary>'+
       '<div class="estate-listing-photo"><img loading="lazy" decoding="async" src="'+
       (asset(listing.src) || defaultGallery[0].src)+'" alt="">'+ribbon(listing,escape)+'</div>'+
       '<div class="estate-listing-copy"><div><h3>'+escape(listing.title)+'</h3><p>'+
       escape(listing.group+' · '+listing.area)+'</p></div><span class="estate-listing-expand">'+
       '<span class="estate-open-label">ดูรายละเอียด</span><span class="estate-close-label">ย่อรายละเอียด</span>'+
       icon('chevron',16)+'</span></div></summary><div class="estate-listing-details"><p>'+
-      escape(listing.description)+'</p></div></details></article>').join('')+'</div>';
+      escape(listing.description)+'</p>'+(withInquiry && bookable(listing.status) ?
+        '<a class="cinema-cta estate-inquiry" href="'+escape(bookingEmail(listing))+'">'+icon('mail',17)+' ร่างอีเมลสอบถามทรัพย์</a>' : '')+
+      '</div></details></article>').join('')+'</div>';
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   let stopCurrent = () => {};
+
+  function navigation(icon, brandImage, signedIn) {
+    const accessLabel = signedIn ? 'เปิดแดชบอร์ด' : 'เข้าสู่ระบบ';
+    const links = [
+      ['properties','จองซื้อ / นัดชม','calendar',' data-booking-link'],
+      ['properties','ผลงานและทรัพย์เปิดขาย','home'],
+      ['company','เกี่ยวกับบริษัท','globe'],
+      ['contact','ติดต่อเรา','phone'],
+      ['gallery','แกลเลอรี','image'],
+    ];
+    return '<header class="cinema-nav"><a class="cinema-brand" href="#scene-0" data-scene-scroll="scene-0">'+
+      brandImage+'<span>Sunday Estate</span></a><div class="cinema-nav-actions">'+
+      '<a class="cinema-cta cinema-access" href="#overview">'+accessLabel+' '+icon('arrow',17)+'</a>'+
+      '<button class="cinema-menu-toggle" type="button" aria-label="เปิดเมนู" aria-expanded="false" aria-controls="cinema-menu" data-cinema-toggle>'+
+      '<span class="cinema-menu-open">'+icon('menu',22)+'</span><span class="cinema-menu-close">'+icon('x',22)+'</span></button></div>'+
+      '<nav id="cinema-menu" class="cinema-menu" aria-label="เมนูเว็บไซต์" hidden><a class="cinema-menu-access" href="#overview">'+
+      icon('user',19)+'<span>'+accessLabel+'</span>'+icon('arrow',16)+'</a>'+
+      links.map(([id,label,glyph,extra=''])=>'<a href="#'+id+'" data-scene-scroll="'+id+'"'+extra+'>'+icon(glyph,19)+
+        '<span>'+label+'</span>'+icon('right',16)+'</a>').join('')+'</nav></header>';
+  }
+
+  function companyFooter(icon, brandImage) {
+    const map = 'https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(company.address);
+    return '<footer class="cinema-footer" aria-label="ข้อมูลและช่องทางติดต่อบริษัท"><div class="company-grid">'+
+      '<section id="company" class="company-section" aria-labelledby="company-heading">'+
+      '<h2 id="company-heading" tabindex="-1">เกี่ยวกับบริษัท</h2><div class="company-identity">'+brandImage+
+      '<div><h3>'+company.name+'</h3><p lang="en">'+company.nameEn+'</p></div></div>'+
+      '<p class="company-description">ทำงานด้านที่ดินและอสังหาริมทรัพย์ ตั้งแต่การซื้อขายและจัดสรรที่ดิน ไปจนถึงการพัฒนาและบริหารทรัพย์สิน</p>'+
+      '<dl class="company-meta"><div><dt>เลขทะเบียนนิติบุคคล</dt><dd>'+company.registration+'</dd></div></dl></section>'+
+      '<section id="contact" class="company-section" aria-labelledby="contact-heading"><h2 id="contact-heading" tabindex="-1">ติดต่อเรา</h2>'+
+      '<address class="company-contacts"><a href="tel:'+company.phone.replaceAll('-','')+'">'+icon('phone',20)+
+      '<span><small>โทรศัพท์</small><strong>'+company.phone+'</strong></span></a><a href="mailto:'+company.email+'">'+icon('mail',20)+
+      '<span><small>อีเมล</small><strong>'+company.email+'</strong></span></a><a href="'+map+'" target="_blank" rel="noopener noreferrer">'+icon('pin',20)+
+      '<span><small>ค้นหาที่อยู่บนแผนที่</small><strong>'+company.address+'</strong></span></a></address></section></div></footer>';
+  }
 
   function landing(api) {
     const {icon, escape, brandImage, read} = api;
@@ -100,18 +150,17 @@ window.EstateScenes = (() => {
         '<div class="cinema-content"><p class="cinema-chapter">' + scene.label + '</p><h2 id="scene-title-' + i + '" tabindex="-1">' +
         scene.title + '</h2><p class="cinema-copy">' + scene.copy + '</p></div></section></div>';
     }).join('');
-    return '<div class="cinema-page"><header class="cinema-nav"><a class="cinema-brand" href="#scene-0" data-scene-scroll="scene-0">' +
-      brandImage + '<span>Sunday Estate</span></a>' +
-      '<nav aria-label="หน้าแรก"><a href="#gallery" data-scene-scroll="gallery">แกลเลอรี</a>' +
-      '<a class="cinema-cta" href="#overview">' + (api.signedIn ? 'เปิดแดชบอร์ด ' : 'เข้าสู่ระบบ ') + icon('arrow',17) + '</a></nav></header>' +
+    return '<div class="cinema-page">'+navigation(icon,brandImage,api.signedIn)+
       '<main id="workspace" tabindex="-1"><div class="cinema-story">' + opening + chapters + '</div>' +
       '<section id="properties" class="cinema-properties" aria-labelledby="properties-heading"><h2 id="properties-heading" tabindex="-1">ผลงานและทรัพย์เปิดขาย</h2>' +
-      '<p>ภาพและสถานะทั้งหมดเป็นตัวอย่างสำหรับทดลองใช้งาน</p>'+
-      (groups.length ? '<div class="estate-filters" role="group" aria-label="กรองตามกลุ่มทรัพย์">' +
+      '<p>ภาพและสถานะทรัพย์เป็นตัวอย่าง ปุ่มสอบถามจะเปิดอีเมลร่างให้ตรวจและส่งเอง</p>'+
+      '<div class="estate-filters" role="group" aria-label="กรองรายการทรัพย์">' +
         '<button class="control" type="button" data-estate-all aria-pressed="true">ทั้งหมด</button>' +
+        '<button class="control" type="button" data-estate-bookable aria-pressed="false">เปิดขาย / เปิดจอง</button>'+
         groups.map(group => '<button class="control" type="button" data-estate-group="'+escape(group)+
-          '" aria-pressed="false">'+escape(group)+'</button>').join('')+'</div>' :
-        '<p>ยังไม่มีรายการแสดง</p>') + listingCards(listings,escape,icon) + '</section>' +
+          '" aria-pressed="false">'+escape(group)+'</button>').join('')+'</div>'+
+      '<p data-estate-empty role="status"'+(listings.length?' hidden':'')+'>ไม่มีทรัพย์ในรายการที่เลือก</p>'+
+      listingCards(listings,escape,icon,true) + '</section>' +
       '<section id="gallery" class="cinema-gallery" aria-labelledby="gallery-heading"><div class="gallery-heading"><div>' +
       '<h2 id="gallery-heading" tabindex="-1">แกลเลอรี</h2><p id="gallery-hint">ปัด ลาก หรือแตะภาพเพื่อเลื่อนมาด้านหน้า</p></div>' +
       '<button class="control" type="button" data-gallery-control="toggle" aria-pressed="false" hidden>หยุดภาพ</button></div>' +
@@ -122,7 +171,7 @@ window.EstateScenes = (() => {
       '<div class="gallery-controls"><div class="gallery-navigation"><button type="button" class="control gallery-prev" data-gallery-control="prev" aria-label="ภาพก่อนหน้า">'+icon('arrow',19)+'</button>'+
       '<span class="gallery-count" aria-live="off" aria-atomic="true"></span>'+
       '<button type="button" class="control" data-gallery-control="next" aria-label="ภาพถัดไป">'+icon('arrow',19)+'</button>'+
-      '</div></div></section></main></div>';
+      '</div></div></section></main>'+companyFooter(icon,brandImage)+'</div>';
   }
 
   function mountChapterMotion(page) {
@@ -177,37 +226,75 @@ window.EstateScenes = (() => {
       event.preventDefault();
       page.querySelector('main').focus();
     };
-    const filters = [...page.querySelectorAll('[data-estate-all],[data-estate-group]')];
+    const filterSelector = '[data-estate-all],[data-estate-bookable],[data-estate-group]';
+    const filters = [...page.querySelectorAll(filterSelector)];
     const properties = [...page.querySelectorAll('[data-listing-group]')];
+    const empty = page.querySelector('[data-estate-empty]');
+    const toggle = page.querySelector('[data-cinema-toggle]');
+    const menu = page.querySelector('#cinema-menu');
+    const events = new AbortController();
+    const listenerOptions = {signal:events.signal};
+    function showMenu(open) {
+      menu.hidden = !open;
+      toggle.setAttribute('aria-expanded',String(open));
+      toggle.setAttribute('aria-label',open?'ปิดเมนู':'เปิดเมนู');
+    }
+    function filterListings(filter) {
+      filters.forEach(button=>button.setAttribute('aria-pressed',String(button===filter)));
+      const group = filter.dataset.estateGroup;
+      const onlyBookable = filter.hasAttribute('data-estate-bookable');
+      properties.forEach(card=>{
+        card.hidden = (onlyBookable && !bookable(card.dataset.listingStatus)) || (group !== undefined && group !== card.dataset.listingGroup);
+      });
+      empty.hidden = properties.some(card=>!card.hidden);
+    }
     const onClick = event => {
-      const filter = event.target.closest('[data-estate-all],[data-estate-group]');
-      if (filter) {
-        filters.forEach(button => button.setAttribute('aria-pressed',String(button===filter)));
-        properties.forEach(card => { card.hidden = !!filter.dataset.estateGroup && card.dataset.listingGroup !== filter.dataset.estateGroup; });
+      if (toggle.contains(event.target)) {
+        showMenu(menu.hidden);
+        if (!menu.hidden && event.detail === 0) menu.querySelector('a').focus({preventScroll:true});
+        return;
       }
+      const filter = event.target.closest(filterSelector);
+      if (filter) filterListings(filter);
       const jump = event.target.closest('[data-scene-scroll]');
       if (jump) {
         event.preventDefault();
+        if (jump.dataset.sceneScroll === 'properties') {
+          filterListings(page.querySelector(jump.hasAttribute('data-booking-link')?'[data-estate-bookable]':'[data-estate-all]'));
+        }
+        showMenu(false);
         const destination = document.getElementById(jump.dataset.sceneScroll);
         destination.scrollIntoView({behavior:motion.matches ? 'instant' : 'smooth'});
         const heading = destination.matches('.cinema-anchor') ? destination.nextElementSibling.querySelector('h1,h2') : destination.querySelector('h2');
         heading?.focus({preventScroll:true});
       }
     };
-
-    page.addEventListener('click',onClick);
-    skip.addEventListener('click',onSkip);
+    function dismissOutside(event) {
+      if (!menu.hidden && !menu.contains(event.target) && !toggle.contains(event.target)) showMenu(false);
+    }
+    page.addEventListener('click',onClick,listenerOptions);
+    skip.addEventListener('click',onSkip,listenerOptions);
+    document.addEventListener('pointerdown',dismissOutside,listenerOptions);
+    document.addEventListener('focusin',dismissOutside,listenerOptions);
+    document.addEventListener('keydown',event=>{
+      if (event.key === 'Escape' && !menu.hidden) {
+        event.preventDefault();
+        showMenu(false);
+        toggle.focus({preventScroll:true});
+      }
+    },listenerOptions);
     const entry = new URLSearchParams(location.search).get('section');
     let jumpFrame;
-    if (entry === 'gallery' || entry === 'properties') {
-      jumpFrame = requestAnimationFrame(() => page.querySelector('#'+entry).scrollIntoView({behavior:'instant'}));
+    if (['gallery','properties','booking','company','contact'].includes(entry)) {
+      const target = entry === 'booking' ? 'properties' : entry;
+      if (entry === 'booking') filterListings(page.querySelector('[data-estate-bookable]'));
+      jumpFrame = requestAnimationFrame(() => page.querySelector('#'+target).scrollIntoView({behavior:'instant'}));
     }
     stopCurrent = () => {
       cancelAnimationFrame(jumpFrame);
       stopGallery();
       stopChapterMotion();
-      skip.removeEventListener('click',onSkip);
-      page.removeEventListener('click',onClick);
+      events.abort();
     };
   }
 
