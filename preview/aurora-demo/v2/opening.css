@@ -136,7 +136,12 @@
   stroke: #fff4d9ed;
   stroke-width: 1px;
 }
-.opening-gold { filter: drop-shadow(0 2px 7px #071425a3); }
+.opening-gold {
+  stroke: #402909;
+  stroke-width: clamp(.8px, .12vw, 1.5px);
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 1px #1c141bb0) drop-shadow(0 4px 9px #14203f80);
+}
 
 .opening-footer {
   position: absolute;

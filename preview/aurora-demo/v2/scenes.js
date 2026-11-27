@@ -107,7 +107,7 @@ window.EstateScenes = (() => {
       '<defs><g id="opening-letterforms" text-anchor="middle">' +
       '<text x="50%" y="62%" dy=".73em">SUNDAY</text><text class="opening-estate" x="50%" y="62%" dy="2.76em">ESTATE</text></g>' +
       '<linearGradient id="opening-gold-paint" x1="0" y1="0" x2=".13" y2="1">' +
-      '<stop stop-color="#fff5dd"/><stop offset=".54" stop-color="#ffe6b1"/><stop offset="1" stop-color="#d0a461"/></linearGradient>' +
+      '<stop stop-color="#ffe36a"/><stop offset=".54" stop-color="#ffc423"/><stop offset="1" stop-color="#e7a00a"/></linearGradient>' +
       '<radialGradient id="opening-fog-glow" cx=".53" cy=".27" r=".47">' +
       '<stop stop-color="#fff9e3" stop-opacity=".70"/><stop offset=".28" stop-color="#ffd499" stop-opacity=".39"/>' +
       '<stop offset=".57" stop-color="#ffbe75" stop-opacity=".18"/><stop offset="1" stop-color="#ffbe75" stop-opacity="0"/></radialGradient>' +
