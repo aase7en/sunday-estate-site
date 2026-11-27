@@ -117,7 +117,7 @@ window.EstateScenes = (() => {
       '<stop offset="1" stop-color="#101d32"/></linearGradient>' +
       '<mask id="opening-fog-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">' +
       '<rect width="100%" height="100%" fill="white"/><g class="opening-rise"><use class="opening-aperture" href="#opening-letterforms" fill="black"/></g></mask>' +
-      '<radialGradient id="opening-dust-falloff"><stop offset="40%"/><stop offset="100%" stop-opacity="0"/></radialGradient>' +
+      '<radialGradient id="opening-dust-falloff"><stop offset="30%"/><stop offset="72%" stop-opacity=".45"/><stop offset="100%" stop-opacity="0"/></radialGradient>' +
       '<mask id="opening-dust-mask" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">' +
       '<rect width="100%" height="100%" fill="white"/><circle r="0" fill="url(#opening-dust-falloff)"/></mask></defs>' +
       '<g class="opening-fog-group" mask="url(#opening-fog-mask)">' +
