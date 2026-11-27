@@ -221,7 +221,7 @@
     const active = latest.filter(c => c.balance > 0);
     const actions = latest.filter(c => c.status === 'overdue' || c.status === 'soon');
     const overdue = actions.filter(c => c.status === 'overdue').length;
-    const status = overdue > 0 ? '<button class="attention" data-action="alerts" type="button">' + icon('alert', 16) +
+    const status = overdue > 0 ? '<button class="attention" data-action="alerts" data-queue-filter="overdue" type="button">' + icon('alert', 16) +
       '<span><strong>' + overdue + ' สัญญาเกินกำหนด</strong> <span class="attention-extra">· ติดตามในคิวงาน</span></span>' + icon('right', 14) + '</button>' : '';
     const cards = [
       {title:'เงินต้นคงค้าง', value:d.sum(active,'balance'), foot:active.length + ' สัญญาที่ยังเปิด', glyph:'wallet', tone:'purple', money:true},
@@ -683,14 +683,19 @@
     });
   }
 
-  function toQueue() {
-    if (page !== 'overview') {
-      history.pushState(null,'','#overview');
-      render();
-    }
-    const queue = document.getElementById('queue');
-    queue.focus({preventScroll:true});
-    queue.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+  function openQueue(filter='all') {
+    if (!xp.staff()) return;
+    const statuses = {all:'ทั้งหมด',overdue:'เกินกำหนด',soon:'ใกล้ครบกำหนด'};
+    const active = Object.hasOwn(statuses,filter) ? filter : 'all';
+    const items = xp.contracts().filter(c=>c.status === 'overdue' || c.status === 'soon');
+    const scoped = key => key === 'all' ? items : items.filter(c=>c.status === key);
+    showDialog('คิวติดตามสัญญา',
+      '<div class="editor"><p class="muted">สถานะ ณ '+d.formatDate(d.asOf)+'</p>' +
+      '<div class="v2-inline" role="group" aria-label="กรองคิวตามสถานะ">' + Object.entries(statuses).map(([key,label]) =>
+        '<button type="button" class="control" data-action="alerts" data-queue-filter="'+key+'" aria-pressed="'+
+        (key===active)+'">'+label+' · '+scoped(key).length+'</button>').join('') + '</div>' + queueMarkup(scoped(active)) +
+      '</div>','work-queue');
+    dialog.querySelector('[data-queue-filter="'+active+'"]')?.focus({preventScroll:true});
   }
 
   document.addEventListener('pointerdown', e => {
@@ -738,7 +743,7 @@
         const themeSelect = root.querySelector('#prefs-form [name="theme"]');
         if (themeSelect) themeSelect.value = pref.theme;
         break;
-      case 'alerts': toQueue(); break;
+      case 'alerts': openQueue(btn.dataset.queueFilter); break;
       case 'dates': dateDialog(); break;
       case 'date-auto':
         dialog.close();

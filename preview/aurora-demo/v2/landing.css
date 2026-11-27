@@ -62,3 +62,29 @@
 .company-contacts strong{font-size:14px;line-height:1.35;font-weight:600}
 @media(max-width:699px){.company-grid{grid-template-columns:1fr}}
 @media(max-width:460px){.cinema-nav-actions{gap:6px}}
+
+.opening-services{display:flex;justify-content:center;gap:clamp(4px,1vw,10px)}
+.opening-services .cinema-cta{
+  margin:0;padding-inline:clamp(6px,2vw,18px);gap:5px;
+  color:#fff0d5;background:#152039f2;white-space:nowrap;font-size:clamp(11px,2.8vw,15px)
+}
+.opening-services .cinema-cta:hover,.opening-services .cinema-cta:focus-visible{background:#35425d;color:#fff}
+.opening-next{display:inline-flex;align-items:center;gap:5px;min-height:36px;padding-inline:10px;color:#fff0d5;font-size:12px}
+.estate-section{width:min(100%,1230px);margin:auto;padding:clamp(36px,6vw,72px) clamp(14px,4vw,36px) 0}
+.estate-section#team{padding-bottom:clamp(36px,6vw,72px)}
+.estate-section h2{font-size:clamp(27px,4vw,46px);line-height:1.25}
+.estate-section>p{color:#d7e0f1;margin-top:6px}
+.estate-service-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(10px,2vw,22px);margin-top:18px}
+.estate-service{
+  display:grid;align-content:start;justify-items:start;gap:12px;min-width:0;
+  background:linear-gradient(145deg,#172742,#111d33);border:1px solid #e7c58236;
+  border-radius:18px;padding:clamp(16px,2.4vw,28px)
+}
+.estate-service,.estate-section{scroll-margin-top:calc(var(--cinema-header) + 12px)}
+.estate-service h3{font-size:clamp(18px,2.2vw,24px)}
+.estate-service p{color:#d7e0f1}
+.estate-service .cinema-cta{margin:0;font-size:13px}
+.estate-service-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#edc9821a;color:#f1ce92}
+.estate-service-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:3px}
+@media(max-width:720px){.estate-service-grid{grid-template-columns:1fr}}
+@media(max-width:360px){.opening-services .cinema-cta svg{display:none}}

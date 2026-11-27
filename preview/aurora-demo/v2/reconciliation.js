@@ -23,6 +23,7 @@ window.createEstateReconciliation = ({root,dialog,icon,escape,read,write,notice,
   const receipt = id => receipts.find(row => row.id === id);
   let dragged;
   let pending = false;
+  let pendingOnly = false;
 
   function matches() {
     const saved = read(storeKey);
@@ -59,7 +60,10 @@ window.createEstateReconciliation = ({root,dialog,icon,escape,read,write,notice,
   function page() {
     if (!active()) return '';
     const recorded = matches();
-    const statementRows = statements.map(statement => {
+    const matched = new Set(recorded.map(pair=>pair.statementId));
+    const count = statements.filter(statement=>matched.has(statement.id)).length;
+    const visible = pendingOnly ? statements.filter(statement=>!matched.has(statement.id)) : statements;
+    const statementRows = visible.map(statement => {
       const candidate = receipts.find(row => row.reference === statement.reference);
       const result = compare(statement,candidate,recorded);
       return '<li class="recon-row"><div class="recon-row-top"><span class="recon-handle" draggable="true" data-bank-drag="' + statement.id +
@@ -77,9 +81,12 @@ window.createEstateReconciliation = ({root,dialog,icon,escape,read,write,notice,
       details:'<div class="module-actions"><a href="#overview" class="control">กลับหน้าภาพรวม</a></div>'}) +
       '<section class="recon-workbench" aria-label="จับคู่รายการ"><div class="recon-context">' + icon('wallet',19) +
       '<strong>' + wallet + '</strong><span>บัญชีธนาคารจำลอง</span></div>' +
+      '<div class="card panel recon-progress"><label for="recon-progress">ยืนยันแล้ว ' + count + ' จาก ' + statements.length +
+      ' รายการในชุดนี้</label><progress id="recon-progress" value="'+count+'" max="'+statements.length+'"></progress>' +
+      '<button type="button" class="control" data-recon="pending-only" aria-pressed="'+pendingOnly+'">เฉพาะยังไม่ยืนยัน</button></div>' +
       '<p class="recon-instruction">เลือกใบรับจากรายการเงินเข้า <span>หรือใช้หูจับลากไปที่ใบรับ</span> แล้วตรวจข้อมูลก่อนยืนยัน</p>' +
       '<div class="recon-grid"><article class="card panel"><h2>เงินเข้าธนาคาร</h2><ul class="recon-list">' + statementRows +
-      '</ul></article><article class="card panel recon-receipts"><h2>ใบรับในสมุดเงิน</h2><ul class="recon-list">' + receiptRows +
+      '</ul>' + (visible.length ? '' : '<p class="empty">ไม่มีรายการที่ยังไม่ยืนยันในชุดนี้</p>') + '</article><article class="card panel recon-receipts"><h2>ใบรับในสมุดเงิน</h2><ul class="recon-list">' + receiptRows +
       '</ul></article></div></section><section class="card panel recon-history" aria-labelledby="recon-history-title"><h2 id="recon-history-title">ประวัติการจับคู่</h2>' +
       '<ul>' + history + '</ul></section>';
   }
@@ -141,6 +148,12 @@ window.createEstateReconciliation = ({root,dialog,icon,escape,read,write,notice,
 
   function click(button) {
     if (!active()) return;
+    if (button.dataset.recon === 'pending-only') {
+      pendingOnly = !pendingOnly;
+      render('workspace');
+      root.querySelector('[data-recon="pending-only"]')?.focus({preventScroll:true});
+      return;
+    }
     const statement = bank(button.dataset.statement);
     const invoice = receipt(button.dataset.receipt);
     if (!statement) return;

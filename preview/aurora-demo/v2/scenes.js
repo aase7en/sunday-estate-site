@@ -9,6 +9,22 @@ window.EstateScenes = (() => {
     phone:'099-265-4265',
     email:'aase7en@sunday-estate.com',
   };
+  const services = [
+    {id:'brokerage',label:'ซื้อ–ขายทรัพย์',title:'นายหน้าอสังหาริมทรัพย์',icon:'home',
+      copy:'ค้นหาทรัพย์ นัดชม หรือคุยกับทีมเรื่องฝากขายบ้านและที่ดิน',
+      team:'ทีมซื้อขายอสังหาริมทรัพย์',role:'ดูแลรายการทรัพย์ นัดชม และประสานงานฝากขาย',
+      action:'ดูทรัพย์เปิดขาย',target:'properties',filter:'booking',contact:'สอบถามหรือฝากขาย'},
+    {id:'credit',label:'สอบถามสินเชื่อ',title:'สินเชื่อและหลักประกัน',icon:'wallet',
+      copy:'คุยเบื้องต้นเรื่องประเภทสัญญา เอกสาร และขั้นตอนกับทีมดูแลสัญญา',
+      team:'ทีมสินเชื่อและสัญญา',role:'ประสานการสอบถามและอธิบายขั้นตอนก่อนทำสัญญา',
+      contact:'ติดต่อทีมสินเชื่อ'},
+    {id:'development',label:'โครงการที่ดิน',title:'พัฒนาที่ดินขาย',icon:'layers',
+      copy:'สอบถามทำเล การแบ่งแปลง และข้อมูลการเข้าถึงของโครงการที่สนใจ',
+      team:'ทีมพัฒนาที่ดิน',role:'ดูแลข้อมูลโครงการ รายละเอียดแปลง และการนัดชมพื้นที่',
+      action:'ดูตัวอย่างทรัพย์ที่ดิน',target:'properties',filter:'land',contact:'สอบถามโครงการ'},
+  ];
+  const enquiry = subject => 'mailto:'+company.email+'?subject='+encodeURIComponent('[เดโม] '+subject);
+  const contactLink = (row,icon,label=row.contact) => '<a class="cinema-cta" href="'+enquiry(row.contact)+'">'+icon('mail',17)+' '+label+'</a>';
   const scenes = [
     {src:'assets/aurora-estate.webp', label:'บ้าน', title:'บ้านที่อยากกลับมา', alt:'บ้านร่วมสมัยริมสระในแสงเช้า', copy:'ให้ทุกวันเริ่มและจบในพื้นที่ที่รู้สึกเป็นของคุณ'},
     {key:'business', src:'assets/scenes/business.webp', mobile:'assets/scenes/business-828.webp', label:'ธุรกิจ', title:'พื้นที่ให้ธุรกิจในฝัน', alt:'ผู้ประกอบการในร้านกาแฟขนาดเล็ก', copy:'เริ่มต้นจากพื้นที่ที่เหมาะกับสิ่งที่คุณอยากทำ'},
@@ -60,6 +76,8 @@ window.EstateScenes = (() => {
   function navigation(icon, brandImage, signedIn) {
     const accessLabel = signedIn ? 'เปิดแดชบอร์ด' : 'เข้าสู่ระบบ';
     const links = [
+      ...services.map(row=>[row.id,row.label,row.icon]),
+      ['team','ทีมงาน','user'],
       ['properties','จองซื้อ / นัดชม','calendar',' data-booking-link'],
       ['properties','ผลงานและทรัพย์เปิดขาย','home'],
       ['company','เกี่ยวกับบริษัท','globe'],
@@ -75,6 +93,22 @@ window.EstateScenes = (() => {
       icon('user',19)+'<span>'+accessLabel+'</span>'+icon('arrow',16)+'</a>'+
       links.map(([id,label,glyph,extra=''])=>'<a href="#'+id+'" data-scene-scroll="'+id+'"'+extra+'>'+icon(glyph,19)+
         '<span>'+label+'</span>'+icon('right',16)+'</a>').join('')+'</nav></header>';
+  }
+
+  function serviceSection(icon) {
+    return '<section class="estate-section" id="services" aria-labelledby="services-heading"><h2 id="services-heading">บริการของเรา</h2>' +
+      '<div class="estate-service-grid">' + services.map(row =>
+        '<article class="estate-service" id="'+row.id+'"><span class="estate-service-icon">'+icon(row.icon,22)+'</span>' +
+        '<h3 tabindex="-1">'+row.title+'</h3><p>'+row.copy+'</p><div class="estate-service-actions">' +
+        (row.target ? '<a class="cinema-cta" href="#'+row.target+'" data-scene-scroll="'+row.target+'" data-'+row.filter+'-link>'+row.action+' '+icon('arrow',17)+'</a>' : '') +
+        contactLink(row,icon) + '</div></article>').join('') + '</div></section>';
+  }
+
+  function teamSection(icon) {
+    return '<section class="estate-section" id="team" aria-labelledby="team-heading"><h2 id="team-heading" tabindex="-1">ทีมงาน Sunday Estate</h2>' +
+      '<p>เลือกทีมตามเรื่องที่คุณต้องการคุย</p><div class="estate-service-grid">' + services.map(row =>
+        '<article class="estate-service"><span class="estate-service-icon">'+icon(row.icon,22)+'</span>' +
+        '<h3>'+row.team+'</h3><p>'+row.role+'</p>'+contactLink(row,icon,'ร่างอีเมลถึงทีม')+'</article>').join('') + '</div></section>';
   }
 
   function companyFooter(icon, brandImage) {
@@ -136,8 +170,9 @@ window.EstateScenes = (() => {
       '<div class="opening-reveal opening-rise" aria-hidden="true">' + brandImage + '</div>' +
       '<canvas class="opening-dust" aria-hidden="true" hidden></canvas>' +
       '<div class="opening-footer"><p class="opening-cue" aria-hidden="true">' + icon('chevron',16) + ' เลื่อนเพื่อชมฉากเปิด</p>' +
-      '<div class="cinema-actions opening-actions"><a class="cinema-cta" href="#scene-1" data-scene-scroll="scene-1">ฉากถัดไป ' +
-      icon('chevron',16) + '</a><a class="cinema-cta" href="#properties" data-scene-scroll="properties">ดูผลงานและทรัพย์</a></div></div></section></div>';
+      '<nav class="opening-services" aria-label="เลือกบริการ">' + services.map(row=>
+        '<a class="cinema-cta" href="#'+row.id+'" data-scene-scroll="'+row.id+'">'+icon(row.icon,17)+' '+row.label+'</a>').join('') + '</nav>' +
+      '<a class="opening-next" href="#scene-1" data-scene-scroll="scene-1">ชมเรื่องราวต่อ '+icon('chevron',16)+'</a></div></section></div>';
     const chapters = scenes.slice(1).map((scene,index) => {
       const i = index + 1;
       const key = 'chapter-'+scene.key;
@@ -152,7 +187,7 @@ window.EstateScenes = (() => {
         scene.title + '</h2><p class="cinema-copy">' + scene.copy + '</p></div></section></div>';
     }).join('');
     return '<div class="cinema-page">'+navigation(icon,brandImage,api.signedIn)+
-      '<main id="workspace" tabindex="-1"><div class="cinema-story">' + opening + chapters + '</div>' +
+      '<main id="workspace" tabindex="-1"><div class="cinema-story">' + opening + chapters + '</div>' + serviceSection(icon) +
       '<section id="properties" class="cinema-properties" aria-labelledby="properties-heading"><h2 id="properties-heading" tabindex="-1">ผลงานและทรัพย์เปิดขาย</h2>' +
       '<p>ภาพและสถานะทรัพย์เป็นตัวอย่าง ปุ่มสอบถามจะเปิดอีเมลร่างให้ตรวจและส่งเอง</p>'+
       '<div class="estate-filters" role="group" aria-label="กรองรายการทรัพย์">' +
@@ -173,7 +208,7 @@ window.EstateScenes = (() => {
       '<button type="button" class="gallery-arrow gallery-next" data-gallery-control="next" aria-label="ภาพถัดไป">'+icon('arrow',20)+'</button></div></div>'+
       '<figcaption></figcaption></figure><div class="gallery-dots" role="group" aria-label="เลือกภาพในแกลเลอรี">'+
       gallery.map((row,i)=>'<button type="button" data-gallery-dot="'+i+'" aria-label="ภาพที่ '+(i+1)+' · '+escape(row.caption)+'"></button>').join('')+
-      '</div><span class="gallery-announcement sr-only" role="status" aria-atomic="true"></span></section></main>'+companyFooter(icon,brandImage)+'</div>';
+      '</div><span class="gallery-announcement sr-only" role="status" aria-atomic="true"></span></section>'+teamSection(icon)+'</main>'+companyFooter(icon,brandImage)+'</div>';
   }
 
   function mountChapterMotion(page) {
@@ -263,12 +298,14 @@ window.EstateScenes = (() => {
       if (jump) {
         event.preventDefault();
         if (jump.dataset.sceneScroll === 'properties') {
-          filterListings(page.querySelector(jump.hasAttribute('data-booking-link')?'[data-estate-bookable]':'[data-estate-all]'));
+          const selector = jump.hasAttribute('data-booking-link') ? '[data-estate-bookable]' :
+            jump.hasAttribute('data-land-link') ? '[data-estate-group="ที่ดิน"]' : '[data-estate-all]';
+          filterListings(page.querySelector(selector) ?? page.querySelector('[data-estate-all]'));
         }
         showMenu(false);
         const destination = document.getElementById(jump.dataset.sceneScroll);
         destination.scrollIntoView({behavior:motion.matches ? 'instant' : 'smooth'});
-        const heading = destination.matches('.cinema-anchor') ? destination.nextElementSibling.querySelector('h1,h2') : destination.querySelector('h2');
+        const heading = destination.matches('.cinema-anchor') ? destination.nextElementSibling.querySelector('h1,h2') : destination.querySelector('h2,h3');
         heading?.focus({preventScroll:true});
       }
     };
@@ -288,10 +325,14 @@ window.EstateScenes = (() => {
     },listenerOptions);
     const entry = new URLSearchParams(location.search).get('section');
     let jumpFrame;
-    if (['gallery','properties','booking','company','contact'].includes(entry)) {
+    if (['gallery','properties','booking','company','contact','team',...services.map(row=>row.id)].includes(entry)) {
       const target = entry === 'booking' ? 'properties' : entry;
       if (entry === 'booking') filterListings(page.querySelector('[data-estate-bookable]'));
-      jumpFrame = requestAnimationFrame(() => page.querySelector('#'+target).scrollIntoView({behavior:'instant'}));
+      jumpFrame = requestAnimationFrame(() => {
+        const section = document.getElementById(target);
+        section?.scrollIntoView({behavior:'instant'});
+        section?.querySelector('h2,h3')?.focus({preventScroll:true});
+      });
     }
     stopCurrent = () => {
       cancelAnimationFrame(jumpFrame);
