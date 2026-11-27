@@ -62,7 +62,7 @@ window.EstateInvestment = (() => {
     const weights = allocations.some(row => row.pledged > 0) ? allocations.map(row => row.pledged) : allocations.map(row => row.share);
     const shares = amountShares(weights);
     allocations.forEach((row, index) => { row.share = shares[index] ?? 0; });
-    return {...deal, basis:'amount', needsReview:true, deeds:deal.deeds.map(({name})=>({name})), allocations};
+    return {...deal, basis:'amount', needsReview:true, deeds:deal.deeds.map(({allocations: legacyAllocations, ...deed})=>deed), allocations};
   }
 
   return {calculate, normalize, units, validMoney};
