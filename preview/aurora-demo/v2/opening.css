@@ -142,6 +142,13 @@
   stroke-linejoin: round;
   filter: drop-shadow(0 2px 1px #1c141bb0) drop-shadow(0 4px 9px #14203f80);
 }
+.opening-dust {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
 
 .opening-footer {
   position: absolute;

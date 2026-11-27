@@ -116,15 +116,18 @@ window.EstateScenes = (() => {
       '<stop offset=".65" stop-color="#0a1529" stop-opacity="0"/><stop offset=".94" stop-color="#0a1529" stop-opacity=".62"/>' +
       '<stop offset="1" stop-color="#101d32"/></linearGradient>' +
       '<mask id="opening-fog-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">' +
-      '<rect width="100%" height="100%" fill="white"/><g class="opening-rise"><use class="opening-aperture" href="#opening-letterforms" fill="black"/></g></mask></defs>' +
+      '<rect width="100%" height="100%" fill="white"/><g class="opening-rise"><use class="opening-aperture" href="#opening-letterforms" fill="black"/></g></mask>' +
+      '<radialGradient id="opening-dust-falloff"><stop offset="40%"/><stop offset="100%" stop-opacity="0"/></radialGradient>' +
+      '<mask id="opening-dust-mask" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">' +
+      '<rect width="100%" height="100%" fill="white"/><circle r="0" fill="url(#opening-dust-falloff)"/></mask></defs>' +
       '<g class="opening-fog-group" mask="url(#opening-fog-mask)">' +
       '<g class="opening-veil"><image href="'+media.source('intro-sky')+'" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"/>' +
       '<rect class="opening-afterglow" width="100%" height="100%" fill="url(#opening-fog-glow)"/></g>' +
       '<image class="opening-mist opening-mist-wide" x="-24%" y="17%" width="148%" height="101%" href="'+media.source('intro-mist')+'" preserveAspectRatio="none"/>' +
       '<image class="opening-mist opening-mist-narrow" x="-75%" y="17%" width="250%" height="101%" href="'+media.source('intro-mist')+'" preserveAspectRatio="none"/></g>' +
       '<rect width="100%" height="100%" fill="url(#opening-edge-shade)"/>' +
-      '<g class="opening-rise"><use class="opening-gold" href="#opening-letterforms" fill="url(#opening-gold-paint)"/>' +
-      '<use class="opening-outline" href="#opening-letterforms"/></g></svg>';
+      '<g class="opening-brand-ink"><g class="opening-rise"><use class="opening-gold" href="#opening-letterforms" fill="url(#opening-gold-paint)"/>' +
+      '<use class="opening-outline" href="#opening-letterforms"/></g></g></svg>';
     const opening = anchor(0) + '<div class="opening-track"'+(openingStyle?' style="'+openingStyle+'"':'')+'><section class="cinema-scene cinema-opening" aria-labelledby="scene-title-0">' +
       '<div class="opening-camera"><div class="opening-plate">' +
       '<picture class="opening-visual"><source media="(max-width:639px)" srcset="'+media.source('intro-mobile')+'">' +
@@ -134,6 +137,7 @@ window.EstateScenes = (() => {
       '<div class="opening-foreground" aria-hidden="true"></div></div></div>' +
       wordmark +
       '<div class="opening-reveal opening-rise" aria-hidden="true">' + brandImage + '</div>' +
+      '<canvas class="opening-dust" aria-hidden="true" hidden></canvas>' +
       '<div class="opening-footer"><p class="opening-cue" aria-hidden="true">' + icon('chevron',16) + ' เลื่อนเพื่อชมฉากเปิด</p>' +
       '<div class="cinema-actions opening-actions"><a class="cinema-cta" href="#scene-1" data-scene-scroll="scene-1">ฉากถัดไป ' +
       icon('chevron',16) + '</a><a class="cinema-cta" href="#properties" data-scene-scroll="properties">ดูผลงานและทรัพย์</a></div></div></section></div>';
@@ -164,14 +168,15 @@ window.EstateScenes = (() => {
       '<section id="gallery" class="cinema-gallery" aria-labelledby="gallery-heading"><div class="gallery-heading"><div>' +
       '<h2 id="gallery-heading" tabindex="-1">แกลเลอรี</h2><p id="gallery-hint">ปัด ลาก หรือแตะภาพเพื่อเลื่อนมาด้านหน้า</p></div>' +
       '<button class="control" type="button" data-gallery-control="toggle" aria-pressed="false" hidden>หยุดภาพ</button></div>' +
-      '<figure class="gallery-figure"><div class="gallery-stage" role="group" tabindex="0" aria-label="วงล้อภาพ" aria-describedby="gallery-hint" data-current="0">' +
+      '<figure class="gallery-figure"><div class="gallery-wheel"><div class="gallery-stage" role="group" tabindex="0" aria-label="วงล้อภาพ" aria-describedby="gallery-hint" data-current="0">' +
       gallery.map((row,i) => '<div class="gallery-card'+(i===0?' is-current':'')+'" data-gallery-image="'+i+'">'+
         '<img src="'+(asset(row.src) || defaultGallery[0].src)+'" alt="" draggable="false" loading="lazy" decoding="async">'+
-        '</div>').join('')+'</div><figcaption></figcaption></figure>'+
-      '<div class="gallery-controls"><div class="gallery-navigation"><button type="button" class="control gallery-prev" data-gallery-control="prev" aria-label="ภาพก่อนหน้า">'+icon('arrow',19)+'</button>'+
-      '<span class="gallery-count" aria-live="off" aria-atomic="true"></span>'+
-      '<button type="button" class="control" data-gallery-control="next" aria-label="ภาพถัดไป">'+icon('arrow',19)+'</button>'+
-      '</div></div></section></main>'+companyFooter(icon,brandImage)+'</div>';
+        '</div>').join('')+'</div><div class="gallery-navigation" role="group" aria-label="เลื่อนแกลเลอรี">'+
+      '<button type="button" class="gallery-arrow gallery-prev" data-gallery-control="prev" aria-label="ภาพก่อนหน้า">'+icon('arrow',20)+'</button>'+
+      '<button type="button" class="gallery-arrow gallery-next" data-gallery-control="next" aria-label="ภาพถัดไป">'+icon('arrow',20)+'</button></div></div>'+
+      '<figcaption></figcaption></figure><div class="gallery-dots" role="group" aria-label="เลือกภาพในแกลเลอรี">'+
+      gallery.map((row,i)=>'<button type="button" data-gallery-dot="'+i+'" aria-label="ภาพที่ '+(i+1)+' · '+escape(row.caption)+'"></button>').join('')+
+      '</div><span class="gallery-announcement sr-only" role="status" aria-atomic="true"></span></section></main>'+companyFooter(icon,brandImage)+'</div>';
   }
 
   function mountChapterMotion(page) {
@@ -221,6 +226,7 @@ window.EstateScenes = (() => {
     const gallery = page.querySelector('#gallery');
     const stopGallery = window.mountEstateGallery(gallery,list,motion);
     const stopChapterMotion = mountChapterMotion(page);
+    const stopOpeningDust = window.mountOpeningDust(page.querySelector('.cinema-opening'),motion);
     const skip = document.querySelector('.skip');
     const onSkip = event => {
       event.preventDefault();
@@ -294,6 +300,7 @@ window.EstateScenes = (() => {
       cancelAnimationFrame(jumpFrame);
       stopGallery();
       stopChapterMotion();
+      stopOpeningDust();
       events.abort();
     };
   }

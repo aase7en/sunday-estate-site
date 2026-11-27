@@ -1,9 +1,11 @@
 window.mountEstateGallery = (gallery, rows, motion) => {
   const stage = gallery.querySelector('.gallery-stage');
+  const wheel = stage.parentElement;
   const cards = [...stage.querySelectorAll('[data-gallery-image]')];
   const images = cards.map(card => card.querySelector('img'));
   const caption = gallery.querySelector('figcaption');
-  const count = gallery.querySelector('.gallery-count');
+  const dots = [...gallery.querySelectorAll('[data-gallery-dot]')];
+  const announcement = gallery.querySelector('.gallery-announcement');
   const toggle = gallery.querySelector('[data-gallery-control="toggle"]');
   const navigation = gallery.querySelector('.gallery-navigation');
   const size = rows.length;
@@ -19,6 +21,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   let position = 0;
   let target;
   let animation = 0;
+  let coasting = false;
   let autoplay = 0;
   let lastFrame;
   let runningTime = 0;
@@ -79,18 +82,13 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     cards.forEach((card,i) => {
       card.classList.toggle('is-current',i === active);
       images[i].alt = i === active ? rows[i].alt : '';
+      if (i === active) dots[i].setAttribute('aria-current','true');
+      else dots[i].removeAttribute('aria-current');
     });
     preloadNearby();
     stage.dataset.current = String(active);
     caption.textContent = rows[active].caption;
-    count.setAttribute('aria-live',manual ? 'polite' : 'off');
-    count.textContent = (active+1)+' / '+size;
-    if (manual) {
-      const announced = document.createElement('span');
-      announced.className = 'sr-only';
-      announced.textContent = ' '+rows[active].caption;
-      count.append(announced);
-    }
+    if (manual) announcement.textContent = 'ภาพที่ '+(active+1)+' '+rows[active].caption;
   }
 
   function stopAutoplay() {
@@ -115,21 +113,29 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     toggle.hidden = motion.matches || size < 2;
     toggle.textContent = paused ? 'เล่นภาพต่อ' : 'หยุดภาพ';
     toggle.setAttribute('aria-pressed',String(paused));
-    const canPlay = visible && !paused && !hovering && !document.hidden && !motion.matches && !drag && target === undefined &&
+    const canPlay = visible && !paused && !hovering && !document.hidden && !motion.matches && !drag && !coasting && target === undefined &&
       !gallery.querySelector('.gallery-stage:focus-visible,button:focus-visible') && size > 1;
     if (canPlay && !autoplay) autoplay = requestAnimationFrame(advance);
     if (!canPlay && autoplay) stopAutoplay();
   }
 
-  function rotate(next,manual) {
-    stopAutoplay();
+  function stopRotation() {
     cancelAnimationFrame(animation);
+    animation = 0;
+    target = undefined;
+    coasting = false;
+  }
+
+  function rotate(next,manual,settling = false) {
+    stopAutoplay();
+    stopRotation();
     target = next;
     const start = position;
     const delta = target-start;
     function settle() {
       position = wrap(next);
       target = undefined;
+      animation = 0;
       paint(manual);
       sync();
     }
@@ -139,14 +145,36 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     }
 
     const started = performance.now();
-    const duration = Math.min(670,310+95*Math.abs(delta));
+    const duration = settling ? 280 : Math.min(670,310+95*Math.abs(delta));
     function frame(now) {
       const progress = Math.min(1,Math.max(0,(now-started)/duration));
-      position = start+delta*(1-(1-progress)**4);
+      position = start+delta*(settling ? ease(progress) : 1-(1-progress)**4);
       if (progress < 1) {
         paint();
         animation = requestAnimationFrame(frame);
       } else settle();
+    }
+    animation = requestAnimationFrame(frame);
+  }
+
+  function coast(speed) {
+    if (Math.abs(speed) < .48) {
+      rotate(Math.round(position),true,true);
+      return;
+    }
+    const friction = 3.15;
+    let velocity = Math.max(-15,Math.min(15,speed));
+    let previous = performance.now();
+    coasting = true;
+    function frame(now) {
+      const elapsed = Math.max(0,Math.min(.05,(now-previous)/1000));
+      previous = now;
+      const decay = Math.exp(-friction*elapsed);
+      position = wrap(position+velocity*(1-decay)/friction);
+      velocity *= decay;
+      paint();
+      if (Math.abs(velocity) > .42) animation = requestAnimationFrame(frame);
+      else rotate(Math.round(position+velocity/friction),true,true);
     }
     animation = requestAnimationFrame(frame);
   }
@@ -170,6 +198,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     }
     if (size < 2) return;
     suppressClick = false;
+    stopRotation();
     drag = {id:event.pointerId,startX:event.clientX,startY:event.clientY,x:event.clientX,time:event.timeStamp,
       velocity:0,step:Math.min(230,stage.clientWidth*.37),moved:false};
     stopAutoplay();
@@ -181,8 +210,6 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     if (!drag.moved) {
       if (Math.abs(dx) < 7 || Math.abs(dy) > Math.abs(dx)) return;
       clearLift();
-      cancelAnimationFrame(animation);
-      target = undefined;
       drag.origin = position;
       drag.moved = true;
       stage.setPointerCapture(event.pointerId);
@@ -205,21 +232,25 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     stage.classList.remove('is-dragging');
     if (gesture.moved) {
       suppressClick = true;
-      const speed = event.type === 'pointerup' && event.timeStamp-gesture.time < 95 && !motion.matches ? gesture.velocity : 0;
-      const momentum = Math.max(-1.55,Math.min(1.55,speed*165/gesture.step));
-      rotate(Math.round(position-momentum),true);
-    } else sync();
+      const age = event.timeStamp-gesture.time;
+      const speed = event.type === 'pointerup' && age < 100 && !motion.matches
+        ? -gesture.velocity*1000/gesture.step*Math.exp(-age/95) : 0;
+      coast(speed);
+    } else if (paused) rotate(Math.round(position),false,true);
+    else sync();
   }
   stage.addEventListener('pointerup',release,opts);
   stage.addEventListener('pointercancel',release,opts);
   stage.addEventListener('lostpointercapture',event => {
     if (event.target === stage) release(event);
   },opts);
-  stage.addEventListener('pointerenter',event => {
+  wheel.addEventListener('pointerenter',event => {
     if (event.pointerType === 'mouse' && hoverCapable.matches) { hovering = true; sync(); }
   },opts);
   stage.addEventListener('pointerleave',event => {
     if (!drag?.moved) release(event);
+  },opts);
+  wheel.addEventListener('pointerleave',event => {
     if (event.pointerType === 'mouse') { hovering = false; sync(); }
   },opts);
   stage.addEventListener('click',event => {
@@ -235,6 +266,11 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     step(event.key === 'ArrowLeft' ? -1 : 1);
   },opts);
   gallery.addEventListener('click',event => {
+    const dot = event.target.closest('[data-gallery-dot]');
+    if (dot) {
+      rotate(Math.round(position+relative(Number(dot.dataset.galleryDot)-position)),true);
+      return;
+    }
     const action = event.target.closest('[data-gallery-control]')?.dataset.galleryControl;
     if (action === 'toggle') {
       paused = !paused;
@@ -266,6 +302,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
   });
   resize.observe(stage);
   navigation.hidden = size < 2;
+  gallery.querySelector('.gallery-dots').hidden = size < 2;
   paint();
   sync();
   return () => {
@@ -273,7 +310,7 @@ window.mountEstateGallery = (gallery, rows, motion) => {
     observer.disconnect();
     resize.disconnect();
     clearLift();
-    cancelAnimationFrame(animation);
+    stopRotation();
     stopAutoplay();
   };
 };

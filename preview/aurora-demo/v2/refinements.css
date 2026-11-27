@@ -54,6 +54,7 @@
 .estate-editor-image{width:min(100%,360px);aspect-ratio:16/8;height:auto;border-radius:12px}
 
 .gallery-figure{margin:6px 0 0}
+.gallery-wheel{position:relative}
 .gallery-stage{
   position:relative;isolation:isolate;overflow:hidden;overflow:clip;perspective:1150px;
   touch-action:pan-y pinch-zoom;user-select:none;cursor:grab;
@@ -85,11 +86,22 @@
   .gallery-stage:not(.is-dragging) .gallery-card:is(:hover,.is-lifted) img{transform:none}
 }
 .gallery-figure figcaption{text-align:center;padding:5px 14px 0;color:#f4e4c6;font-size:clamp(15px,2vw,21px);font-weight:600}
-.gallery-controls{display:grid;justify-items:center;margin-top:8px}
-.gallery-navigation{display:flex;align-items:center;gap:10px}
-.gallery-navigation .control{width:44px;padding:0;border-radius:50%;color:#f0d4a0}
+.gallery-navigation{
+  position:absolute;inset-inline:clamp(5px,1.8vw,26px);top:50%;transform:translateY(-50%);
+  display:flex;justify-content:space-between;pointer-events:none
+}
+.gallery-arrow{
+  width:44px;height:44px;display:grid;place-items:center;pointer-events:auto;color:#f5f7fc;
+  border:1px solid #dbe7ff3d;border-radius:50%;background:#111b2cca;opacity:.61;
+  transition:opacity .18s ease,background .18s ease
+}
+.gallery-arrow:is(:hover,:focus-visible,:active){opacity:1;background:#1a2b47}
 .gallery-prev svg{rotate:180deg}
-.gallery-count{font-size:13px;color:#d1d9e7;font-variant-numeric:tabular-nums;min-width:46px;text-align:center}
+.gallery-dots{display:flex;flex-wrap:wrap;justify-content:center;width:min(100% - 24px,570px);margin:5px auto 0}
+.gallery-dots button{display:grid;place-items:center;width:27px;height:26px;border-radius:8px}
+.gallery-dots button::before{content:"";width:6px;height:6px;border-radius:50%;background:#dfe7f49a;transition:background .18s ease,scale .18s ease}
+.gallery-dots button:is(:hover,:focus-visible)::before{background:#e8eefbcc}
+.gallery-dots button[aria-current=true]::before{background:#fff;scale:1.47;box-shadow:0 0 9px #fff7}
 @media(max-width:639px){
   .gallery-stage{perspective:820px;height:clamp(330px,105vw,550px)}
   .gallery-card{width:42%;height:min(57%,52vw)}
