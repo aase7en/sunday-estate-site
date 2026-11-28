@@ -94,9 +94,6 @@ dialog[data-kind="v2-chat"]{width:min(calc(100% - 20px),460px);max-height:calc(1
 .v2-deed-list{display:flex;flex-wrap:wrap;gap:6px;padding:0;list-style:none;margin:6px 0 3px}
 .v2-deed-list li{padding:4px 8px;border-radius:7px;background:var(--wash);font-size:12px;overflow-wrap:anywhere}
 .v2-deal-hint,.v2-cap{margin:0;font-size:.78rem;color:var(--muted)}
-.v2-deed-input{display:flex;gap:6px;align-items:end;min-width:0}
-.v2-deed-input label{flex:1}
-.v2-deed-input .control{flex:none}
 .v2-allocation{padding:10px;border-radius:11px;background:var(--wash)}
 .v2-allocation .control{justify-self:start}
 .v2-allocation details{font-size:.78rem;color:var(--muted)}

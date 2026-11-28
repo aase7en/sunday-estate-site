@@ -375,6 +375,8 @@
       cardHead('ข้อมูลส่วนตัว', 'ชื่อ บทบาท และข้อมูลติดต่อ', 'user','purple') + '<form id="profile-form" class="editor"><div class="form-grid">' +
       input('ชื่อที่แสดง','name') + input('บทบาท','role') + input('อีเมลติดต่อ','email','email',120) + input('เบอร์โทร','phone','tel',32) +
       '</div><label>เกี่ยวกับคุณ<textarea name="bio" maxlength="160" rows="2">' + escape(p.bio) + '</textarea></label>' +
+      (account === 'client' ? '<label>บ้านเลขที่ / หมู่ / ถนน<input name="addressLine" maxlength="180" value="' +
+        escape(p.addressLine ?? '') + '"></label>' + window.EstateThaiAddress.render('borrower-address',p) : '') +
       '<div class="form-footer"><button class="primary" type="submit">บันทึกโปรไฟล์</button></div></form></article>' +
       '<article class="card panel">' + cardHead('การตั้งค่าพื้นที่ทำงาน','บันทึกแยกตามบัญชีในเบราว์เซอร์นี้','globe','cyan') +
       '<form id="prefs-form" class="editor"><div class="form-grid"><label>ธีม<select name="theme">' + choose(themeOptions, pref.theme) +

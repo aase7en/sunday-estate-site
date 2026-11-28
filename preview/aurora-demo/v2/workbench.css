@@ -82,3 +82,32 @@
 .v2-private-sale summary{cursor:pointer;min-height:36px;font-weight:650}
 .v2-private-sale ul{margin:8px 0;padding-inline-start:1.25em}
 .v2-private-sale .data-table th,.v2-private-sale .data-table td{white-space:normal}
+
+.v2-deed-input{
+  display:grid;align-items:start;gap:8px;padding-block:9px;border-bottom:1px solid var(--border);
+}
+.v2-deed-input .v2-inline{gap:7px}
+.v2-deed-input .v2-deal-hint{overflow-wrap:anywhere;margin:0}
+#parcel-dialog{width:min(calc(100% - 24px),600px);max-height:calc(100dvh - 28px);overscroll-behavior:contain}
+#parcel-dialog::backdrop{background:#09081885;backdrop-filter:blur(5px)}
+#parcel-dialog[open]{display:flex;flex-direction:column;overflow:hidden}
+#parcel-dialog .dialog-head{flex:none}
+#parcel-dialog .dialog-body{min-height:0;overflow:auto;overscroll-behavior:contain;scroll-padding-bottom:64px;padding-bottom:0}
+#parcel-dialog .form-footer{
+  position:sticky;bottom:0;z-index:1;background:var(--paper);border-top:1px solid var(--border);padding-block:8px
+}
+.thai-address{
+  display:grid;gap:9px;border:1px solid var(--border);border-radius:12px;padding:10px;min-width:0;margin:0;
+}
+.thai-address legend{font-weight:700;padding-inline:5px}
+.thai-address a{text-decoration:underline}
+.thai-address .v2-deal-hint,.address-source{margin:0;color:var(--muted)}
+.address-options{
+  list-style:none;margin:0;padding:4px;max-height:14rem;overflow:auto;overscroll-behavior:contain;
+  border:1px solid var(--border);border-radius:10px;background:var(--paper);
+}
+.address-options li{
+  display:flex;align-items:center;min-height:44px;padding:7px 8px;border-radius:7px;cursor:pointer;font-size:13px;
+}
+.address-options li+li{border-top:1px solid var(--border)}
+.address-options li[aria-selected=true],.address-options li:hover{background:var(--wash);color:var(--accent)}

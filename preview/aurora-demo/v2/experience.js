@@ -1,6 +1,8 @@
 window.createEstateExperience = api => {
   const d = window.EstateData;
   const media = window.EstateMedia;
+  const thaiAddress = window.EstateThaiAddress;
+  const parcelDialog = document.getElementById('parcel-dialog');
   const {icon, escape, read, write, notice, open, moduleHeader} = api;
   const money = new Intl.NumberFormat('th-TH',{style:'currency',currency:'THB',maximumFractionDigits:2});
   const baht = n => money.format(n);
@@ -471,7 +473,8 @@ window.createEstateExperience = api => {
           pledged + '</strong><small>จ่ายจริงแล้ว ' + baht(d.sum(visible,'paid')) + '</small></div>' +
           '<section class="v2-deed"><h3>โฉนดในดีล</h3><ul class="v2-deed-list">' +
           deal.deeds.map(deed=>'<li>' + escape(deed.name) +
-            (deed.details || hasCoordinates(deed) ? '<details><summary>ข้อมูลแปลง</summary>' +
+            (deed.details || deedSummary(deed) || hasCoordinates(deed) ? '<details><summary>ข้อมูลแปลง</summary>' +
+              (deedSummary(deed) ? '<p>' + escape(deedSummary(deed)) + '</p>' : '') +
               (deed.details ? '<p>' + escape(deed.details) + '</p>' : '') +
               (hasCoordinates(deed) ? '<p>พิกัด ' + escape(deed.lat + ', ' + deed.lng) + '</p>' : '') +
               '</details>' : '') + '</li>').join('') + '</ul></section>' +
@@ -487,6 +490,13 @@ window.createEstateExperience = api => {
 
   const hasCoordinates = deed => typeof deed.lat === 'number' && typeof deed.lng === 'number';
   const newDeed = () => ({id:crypto.randomUUID(),name:''});
+  const deedLocation = deed => [deed.address?.subdistrict,deed.address?.district,deed.address?.province,
+    deed.address?.postalCode].filter(Boolean).join(' · ');
+  const deedSummary = deed => [
+    deed.deedNo && 'โฉนด '+deed.deedNo,
+    deed.mapSheet && 'ระวาง '+deed.mapSheet,
+    deedLocation(deed),
+  ].filter(Boolean).join(' · ');
   const dealSteps = ['ข้อมูลดีล','โฉนด','ผู้ร่วมทุน','ตรวจทาน'];
   let dealStep = 0;
   let dealDraft;
@@ -507,6 +517,58 @@ window.createEstateExperience = api => {
   function coordinateInput(label,name,value,limit) {
     return '<label>' + label + '<input name="' + name + '" type="number" inputmode="decimal" step="any" min="' +
       (-limit) + '" max="' + limit + '" value="' + escape(String(value ?? '')) + '"></label>';
+  }
+
+  function editDeed(index,trigger) {
+    const parentForm = document.getElementById('v2-deal');
+    const deed = dealDraft?.deeds[index];
+    if (!admin() || !parentForm || dealStep !== 1 || !deed || parcelDialog.open) return;
+    const field = (key,label,max) => '<label>'+label+'<input name="'+key+'" maxlength="'+max+
+      '" value="'+escape(deed[key] ?? '')+'"></label>';
+    parcelDialog.innerHTML = '<div class="dialog-head"><h2 id="parcel-dialog-title">รายละเอียดโฉนด '+(index+1)+'</h2>' +
+      '<button class="icon-button" type="button" data-parcel-close aria-label="ปิดรายละเอียดโฉนด">'+icon('x')+'</button></div>' +
+      '<div class="dialog-body"><form class="editor" method="dialog"><div class="form-grid">' +
+      field('deedNo','เลขโฉนด',70) + field('mapSheet','ระวาง',80) + '</div>' +
+      thaiAddress.render('deed-address',deed.address) + field('details','ที่ตั้ง / รายละเอียดแปลง',180) +
+      '<div class="form-grid">'+coordinateInput('ละติจูด','lat',deed.lat,90)+coordinateInput('ลองจิจูด','lng',deed.lng,180)+'</div>' +
+      field('documentRef','รหัสอ้างอิงไฟล์โฉนด',100) +
+      '<p class="v2-deal-hint">ใช้ข้อมูลจำลองในเดโม กรอกเฉพาะข้อมูลที่มี แล้วบันทึกดีลเมื่อทำครบทุกขั้นตอน</p>' +
+      errorLine + formFooter('ใช้ข้อมูลแปลง','<button class="control" type="button" data-parcel-close>ยกเลิก</button>') +
+      '</form></div>';
+    for (const button of parcelDialog.querySelectorAll('[data-parcel-close]')) {
+      button.addEventListener('click',()=>parcelDialog.close());
+    }
+    const form = parcelDialog.querySelector('form');
+    // Keep the parent step mounted, including its unsaved fields and current scroll position.
+    const parentDialog = parentForm.closest('dialog');
+    const closeWithParent = () => { if (parcelDialog.open) parcelDialog.close(); };
+    parentDialog.addEventListener('close',closeWithParent,{once:true});
+    parcelDialog.addEventListener('close',()=>{
+      parentDialog.removeEventListener('close',closeWithParent);
+      parcelDialog.replaceChildren();
+      if (parentDialog.open && trigger.isConnected) trigger.focus({preventScroll:true});
+    },{once:true});
+    form.addEventListener('input',event=>{
+      if (['lat','lng'].includes(event.target.name)) error(form,'');
+    });
+    form.addEventListener('submit',event=>{
+      event.preventDefault();
+      event.stopPropagation();
+      if (!admin() || !parentDialog.open || !parentForm.isConnected) return;
+      const {lat,lng} = form.elements;
+      if (Boolean(lat.value) !== Boolean(lng.value)) {
+        error(form,'กรอกละติจูดและลองจิจูดให้ครบคู่ หรือเว้นว่างทั้งสองช่อง');
+        (lat.value ? lng : lat).focus();
+        return;
+      }
+      for (const key of ['deedNo','mapSheet','details','documentRef']) deed[key] = form.elements[key].value.trim();
+      deed.address = thaiAddress.read(form);
+      deed.lat = lat.value ? lat.valueAsNumber : null;
+      deed.lng = lng.value ? lng.valueAsNumber : null;
+      parentForm.querySelector('[data-deed-summary="'+index+'"]').textContent = deedSummary(deed) || 'ยังไม่ได้ระบุข้อมูลโฉนด';
+      parcelDialog.close();
+    });
+    parcelDialog.showModal();
   }
 
   function paintDeal() {
@@ -537,15 +599,11 @@ window.createEstateExperience = api => {
       '<label>ขอบเขตพอร์ต<select name="scope">' + option('personal','พอร์ตส่วนตัว',deal.scope) +
       option('company','พอร์ตบริษัท',deal.scope) + '</select></label></div>' +
       '<fieldset class="v2-fieldset" data-deal-step="1"' + (dealStep===1 ? '' : ' hidden') + '><legend>โฉนดในดีล</legend><p class="v2-deal-hint">เพิ่มทุกแปลงที่ซื้อในโครงการนี้</p>' +
-      deal.deeds.map((deed,index)=>'<div class="v2-deed-input"><label>เลขโฉนด / ชื่อแปลง ' + (index+1) +
-        '<input name="deed-' + index + '" value="' + escape(deed.name) + '" maxlength="70" required></label>' +
-        '<details><summary>ข้อมูลทรัพย์ พิกัด และเอกสาร</summary>' +
-        '<label>ที่ตั้ง / รายละเอียดแปลง<input name="parcel-detail-' + index + '" maxlength="180" value="' + escape(deed.details ?? '') + '"></label>' +
-        '<div class="form-grid">' + coordinateInput('ละติจูด','lat-'+index,deed.lat,90) +
-        coordinateInput('ลองจิจูด','lng-'+index,deed.lng,180) + '</div>' +
-        '<label>รหัสอ้างอิงไฟล์โฉนด<input name="document-'+index+'" maxlength="100" value="'+ escape(deed.documentRef ?? '') + '"></label>' +
-        '<p class="v2-deal-hint">กรอกทีหลังได้ · ใช้ข้อมูลจำลอง · ช่องนี้เก็บรหัสอ้างอิงไฟล์เท่านั้น</p></details>' +
-        (deal.deeds.length > 1 ? btn('remove-deed:'+index,'ลบแปลง') : '') + '</div>').join('') +
+      deal.deeds.map((deed,index)=>'<div class="v2-deed-input"><label>ชื่อแปลง ' + (index+1) +
+        '<input name="deed-' + index + '" value="' + escape(deed.name) + '" maxlength="70"></label>' +
+        '<p class="v2-deal-hint" data-deed-summary="'+index+'">'+escape(deedSummary(deed) || 'ยังไม่ได้ระบุข้อมูลโฉนด')+'</p>' +
+        '<div class="v2-inline">'+btn('deed-details:'+index,'รายละเอียดโฉนด '+(index+1)) +
+        (deal.deeds.length > 1 ? btn('remove-deed:'+index,'ลบแปลง '+(index+1)) : '') + '</div></div>').join('') +
       '<div class="v2-inline">' + btn('add-deed','เพิ่มโฉนด') + '</div></fieldset>' +
       '<fieldset class="v2-fieldset" data-deal-step="2"' + (dealStep===2 ? '' : ' hidden') + '><legend>ผู้ร่วมลงทุนทั้งดีล</legend><p class="v2-deal-hint">ตั้งสัดส่วนครั้งเดียว ใช้กับทุกโฉนดในโครงการ</p>' +
       '<label>วิธีคำนวณ<select name="basis">' + option('percent','กรอกเปอร์เซ็นต์ → คำนวณเงิน',deal.basis) +
@@ -558,7 +616,7 @@ window.createEstateExperience = api => {
       '<h3>ตรวจทานข้อมูลดีล</h3><p>' + escape(deal.name) + ' · ' + (deal.scope==='personal' ? 'พอร์ตส่วนตัว' : 'พอร์ตบริษัท') + '</p>' +
       '<p>' + deal.deeds.length + ' โฉนด · ' + deal.allocations.length + ' ผู้ร่วมทุน · ทุนทั้งดีล ' +
       baht(investment.calculate(deal.allocations,deal.basis).total ?? 0) + '</p><ul>' +
-      deal.deeds.map(deed=>'<li>' + escape(deed.name) + '</li>').join('') + '</ul></section>' +
+      deal.deeds.map(deed=>'<li>' + escape(deed.name || deed.deedNo) + '</li>').join('') + '</ul></section>' +
       errorLine + formFooter(dealStep===3 ? 'บันทึกดีลจำลอง' : 'ถัดไป',dealStep>0 ? btn('deal-back','ย้อนกลับ') : '') + '</form>','v2-deal');
     updateDeal(document.getElementById('v2-deal'));
   }
@@ -610,10 +668,6 @@ window.createEstateExperience = api => {
     dealDraft.scope = form.elements.scope.value;
     dealDraft.deeds.forEach((deed,index)=>{
       deed.name = form.elements['deed-'+index].value.trim();
-      deed.details = form.elements['parcel-detail-'+index].value.trim();
-      deed.documentRef = form.elements['document-'+index].value.trim();
-      deed.lat = form.elements['lat-'+index].value === '' ? null : form.elements['lat-'+index].valueAsNumber;
-      deed.lng = form.elements['lng-'+index].value === '' ? null : form.elements['lng-'+index].valueAsNumber;
     });
     const result = updateDeal(form);
     dealDraft.allocations = dealDraft.allocations.map((row,index)=>{
@@ -657,11 +711,11 @@ window.createEstateExperience = api => {
       if (!dealDraft.name) return error(form,'กรอกชื่อโครงการ');
       return advance();
     }
-    if (dealDraft.deeds.some(deed=>!deed.name) ||
-      new Set(dealDraft.deeds.map(deed=>deed.name.toLowerCase())).size !== dealDraft.deeds.length) {
-      return error(form,'กรอกเลขโฉนด / ชื่อแปลงให้ครบและไม่ซ้ำกัน');
+    const names = dealDraft.deeds.map(deed=>deed.name || deed.deedNo);
+    if (names.some(name=>!name) || new Set(names.map(name=>name.toLowerCase())).size !== names.length) {
+      return error(form,'กรอกชื่อแปลงหรือเลขโฉนดให้ครบและไม่ซ้ำกันในดีล');
     }
-    if (dealDraft.deeds.some(deed=>!(deed.lat === null && deed.lng === null) &&
+    if (dealDraft.deeds.some(deed=>!(deed.lat == null && deed.lng == null) &&
       !(hasCoordinates(deed) && Math.abs(deed.lat) <= 90 && Math.abs(deed.lng) <= 180))) {
       return error(form,'กรอกละติจูดและลองจิจูดให้ครบคู่ หรือเว้นว่างทั้งสองช่อง');
     }
@@ -688,7 +742,8 @@ window.createEstateExperience = api => {
     }
     if (dealStep === 2) return advance();
     const id = dealDraft.id ?? 'INV-' + crypto.randomUUID().slice(0,8);
-    const deal = {...dealDraft,id,allocations,needsReview:false};
+    const deal = {...dealDraft,id,allocations,needsReview:false,
+      deeds:dealDraft.deeds.map(deed=>({...deed,name:deed.name || deed.deedNo}))};
     if (!write('investment-deals',[...allDeals().filter(record=>record.id !== id),deal])) return;
     close();
     api.render();
@@ -966,7 +1021,8 @@ window.createEstateExperience = api => {
     if (actor() === 'partner') return investmentPage();
     const ordered = contracts().slice().sort((a,b)=>(b.balance > 0) - (a.balance > 0) || a.due.localeCompare(b.due));
     const next = ordered.find(c=>c.balance > 0);
-    return moduleHeader('contracts',{title:'สัญญาของฉัน',description:'ยอดและกำหนดตามข้อมูลจำลอง ณ ' + d.formatDate(d.asOf)}) +
+    return moduleHeader('contracts',{title:'สัญญาของฉัน',description:'ยอดและกำหนดตามข้อมูลจำลอง ณ ' + d.formatDate(d.asOf),
+      details:'<div class="module-actions"><a class="control" href="#profile">ข้อมูลติดต่อผู้กู้</a></div>'}) +
       (next ? '<article class="card panel client-next"><div><h2>สัญญาที่ต้องดูถัดไป</h2><p class="muted">' +
         escape(next.id) + ' · ' + d.statusName[next.status] + ' · กำหนด ' + d.formatDate(next.due) +
         '</p></div>' + btn('pay-preview:'+next.id,'ตรวจยอดตามสัญญา',true) + '</article>' : '') +
@@ -1019,6 +1075,7 @@ window.createEstateExperience = api => {
       }
       case 'rules': rulesDialog(); break;
       case 'deal-edit': dealEdit(arg); break;
+      case 'deed-details': editDeed(Number(arg),button); break;
       case 'deal-back': {
         const form = document.getElementById('v2-deal');
         if (admin() && form && dealStep > 0) {
